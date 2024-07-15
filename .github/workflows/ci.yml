@@ -1,0 +1,63 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        language: [python, rust, node]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      if: matrix.language == 'python'
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'
+    - name: Install Python dependencies
+      if: matrix.language == 'python'
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+    - name: Run Python tests
+      if: matrix.language == 'python'
+      run: |
+        source venv/bin/activate
+        pytest tests
+
+    - name: Set up Rust
+      if: matrix.language == 'rust'
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Run Rust tests
+      if: matrix.language == 'rust'
+      run: |
+        cargo test
+
+    - name: Set up Node.js
+      if: matrix.language == 'node'
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+    - name: Install Node.js dependencies
+      if: matrix.language == 'node'
+      run: |
+        npm install
+    - name: Run Node.js tests
+      if: matrix.language == 'node'
+      run: |
+        NODE_OPTIONS=--experimental-vm-modules npx mocha tests
