@@ -1,0 +1,19 @@
+{
+  "name": "numbers",
+  "version": "1.0.0",
+  "description": "Numbers project",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "chai": "^5.1.1",
+    "mocha": "^10.6.0"
+  },
+  "devDependencies": {
+    "mocha": "^10.6.0",
+    "chai": "^5.1.1"
+  }
+}
+
