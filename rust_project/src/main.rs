@@ -113,3 +113,15 @@ fn run_auction_flow(rpc: &Client) {
 // - Transfer confirmation
 // - Real transaction handling
 // - JSON file or SQLite for persistence (if needed)
+
+// -----------------------------------------------------------------------------
+// NOTE FOR FUTURE DEVELOPERS:
+// This MVP uses a centralized wallet to fund inscriptions automatically.
+// The wallet must be manually preloaded by the project owner.
+//
+// In a production system, this logic should be upgraded to:
+// - Use a dedicated wallet with auto-funding logic
+// - Possibly integrate multi-signature controls or smart contract-style spending logic
+// - Ensure continuity by allowing autonomous or community-managed funding
+// - Make wallet funding thresholds and status observable and auditable
+// -----------------------------------------------------------------------------
