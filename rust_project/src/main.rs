@@ -115,7 +115,7 @@ fn run_auction_flow(rpc: &Client) {
     // - Prevent auction N+1 from proceeding before N is inscribed
     let number = 1;
     let address = rpc.get_new_address(None, None).expect("Couldn't get new address");
-    let mut auction = start_auction(number, address.to_string());
+    let mut auction = start_auction(number, address.assume_checked().to_string());
 
     println!("\nAuction started for Number {}.", auction.number);
     println!("Owner address: {}", auction.owner_address);
@@ -127,8 +127,7 @@ fn run_auction_flow(rpc: &Client) {
         // Check if the auction has already ended before accepting new input
         if let Some(start) = auction.start_time {
             if start.elapsed() >= auction.duration {
-                println!("Auction has ended. No more bids accepted.
-");
+                println!("Auction has ended. No more bids accepted.\n");
                 break;
             }
         }
