@@ -73,7 +73,7 @@ use std::fs::File;
 use std::io::Write;
 use chrono::Utc;
 
-fn try_inscribe_with_retries(number: u32, address: &str, max_retries: u8) -> bool {
+fn try_inscribe_with_retries(number: u32, address: &str, max_retries: u8, amount: f64, winner: &str) -> bool {
     for attempt in 1..=max_retries {
         println!("Attempting inscription #{} for number {} to address {}", attempt, number, address);
 
@@ -84,8 +84,8 @@ fn try_inscribe_with_retries(number: u32, address: &str, max_retries: u8) -> boo
             let result = AuctionResult {
                 number,
                 address: address.to_string(),
-                amount: 0.0, // placeholder; real value added in auction flow
-                winner: String::new(), // placeholder; set in auction flow
+                amount,
+                winner: winner.to_string(),
                 timestamp: Utc::now().to_rfc3339(),
             };
             if let Ok(json) = serde_json::to_string_pretty(&result) {
@@ -174,7 +174,7 @@ fn run_auction_flow(rpc: &Client) {
             if start.elapsed() >= auction.duration {
                 println!("Auction ended! Winning bid: {} BTC by {}", auction.highest_bid, auction.highest_bidder);
 
-                let success = try_inscribe_with_retries(auction.number, &auction.owner_address, 3);
+                let success = try_inscribe_with_retries(auction.number, &auction.owner_address, 3, auction.highest_bid, &auction.highest_bidder);
                 if !success {
                     println!("Error: Could not inscribe number {}. System halted.", auction.number);
                     return;
