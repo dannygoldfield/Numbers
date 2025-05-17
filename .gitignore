@@ -1,5 +1,33 @@
+# macOS system file
 .DS_Store
+
+# Python and virtual environments
 venv/
+__pycache__/
 tests/__pycache__/
+
+# Rust build artifacts
 target/
 
+# Node modules
+node_modules/
+
+# VS Code settings
+.vscode/
+
+# Log and temp files
+*.log
+*.tmp
+*.swp
+
+# Private configuration files
+.env
+
+# Media/design files – keep these on external SSD
+Numbers-Assets/
+*.psd
+*.tiff
+*.mov
+*.mp4
+*.png
+*.jpg
