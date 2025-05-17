@@ -12,9 +12,9 @@ fn main() {
     println!("Welcome back to the Numbers prototype!");
     println!("Connecting to Bitcoin Testnet RPC...");
 
-    let rpc_url = "http://127.0.0.1:18332";
+    let rpc_url = "http://34.152.9.61:18332";
     let rpc_user = "your_rpc_username"; // <- Replace with your actual rpcuser
-    let rpc_pass = "your_rpc_password"; // <- Replace with your actual rpcpassword
+    let rpc_pass = "your_rpc-password"; // <- Replace with your actual rpcpassword
 
     let rpc = Client::new(rpc_url, Auth::UserPass(rpc_user.to_string(), rpc_pass.to_string()))
         .expect("Failed to create RPC client");
