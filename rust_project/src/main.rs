@@ -7,20 +7,27 @@ use bitcoincore_rpc::{Auth, Client, RpcApi};
 use std::io;
 use std::time::{Duration, Instant};
 
+use dotenv::dotenv;
+use std::env;
+
+
 fn main() {
     // This is a test comment to verify GitHub sync.
     println!("Welcome back to the Numbers prototype!");
     println!("Connecting to Bitcoin Testnet RPC...");
 
-    let rpc_url = "http://34.152.9.61:18332";
-    let rpc_user = "your_rpc_username"; // <- Replace with your actual rpcuser
-    let rpc_pass = "your_rpc-password"; // <- Replace with your actual rpcpassword
+    dotenv().ok();
+
+    let rpc_url = env::var("RPC_URL").expect("RPC_URL not set");
+    let rpc_user = env::var("RPC_USER").expect("RPC_USER not set");
+    let rpc_pass = env::var("RPC_PASS").expect("RPC_PASS not set");
 
     let rpc = Client::new(rpc_url, Auth::UserPass(rpc_user.to_string(), rpc_pass.to_string()))
         .expect("Failed to create RPC client");
 
     run_auction_flow(&rpc);
 }
+
 
 // In future versions, a full Vec<Bid> could be added here to track all bids:
 // struct Bid {
