@@ -1,73 +1,67 @@
 // Numbers Prototype – Rust + Ordinals on Bitcoin Testnet
 
-// Goal: This code is part of a working prototype for the Numbers Project.
-// It enables testnet-based inscription auction functionality, starting with core logic only.
+// This prototype powers the Numbers auction on Bitcoin Testnet.
+// It creates a simple timed auction for each number. When a user places the first bid,
+// a 60-second countdown begins. The highest bidder at the end wins.
+// The number is then "inscribed" (simulated for now) to the winner’s address.
+//
+// Current Features:
+// - Starts new auctions for each number (currently hardcoded to #1)
+// - Collects bids from stdin
+// - Starts timer on first bid
+// - Ends auction after 60 seconds
+// - Simulates Ordinals inscription with retry logic
+// - Saves winning bid as a JSON file
+//
+// Future Enhancements:
+// - Integrate real Ordinals inscription logic
+// - Track and display full bid history (Vec<Bid>)
+// - Handle actual Bitcoin transactions
+// - Enforce bid rules (e.g. min increment, bid expiry)
+// - Persist data in SQLite or other DB
+// - Support sequential auctions (N+1 only after N is inscribed)
+// - Replace bidder name with pubkey hash or wallet address
+// - Add admin controls (pause, resume, force-inscribe, etc.)
 
 use bitcoincore_rpc::{Auth, Client, RpcApi};
-use std::io;
+use std::env;
+use std::fs::File;
+use std::io::{self, Write};
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::{Duration, Instant};
 
+use chrono::Utc;
 use dotenv::dotenv;
-use std::env;
-
+use serde::Serialize;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 fn main() {
-    // This is a test comment to verify GitHub sync.
     println!("Welcome back to the Numbers prototype!");
     println!("Connecting to Bitcoin Testnet RPC...");
 
     dotenv().ok();
-
     let rpc_url = env::var("RPC_URL").expect("RPC_URL not set");
     let rpc_user = env::var("RPC_USER").expect("RPC_USER not set");
     let rpc_pass = env::var("RPC_PASS").expect("RPC_PASS not set");
+    println!("Using RPC credentials: {} / {}", rpc_user, rpc_pass);
 
-    let rpc = Client::new(rpc_url, Auth::UserPass(rpc_user.to_string(), rpc_pass.to_string()))
+    let rpc = Client::new(&rpc_url, Auth::UserPass(rpc_user, rpc_pass))
         .expect("Failed to create RPC client");
 
     run_auction_flow(&rpc);
 }
-
-
-// In future versions, a full Vec<Bid> could be added here to track all bids:
-// struct Bid {
-//     amount: f64,
-//     bidder: String,
-//     timestamp: Instant,
-// }
 
 struct NumberAuction {
     number: u32,
     owner_address: String,
     highest_bid: f64,
     highest_bidder: String,
-    is_inscribed: bool,
     start_time: Option<Instant>,
     duration: Duration,
 }
 
-fn start_auction(number: u32, address: String) -> NumberAuction {
-    NumberAuction {
-        number,
-        owner_address: address,
-        highest_bid: 0.0,
-        highest_bidder: String::new(),
-        is_inscribed: false,
-        start_time: None,
-        duration: Duration::from_secs(12345),
-    }
-}
-
-fn inscribe_number(number: u32, address: &str) -> bool {
-    // Simulated Ordinals inscription logic
-    // Replace this with actual inscription call in the future
-    use rand::Rng;
-    let success = rand::thread_rng().gen_bool(0.5); // 50% chance of success
-    println!("Simulating inscription of #{} to {}...", number, address);
-    success
-}
-
-#[derive(serde::Serialize)]
+#[derive(Serialize)]
 struct AuctionResult {
     number: u32,
     address: String,
@@ -76,16 +70,28 @@ struct AuctionResult {
     timestamp: String,
 }
 
-use std::fs::File;
-use std::io::Write;
-use chrono::Utc;
+fn inscribe_number(number: u32, address: &str) -> bool {
+    use rand::Rng;
+    let success = rand::thread_rng().gen_bool(0.5);
+    println!("Simulating inscription of #{} to {}...", number, address);
+    success
+}
 
-fn try_inscribe_with_retries(number: u32, address: &str, max_retries: u8, amount: f64, winner: &str) -> bool {
+fn try_inscribe_with_retries(
+    number: u32,
+    address: &str,
+    max_retries: u8,
+    amount: f64,
+    winner: &str,
+) -> bool {
     for attempt in 1..=max_retries {
-        println!("Attempting inscription #{} for number {} to address {}", attempt, number, address);
+        println!(
+            "Attempting inscription #{} for number {} to address {}",
+            attempt, number, address
+        );
 
-        // Simulated result of inscription (placeholder: always fails except on last try)
         let inscription_successful = inscribe_number(number, address);
+        println!("Success result for attempt #{}: {}", attempt, inscription_successful);
 
         if inscription_successful {
             let result = AuctionResult {
@@ -95,6 +101,7 @@ fn try_inscribe_with_retries(number: u32, address: &str, max_retries: u8, amount
                 winner: winner.to_string(),
                 timestamp: Utc::now().to_rfc3339(),
             };
+
             if let Ok(json) = serde_json::to_string_pretty(&result) {
                 let filename = format!("auction_result_{}.json", number);
                 if let Ok(mut file) = File::create(&filename) {
@@ -102,54 +109,89 @@ fn try_inscribe_with_retries(number: u32, address: &str, max_retries: u8, amount
                     println!("Saved auction result to {}", filename);
                 }
             }
-            println!("Inscription successful for number {} on attempt #{}", number, attempt);
+
+            println!(
+                "Inscription successful for number {} on attempt #{}",
+                number, attempt
+            );
             return true;
         } else {
             println!("Inscription attempt #{} failed. Retrying...", attempt);
         }
     }
 
-    println!("All inscription attempts failed for number {}. Manual intervention required.", number);
+    println!(
+        "All inscription attempts failed for number {}. Manual intervention required.",
+        number
+    );
     false
 }
 
 fn run_auction_flow(rpc: &Client) {
-    // Placeholder for post-auction inscription logic with retries
-    // When the auction ends, the system should:
-    // - Attempt to inscribe the number to the winning address
-    // - Retry up to 3 times if it fails
-    // - Halt and log if all retries fail
-    // - Prevent auction N+1 from proceeding before N is inscribed
     let number = 1;
     let address = rpc.get_new_address(None, None).expect("Couldn't get new address");
-    let mut auction = start_auction(number, address.assume_checked().to_string());
+    let auction = Arc::new(Mutex::new(NumberAuction {
+        number,
+        owner_address: address.assume_checked().to_string(),
+        highest_bid: 0.0,
+        highest_bidder: String::new(),
+        start_time: None,
+        duration: Duration::from_secs(60),
+    }));
 
-    println!("\nAuction started for Number {}.", auction.number);
-    println!("Owner address: {}", auction.owner_address);
-    println!("Auction will last 12,345 seconds after the first bid.\n");
-    println!("If no one bids, the auction waits indefinitely until the first bid is received.\n");
+    let auction_clone = Arc::clone(&auction);
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = Arc::clone(&running);
 
-    let mut input = String::new();
-    loop {
-        // Check if the auction has already ended before accepting new input
-        if let Some(start) = auction.start_time {
-            if start.elapsed() >= auction.duration {
-                println!("Auction has ended. No more bids accepted.\n");
-                break;
+    // Timer thread
+    thread::spawn(move || {
+        loop {
+            thread::sleep(Duration::from_secs(1));
+            let mut auction = auction_clone.lock().unwrap();
+            if let Some(start) = auction.start_time {
+                if start.elapsed() >= auction.duration {
+                    println!("\nAuction ended! Winning bid: {} BTC by {}", auction.highest_bid, auction.highest_bidder);
+                    let success = try_inscribe_with_retries(
+                        auction.number,
+                        &auction.owner_address,
+                        3,
+                        auction.highest_bid,
+                        &auction.highest_bidder,
+                    );
+                    if !success {
+                        println!("Error: Could not inscribe number {}. System halted.", auction.number);
+                    } else {
+                        println!(
+                            "Number {} successfully inscribed to address {}.",
+                            auction.number, auction.owner_address
+                        );
+                    }
+                    running_clone.store(false, Ordering::SeqCst);
+                    break;
+                }
             }
         }
-        println!("Enter your bid (BTC) and your name (e.g. 0.001 Alice), or type 'done' to finish:");
-        input.clear();
-        io::stdin().read_line(&mut input).expect("Failed to read input");
-        let trimmed = input.trim();
+    });
 
+    println!("\nAuction started for Number {}.", number);
+    println!("Owner address: {}", auction.lock().unwrap().owner_address);
+    println!("Auction will last 60 seconds after the first bid.\n");
+
+    let mut input = String::new();
+    while running.load(Ordering::SeqCst) {
+        println!("Enter your bid (BTC) and your name (e.g. 0.001 Alice), or type 'done':");
+        input.clear();
+        if io::stdin().read_line(&mut input).is_err() {
+            continue;
+        }
+        let trimmed = input.trim();
         if trimmed.eq_ignore_ascii_case("done") {
             break;
         }
 
         let parts: Vec<&str> = trimmed.split_whitespace().collect();
         if parts.len() != 2 {
-            println!("Invalid input. Please use the format: amount name\n");
+            println!("Invalid input. Use format: amount name\n");
             continue;
         }
 
@@ -160,9 +202,9 @@ fn run_auction_flow(rpc: &Client) {
                 continue;
             }
         };
-
         let bidder_name = parts[1];
 
+        let mut auction = auction.lock().unwrap();
         if auction.start_time.is_none() {
             auction.start_time = Some(Instant::now());
             println!("Auction timer started.");
@@ -173,33 +215,10 @@ fn run_auction_flow(rpc: &Client) {
             auction.highest_bidder = bidder_name.to_string();
             println!("New highest bid: {} BTC by {}\n", bid_amount, bidder_name);
         } else {
-            println!("Bid too low. Current highest bid is {} BTC by {}\n", auction.highest_bid, auction.highest_bidder);
-        }
-
-        if let Some(start) = auction.start_time {
-            if start.elapsed() >= auction.duration {
-                println!("Auction ended! Winning bid: {} BTC by {}", auction.highest_bid, auction.highest_bidder);
-
-                let success = try_inscribe_with_retries(auction.number, &auction.owner_address, 3, auction.highest_bid, &auction.highest_bidder);
-                if !success {
-                    println!("Error: Could not inscribe number {}. System halted.", auction.number);
-                    return;
-                }
-
-                println!("Number {} successfully inscribed to address {}.", auction.number, auction.owner_address);
-                break;
-            }
+            println!(
+                "Bid too low. Current highest bid is {} BTC by {}\n",
+                auction.highest_bid, auction.highest_bidder
+            );
         }
     }
 }
-
-// More to be added: 
-// - Ordinal inscription logic
-// - Transfer confirmation
-// - Real transaction handling
-// - JSON file or SQLite for persistence (if needed)
-// - Optional full bid history tracking using Vec<Bid> for transparency and analytics
-// - Graceful rejection of invalid or late bids, possibly with configurable rules
-// - Public key hash or wallet address can eventually replace 'name' for on-chain identity
-// - Retry mechanism for inscription failures, with logging and fail-safe halt
-// - Ensure inscription of number N cannot be skipped or outpaced by number N+1

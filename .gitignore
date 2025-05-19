@@ -15,6 +15,9 @@ node_modules/
 # VS Code settings
 .vscode/
 
+# Google Cloud SDK
+google-cloud-sdk/
+
 # Log and temp files
 *.log
 *.tmp
