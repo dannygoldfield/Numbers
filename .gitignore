@@ -35,5 +35,7 @@ Numbers-Assets/
 *.png
 *.jpg
 
-auction_result_*.json
+/results/*.json
+
+
 
