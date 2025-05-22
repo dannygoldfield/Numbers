@@ -128,7 +128,23 @@ fn try_inscribe_with_retries(
 }
 
 fn run_auction_flow(rpc: &Client) {
-    let number = 1;
+    let number = std::fs::read_dir("results")
+    .ok()
+    .and_then(|entries| {
+        entries
+            .filter_map(|entry| entry.ok())
+            .filter_map(|entry| {
+                entry.file_name().to_str().and_then(|name| {
+                    name.strip_prefix("auction_result_")
+                        .and_then(|s| s.strip_suffix(".json"))
+                        .and_then(|n| n.parse::<u32>().ok())
+                })
+            })
+            .max()
+            .map(|n| n + 1)
+    })
+    .unwrap_or(1);
+    println!("Next auction number: {}", number);
     let address = rpc.get_new_address(None, None).expect("Couldn't get new address");
     let auction = Arc::new(Mutex::new(NumberAuction {
         number,
