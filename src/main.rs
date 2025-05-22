@@ -103,7 +103,7 @@ fn try_inscribe_with_retries(
             };
 
             if let Ok(json) = serde_json::to_string_pretty(&result) {
-                let filename = format!("auction_result_{}.json", number);
+                let filename = format!("results/auction_result_{}.json", number);
                 if let Ok(mut file) = File::create(&filename) {
                     let _ = file.write_all(json.as_bytes());
                     println!("Saved auction result to {}", filename);
