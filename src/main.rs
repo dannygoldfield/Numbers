@@ -22,6 +22,13 @@
 // - Support sequential auctions (N+1 only after N is inscribed)
 // - Replace bidder name with pubkey hash or wallet address
 // - Add admin controls (pause, resume, force-inscribe, etc.)
+//
+// Note: For this MVP, `txindex=1` is not required in bitcoin.conf because we're not querying `ord` for real inscriptions.
+// It can be added later when full ordinal index support is needed.
+//
+// What is a satpoint?
+// A satpoint identifies the exact location of a satoshi using this format:
+// <txid>:<vout>:<offset>. This becomes critical when tracking inscriptions and their ownership.
 
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use std::env;
@@ -33,8 +40,48 @@ use std::time::{Duration, Instant};
 
 use chrono::Utc;
 use dotenv::dotenv;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::sync::atomic::{AtomicBool, Ordering};
+
+// Append-only JSON index support
+use std::path::Path;
+use std::fs::OpenOptions;
+use std::io::{BufReader, BufWriter};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct InscriptionRecord {
+    number: u32,
+    inscription_id: String,
+    txid: String,
+    output_index: u32,
+    address: String,
+    timestamp: String,
+    block_height: u32,
+    auction_winner: String,
+    content_type: Option<String>,
+    content_length: Option<u64>,
+    bid_amount_btc: Option<f64>,
+    ordinal: Option<String>,
+    content_hash: Option<String>,
+    raw_json_url: Option<String>,
+}
+
+fn append_to_index(new_record: InscriptionRecord, path: &str) {
+    let path = Path::new(path);
+    let mut records: Vec<InscriptionRecord> = if path.exists() {
+        let file = File::open(path).expect("Failed to open index file");
+        let reader = BufReader::new(file);
+        serde_json::from_reader(reader).unwrap_or_else(|_| vec![])
+    } else {
+        vec![]
+    };
+
+    records.push(new_record);
+
+    let file = File::create(path).expect("Failed to write index file");
+    let writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(writer, &records).expect("Failed to write JSON");
+}
 
 fn main() {
     println!("Welcome back to the Numbers prototype!");
@@ -114,6 +161,30 @@ fn try_inscribe_with_retries(
                 "Inscription successful for number {} on attempt #{}",
                 number, attempt
             );
+            // Append to inscription index (JSON-based)
+            let inscription_id = format!("{}:{}", result.address, 0);
+            let txid = "mock-txid".to_string(); // placeholder
+            let output_index = 0;
+            let block_height = 0;
+
+            let index_entry = InscriptionRecord {
+                number,
+                inscription_id,
+                txid,
+                output_index,
+                address: address.to_string(),
+                timestamp: result.timestamp.clone(),
+                block_height,
+                auction_winner: winner.to_string(),
+                content_type: None,
+                content_length: None,
+                bid_amount_btc: Some(amount),
+                ordinal: None,
+                content_hash: None,
+                raw_json_url: None,
+            };
+
+            append_to_index(index_entry, "inscription_index.json");
             return true;
         } else {
             println!("Inscription attempt #{} failed. Retrying...", attempt);
