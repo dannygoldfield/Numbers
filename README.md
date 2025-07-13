@@ -1,91 +1,54 @@
-# Numbers Project
+# Numbers
 
-## Project Description
-The Numbers project is an experimental and commercial art project that involves a live auction of  inscribing unique numbers onto Satoshis on the Bitcoin blockchain.
+Inscribing numbers to Bitcoin. One at a time.
 
-## Table of Contents
-- [Project Description](#project-description)
-- [Prerequisites](#prerequisites)
-- [Installation Instructions](#installation-instructions)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Running Tests](#running-tests)
-- [Contribution Guidelines](#contribution-guidelines)
-- [Roadmap](#roadmap)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
-- [Contact](#contact)
+## How it works
 
-## Prerequisites
-- Python 3.8 or higher
-- Rust 1.50 or higher
-- Bitcoin Core 0.21.0 or higher
-- Git
+* Start an auction
+* Take bids in real time
+* Pick a winner
+* Inscribe a number to Bitcoin testnet
+* Save the result
+* Go again
 
-## Installation Instructions
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/your-username/numbers-project.git
-    ```
+## Requirements
 
-2. Navigate to the project directory:
-    ```bash
-    cd numbers-project
-    ```
+* macOS
+* Rust
+* Bitcoin Core (testnet)
 
-3. Update the package list:
-    ```bash
-    sudo apt update
-    ```
+## Run it
 
-4. Install Git:
-    ```bash
-    sudo apt install git
-    ```
+```sh
+bitcoind -testnet -datadir=/Volumes/DannyGoldfield-WorkDrive/bitcoin-testnet
 
-## Configuration
-### Bitcoin Core Configuration
-Ensure your `bitcoin.conf` file is configured correctly:
-```conf
-rpcuser=your_rpc_username
-rpcpassword=your_rpc_password
-server=1
-txindex=1
-rpcallowip=127.0.0.1
+bitcoin-cli -testnet -rpcuser=numbersuser -rpcpassword=numberspass getblockchaininfo
 
-## Testing
+export RPC_URL=http://127.0.0.1:18332
+export RPC_USER=numbersuser
+export RPC_PASS=numberspass
 
-### Python Tests
-1. Navigate to the project directory:
-   ```sh
-   cd /Volumes/Konstantine/Code/Numbers
-   ```
-2. Ensure you are in your virtual environment:
-   ```sh
-   source venv/bin/activate
-   ```
-3. Run the tests:
-   ```sh
-   pytest tests
-   ```
+cd ~/Github/Numbers
+cargo run
+```
 
-### Rust Tests
-1. Navigate to the Rust project directory:
-   ```sh
-   cd /Volumes/Konstantine/Code/Numbers/rust_project
-   ```
-2. Run the tests:
-   ```sh
-   cargo test
-   ```
+> Note: You need a local Bitcoin Core node running in testnet mode. This repo connects to a local RPC port.
 
-### Node.js Tests
-1. Navigate to the project directory:
-   ```sh
-   cd /Volumes/Konstantine/Code/Numbers
-   ```
-2. Run the tests:
-   ```sh
-   NODE_OPTIONS=--experimental-vm-modules npx mocha tests
-   ```
+## Files
 
+* `src/main.rs`: auction logic
+* `results/`: output JSON
+* `WHY.md`: why this exists
+
+## Modules in development
+
+* `auction`: bidding and timing
+* `inscribe`: write to sats
+* `settle`: handle bid logic
+* `view`: show what’s happening
+
+Keep it minimal. Document as you go.
+
+## License
+
+MIT

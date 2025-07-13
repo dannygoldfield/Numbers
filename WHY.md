@@ -2,15 +2,14 @@
 
 What if you could own a number?
 
-That simple, provocative idea is the seed of this project. Not a company, not a coin—just a number. Inscribed onto Bitcoin. Auctioned one at a time. 1, 2, 3, and so on.
+Not a token. Not a coin. A number. Inscribed on Bitcoin.
 
-It’s absurd. And yet it’s entirely real.
+1, 2, 3, 4, 5, ...
 
-Numbers are one of the most universal systems humans have ever created. We count with them. We measure with them. We sort the world with them. They belong to everyone, and no one. Until now—maybe.
+One at a time. Auctioned. Written to sats. The record stays.
 
-If collectors feel something, it's not because they were promised utility. It's because they recognize the strange clarity and inevitability of the idea.
+It’s dumb. It’s serious. It’s a system.
 
-If this project succeeds, I pledge to use its success to do good. Not because it's a brand value, but because doing good is what makes strange things worth doing.
+If it works, good. If it makes money, better. Use the money to make other stuff.
 
-– Danny
-
+That’s it.
