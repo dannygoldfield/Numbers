@@ -4,18 +4,18 @@ Inscribing numbers to Bitcoin. One at a time.
 
 ## How it works
 
-* Start an auction
-* Take bids in real time
-* Pick a winner
-* Inscribe a number to Bitcoin testnet
-* Save the result
-* Go again
+- Start an auction
+- Take bids in real time
+- Pick a winner
+- Inscribe a number to Bitcoin testnet
+- Save the result
+- Go again
 
 ## Requirements
 
-* macOS
-* Rust
-* Bitcoin Core (testnet)
+- macOS
+- Rust
+- Bitcoin Core (testnet)
 
 ## Run it
 
@@ -36,16 +36,16 @@ cargo run
 
 ## Files
 
-* `src/main.rs`: auction logic
-* `results/`: output JSON
-* `WHY.md`: why this exists
+- `src/main.rs`: auction logic
+- `results/`: output JSON
+- `WHY.md`: why this exists
 
 ## Modules in development
 
-* `auction`: bidding and timing
-* `inscribe`: write to sats
-* `settle`: handle bid logic
-* `view`: show what’s happening
+- `auction`: bidding and timing
+- `inscribe`: write to sats
+- `settle`: handle bid logic
+- `view`: show what’s happening
 
 Keep it minimal. Document as you go.
 
