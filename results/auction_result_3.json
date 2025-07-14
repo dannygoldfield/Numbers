@@ -1,7 +1,16 @@
 {
   "number": 3,
-  "address": "tb1q64c07znrmjsgc2c4tgqmt4yqmpd2qwz9a06gp5",
-  "amount": 0.005,
-  "winner": "Casey",
-  "timestamp": "2025-05-30T04:47:44.116448+00:00"
+  "inscription_id": "simulated-id",
+  "txid": "simulated-txid",
+  "output_index": 0,
+  "address": "simulated-address",
+  "timestamp": "2025-07-13T23:30:47.181636+00:00",
+  "block_height": 0,
+  "auction_winner": "amy",
+  "content_type": null,
+  "content_length": null,
+  "bid_amount_btc": 0.234,
+  "ordinal": null,
+  "content_hash": null,
+  "raw_json_url": null
 }

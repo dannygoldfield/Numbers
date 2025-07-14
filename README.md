@@ -22,11 +22,11 @@ Inscribing numbers to Bitcoin. One at a time.
 ```sh
 bitcoind -testnet -datadir=/Volumes/DannyGoldfield-WorkDrive/bitcoin-testnet
 
-bitcoin-cli -testnet -rpcuser=numbersuser -rpcpassword=numberspass getblockchaininfo
+bitcoin-cli -testnet -rpcuser=Numbers -rpcpassword=auction123 getblockchaininfo
 
 export RPC_URL=http://127.0.0.1:18332
-export RPC_USER=numbersuser
-export RPC_PASS=numberspass
+export RPC_USER=Numbers
+export RPC_PASS=auction123
 
 cd ~/Github/Numbers
 cargo run

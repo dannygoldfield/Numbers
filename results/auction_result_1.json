@@ -1,7 +1,16 @@
 {
   "number": 1,
-  "address": "tb1qeurlcwd5zh422w2d2qz6p5gjwjku7ljhm5peyd",
-  "amount": 0.002,
-  "winner": "Danny",
-  "timestamp": "2025-05-22T21:50:05.925911+00:00"
+  "inscription_id": "simulated-id",
+  "txid": "simulated-txid",
+  "output_index": 0,
+  "address": "simulated-address",
+  "timestamp": "2025-07-13T23:28:44.867532+00:00",
+  "block_height": 0,
+  "auction_winner": "danny",
+  "content_type": null,
+  "content_length": null,
+  "bid_amount_btc": 0.123,
+  "ordinal": null,
+  "content_hash": null,
+  "raw_json_url": null
 }

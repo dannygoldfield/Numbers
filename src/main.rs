@@ -22,38 +22,11 @@
 // Key design principle to encode later:
 // Never advance to the next number until the previous one has been successfully inscribed.
 
-// --- Questions to clarify inscribe module goals ---
-// 1. What data do we need to store about each inscription to ensure the project can go public?
-// 2. What operations do we expect to perform frequently on this data (e.g., lookup, update, export)?
-// 3. What will the system need to do differently when we move from testnet to mainnet?
-// 4. Will we be integrating with any external explorers, APIs, or wallets?
-// 5. How do we identify and verify that an inscription is valid and complete?
-
-// --- Planned updates for real inscription logic ---
-
-// 1. Check if number is already inscribed by scanning inscription_index.json
-//    - If yes, skip or raise error
-//    - If no, proceed
-
-// 2. Generate witness content for inscription:
-//    fn generate_inscription_payload(number: u32) -> Vec<u8>
-
-// 3. Build and broadcast Bitcoin transaction with inscription
-//    fn create_and_send_inscription_tx(payload: Vec<u8>, address: &str) -> Result<Txid, Error>
-
-// 4. Extract satpoint and tx metadata from successful broadcast
-//    - txid
-//    - vout
-//    - offset
-//    - block_height (can be 0 if unconfirmed)
-
-// 5. Record all metadata to JSON inscription index
-
 // --- Imports ---
 use bitcoincore_rpc::{Auth, Client, RpcApi};
 use std::env;
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, Write, BufReader, BufWriter};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -62,10 +35,7 @@ use chrono::Utc;
 use dotenv::dotenv;
 use serde::{Serialize, Deserialize};
 use std::sync::atomic::{AtomicBool, Ordering};
-
 use std::path::Path;
-use std::fs::OpenOptions;
-use std::io::{BufReader, BufWriter};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct InscriptionRecord {
@@ -102,6 +72,25 @@ fn append_to_index(new_record: InscriptionRecord, path: &str) {
     serde_json::to_writer_pretty(writer, &records).expect("Failed to write JSON");
 }
 
+fn is_already_inscribed(number: u32, path: &str) -> bool {
+    let path = Path::new(path);
+    if !path.exists() {
+        return false;
+    }
+
+    let file = match File::open(path) {
+        Ok(file) => file,
+        Err(_) => return false,
+    };
+
+    let reader = BufReader::new(file);
+    if let Ok(records) = serde_json::from_reader::<_, Vec<InscriptionRecord>>(reader) {
+        return records.iter().any(|r| r.number == number);
+    }
+
+    false
+}
+
 #[derive(Serialize)]
 struct AuctionResult {
     number: u32,
@@ -111,7 +100,27 @@ struct AuctionResult {
     timestamp: String,
 }
 
+fn generate_inscription_payload(number: u32) -> Vec<u8> {
+    let payload = format!("{}", number);
+    println!("Generated payload: {}", payload);
+    payload.into_bytes()
+}
+
+fn create_inscription_tx(payload: Vec<u8>, address: &str) {
+    let mock_txid = format!("mock-txid-{}", rand::random::<u32>());
+    println!("Creating mock transaction to inscribe to address: {}", address);
+    println!("Payload size: {} bytes", payload.len());
+
+    let vout = 0;
+    let offset = 0;
+    let satpoint = format!("{}:{}:{}", mock_txid, vout, offset);
+    println!("Mock satpoint: {}", satpoint);
+}
+
 fn inscribe_number(number: u32, address: &str) -> bool {
+    let payload = generate_inscription_payload(number);
+    create_inscription_tx(payload.clone(), address);
+
     use rand::Rng;
     let success = rand::thread_rng().gen_bool(0.5);
     println!("Simulating inscription of #{} to {}...", number, address);
@@ -125,6 +134,11 @@ fn try_inscribe_with_retries(
     amount: f64,
     winner: &str,
 ) -> bool {
+    if is_already_inscribed(number, "results/inscription_index.json") {
+        println!("Number {} is already inscribed. Skipping.", number);
+        return false;
+    }
+
     for attempt in 1..=max_retries {
         println!(
             "Attempting inscription #{} for number {} to address {}",
@@ -151,7 +165,7 @@ fn try_inscribe_with_retries(
                 }
             }
 
-            let inscription_id = format!("{}:{}", result.address, 0);
+            let inscription_id = format!("{}:{}:{}", "mock-txid", 0, 0);
             let txid = "mock-txid".to_string();
             let output_index = 0;
             let block_height = 0;
@@ -234,7 +248,7 @@ fn run_auction_flow(rpc: &Client) {
     thread::spawn(move || {
         loop {
             thread::sleep(Duration::from_secs(1));
-            let mut auction = auction_clone.lock().unwrap();
+            let auction = auction_clone.lock().unwrap();
             if let Some(start) = auction.start_time {
                 if start.elapsed() >= auction.duration {
                     println!(
