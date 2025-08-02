@@ -1,27 +1,31 @@
-# macOS system file
+# macOS system files
 .DS_Store
+
+# Rust build artifacts
+target/
 
 # Python and virtual environments
 venv/
 __pycache__/
 tests/__pycache__/
 
-# Rust build artifacts
-target/
-
 # Node modules
 node_modules/
 
-# VS Code settings
+# VS Code settings and extensions
 .vscode/
 
 # Google Cloud SDK
 google-cloud-sdk/
 
-# Log and temp files
+# Log, temp, and swap files
 *.log
 *.tmp
 *.swp
+
+# Backup files (from editors or manual copies)
+*~
+*.bak
 
 # Private configuration files
 .env
@@ -34,6 +38,3 @@ Numbers-Assets/
 *.mp4
 *.png
 *.jpg
-
-
-
