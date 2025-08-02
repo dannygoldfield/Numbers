@@ -270,5 +270,53 @@
     "ordinal": null,
     "content_hash": null,
     "raw_json_url": null
+  },
+  {
+    "number": 24,
+    "inscription_id": "mock-txid:0:0",
+    "txid": "mock-txid",
+    "output_index": 0,
+    "address": "tb1qah436mjnxzuwle5vpyvfsmw4axdnge4qtg2595",
+    "timestamp": "2025-07-17T03:04:48.925910+00:00",
+    "block_height": 0,
+    "auction_winner": "Ana",
+    "content_type": null,
+    "content_length": null,
+    "bid_amount_btc": 0.001,
+    "ordinal": null,
+    "content_hash": null,
+    "raw_json_url": null
+  },
+  {
+    "number": 25,
+    "inscription_id": "mock-txid:0:0",
+    "txid": "mock-txid",
+    "output_index": 0,
+    "address": "tb1qzcka4fm7tdfe0ktuq6y0f3pfk33n7pf6chptfw",
+    "timestamp": "2025-07-17T03:10:52.586751+00:00",
+    "block_height": 0,
+    "auction_winner": "Ana",
+    "content_type": null,
+    "content_length": null,
+    "bid_amount_btc": 0.456,
+    "ordinal": null,
+    "content_hash": null,
+    "raw_json_url": null
+  },
+  {
+    "number": 26,
+    "inscription_id": "mock-txid:0:0",
+    "txid": "mock-txid",
+    "output_index": 0,
+    "address": "tb1q9as58z30md47u2v76qd65hdhgg0gntpz3553en",
+    "timestamp": "2025-07-30T13:44:40.793008+00:00",
+    "block_height": 0,
+    "auction_winner": "Danny",
+    "content_type": null,
+    "content_length": null,
+    "bid_amount_btc": 0.123,
+    "ordinal": null,
+    "content_hash": null,
+    "raw_json_url": null
   }
 ]
