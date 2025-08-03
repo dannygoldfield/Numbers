@@ -1,7 +1,7 @@
 // Numbers Prototype – Rust + Ordinals on Bitcoin Testnet
 
 // A timed auction system for Numbers inscribed on Bitcoin Testnet.
-// When the first bid is placed, a 60-second countdown starts.
+// When the first bid is placed, a 56-second countdown starts.
 // Highest bidder at the end wins. Auction results are saved to disk.
 
 // Features:
@@ -238,7 +238,7 @@ fn run_auction_flow(rpc: &Client) {
         highest_bid: 0.0,
         highest_bidder: String::new(),
         start_time: None,
-        duration: Duration::from_secs(60),
+        duration: Duration::from_secs(56),
     }));
 
     let auction_clone = Arc::clone(&auction);
@@ -282,7 +282,7 @@ fn run_auction_flow(rpc: &Client) {
 
     println!("\nAuction started for Number {}.", number);
     println!("Owner address: {}", auction.lock().unwrap().owner_address);
-    println!("Auction will last 60 seconds after the first bid.\n");
+    println!("Auction will last 56 seconds after the first bid.\n");
 
     let mut input = String::new();
     while running.load(Ordering::SeqCst) {

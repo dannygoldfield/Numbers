@@ -318,5 +318,21 @@
     "ordinal": null,
     "content_hash": null,
     "raw_json_url": null
+  },
+  {
+    "number": 27,
+    "inscription_id": "mock-txid:0:0",
+    "txid": "mock-txid",
+    "output_index": 0,
+    "address": "tb1qqkv83msddp5ssgvmckeswsa6csremm58x22nx2",
+    "timestamp": "2025-08-03T17:43:53.057685+00:00",
+    "block_height": 0,
+    "auction_winner": "SuperGrok",
+    "content_type": null,
+    "content_length": null,
+    "bid_amount_btc": 0.02,
+    "ordinal": null,
+    "content_hash": null,
+    "raw_json_url": null
   }
 ]
