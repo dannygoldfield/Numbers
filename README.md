@@ -186,5 +186,5 @@ MIT License — see `LICENSE` file for details.
 
 1. Bitcoin Testnet
 2. Rust Documentation
-3. Project Rationale (`WHY.md`)
+3. Project Rationale [WHY.md](./docs/WHY.md)
 4. GitHub Issues
