@@ -147,6 +147,54 @@ Update `README.md` with the following roadmap:
 Each phase preserves conceptual coherence and prepares for a secure, extensible product launch.
 
 ---
+## UI/UX Q&A
+
+Writing prompt process for deep research
+
+1. Do you want examples from active production sites only, or are concept designs (e.g., Dribbble, Behance) also acceptable?
+Not only active production sites and nclude concept designs. 
+
+2. Are you specifically looking for mobile-first or desktop-first layouts?
+Only mobile.
+
+3. Should the examples lean more toward NFT marketplaces (like Foundation, Zora) or single-item auction dApps?
+Lean much more heavily towards single item auction dApps.
+
+4. Any chain or ecosystem you want to prioritize (e.g., Ordinals over Ethereum)?
+This will be for the Numbers dApp of course but any ecosystem is fine to research now.
+
+5. Do you want these concepts formatted as static wireframes, interactive prototypes, or narrative walkthroughs (or a mix)? 
+
+6. Should I aim to stay within the color/font/style palette seen in your attached screenshot (warm, VS Code-inspired) for all but the humorous/outrageous ones?
+
+7. Are there any UX behaviors you strongly want to avoid (e.g., modals, infinite scroll, horizontal nav)?
+
+## UI Prompts
+
+Firefly
+Concept 1: Professional A minimalist auction app called "Numbers" features a clean, modern interface with a warm, human-centered palette. The background is a soft, gradient orange and blue, evoking a sense of warmth and optimism. A countdown timer is prominently displayed at the top, with a subtle monospaced font and a blinking cursor, adding a touch of tech without being overwhelming. Below, an animated slogan, "What if you could own a number?" appears in a sleek, elegant font. The bid input field is large and easy to type on, with a soft, gradient background that enhances readability. The layout is mobile-friendly, ensuring a comfortable experience for users. ### Concept 2: Humorous/Playful In this version of "Numbers," the app has a playful, whimsical feel. The background is a vibrant, gradient of sunny yellow and sky blue, with a subtle monospaced font and blinking cursor for a tech nod. A countdown timer is displayed with a fun, hand-drawn font, and the animated slogan, "What if you could own a number?" is written in a quirky, cursive style. The bid input field is large and inviting, with a soft, gradient background that feels warm and approachable.
+
+## Key Elements for UI
+
+Display of project title at top: Numbers
+
+Typing-effect slogans, like “What if you could own a number?”
+
+Display of the current number being auctioned, centered
+
+Countdown auction timer: 12,345 seconds
+
+Live bid input field waiting for first bid.
+
+Submit Bid button
+
+Custome keyboard for placing bid with keys for 1,2,3,4,5,6,7,8,9,0, and .
+
+Connect Wallet button 
+
+Menu Button
+
+Help icon
 
 ## Last Updated
-2025-08-03
+2025-08-04
