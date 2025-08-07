@@ -1,0 +1,6 @@
+[book]
+title = "Numbers Docs"
+author = "Danny Goldfield"
+language = "en"
+multilingual = false
+src = "src"
