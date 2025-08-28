@@ -171,3 +171,10 @@ infrastructure.
 -   Sub-number "points" (community extensions).\
 -   AR/VR experiences tied to owned numbers.\
 -   Treasury: auction revenue funds new projects.
+
+------------------------------------------------------------------------
+
+## References
+
+For detailed definitions of technical terms (TXID, SegWit, Satpoint,
+RPC, Merkle Tree), see the [Glossary](Glossary.md).
