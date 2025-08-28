@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Numbers – constant box, centered digit</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <div id="stage" aria-live="off">
+    <!-- two layers for crossfade -->
+    <span class="digit layer a visible"><span class="glyph">0</span></span>
+    <span class="digit layer b hidden"><span class="glyph">0</span></span>
+
+    <!-- translucent rectangle that fills the constant box -->
+    <div id="overlay" aria-hidden="true"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

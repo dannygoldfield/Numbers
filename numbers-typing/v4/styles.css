@@ -1,0 +1,67 @@
+/* ===== Numbers — v4 crossfade stopwatch digit ===== */
+
+:root{
+  /* translucency */
+  --bg-alpha: 0.90;                       /* background opacity */
+  --fg-alpha: 0.95;                       /* digit opacity */
+
+  /* sizing */
+  --font-size: clamp(48px, 14vw, 160px);
+
+  /* crossfade controls */
+  --fade-ms: 720ms;                        /* fade length */
+  --fade-ease: cubic-bezier(.4, 0, .2, 1); /* smooth ease-in-out */
+
+  /* subtle scale on fade for polish */
+  --scale-dim: 0.98;                       /* 1 = no scale change */
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: rgba(17,17,17,var(--bg-alpha));
+  color: rgba(221,221,221,var(--fg-alpha));
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  display: grid;
+  place-items: center;
+}
+
+#stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  padding: 1rem;
+
+  /* keep both layers aligned and prevent layout shift */
+  width: 1ch;
+  height: 1em;
+}
+
+/* two overlaid layers that crossfade */
+.digit {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: var(--font-size);
+  letter-spacing: 0;
+  font-variation-settings: "wght" 600;
+
+  transition:
+    opacity var(--fade-ms) var(--fade-ease),
+    transform var(--fade-ms) var(--fade-ease);
+  will-change: opacity, transform;
+
+  /* make sure clicks do not interfere while animating */
+  pointer-events: none;
+}
+
+.visible { opacity: 1; transform: scale(1); }
+.hidden  { opacity: 0; transform: scale(var(--scale-dim)); }
+
+/* accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .digit { transition: none; transform: none !important; }
+}

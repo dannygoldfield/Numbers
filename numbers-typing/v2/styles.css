@@ -1,0 +1,40 @@
+:root{
+  /* translucency knobs */
+  --bg-alpha: 0.90;     /* 0 = fully transparent, 1 = solid */
+  --fg-alpha: 0.95;     /* digit opacity */
+
+  /* sizing */
+  --font-size: clamp(48px, 14vw, 100px);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: rgba(17,17,17,var(--bg-alpha));
+  color: rgba(221,221,221,var(--fg-alpha));
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  display: grid;
+  place-items: center;
+}
+
+#stage {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  padding: 1rem;
+}
+
+#digit {
+  font-size: var(--font-size);
+  letter-spacing: 0;
+  /* Optional: tiny weight change for crispness on some displays */
+  font-variation-settings: "wght" 500;
+}
+
+/* Optional: if you turn on FADE_MODE in JS, this class is toggled */
+.fade {
+  opacity: 0;
+  transition: opacity 90ms linear; /* short crossfade */
+}

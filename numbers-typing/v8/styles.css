@@ -1,0 +1,92 @@
+/* ===== Numbers v7 — mini v6 counting rectangle as block caret ===== */
+
+:root{
+  --bg-alpha: 0.90;
+  --fg-alpha: 0.95;
+
+  /* typing line */
+  --typing-size: clamp(14px, 2.8vw, 28px);
+  --typing-line-height: 1.25;
+
+  /* v6 crossfade timing (JS SPEED_MS should be ≥ --fade-ms) */
+  --fade-ms: 460ms;
+  --fade-in-ease: cubic-bezier(.16,1,.3,1);
+  --fade-out-ease: cubic-bezier(.4,0,1,1);
+  --scale-dim: 0.998;
+
+  /* caret rectangle look */
+  --overlay-fill: rgba(255,255,255,0.10);  /* tweak to taste */
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: rgba(17,17,17,var(--bg-alpha));
+  color: rgba(221,221,221,var(--fg-alpha));
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  display: grid;
+  place-items: center;
+}
+
+/* ---------- Typing line ---------- */
+
+.typing {
+  position: relative;  /* anchor for absolute caret */
+  font: 400 var(--typing-size)/var(--typing-line-height) system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  text-align: center;
+  max-width: min(92vw, 80ch);
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+/* zero-width inline box at insertion point (creates a measurable anchor) */
+.marker { display: inline-block; width: 0; height: 1em; }
+
+/* ---------- Shared v6 stage styles (caret only) ---------- */
+
+.stage { position: relative; line-height: 1; }
+.digit {
+  position: absolute; inset: 0;
+  display: flex; align-items: flex-start; justify-content: center;
+  transition-property: opacity, transform;
+  transition-duration: var(--fade-ms), var(--fade-ms);
+  transition-timing-function: linear, linear;
+  will-change: opacity, transform;
+  pointer-events: none; z-index: 1;
+}
+.digit.visible { transition-timing-function: var(--fade-in-ease), var(--fade-in-ease); }
+.digit.hidden  { transition-timing-function: var(--fade-out-ease), var(--fade-out-ease); }
+.visible { opacity: 1; transform: scale(1); }
+.hidden  { opacity: 0; transform: scale(var(--scale-dim)); }
+
+.glyph {
+  display: block; line-height: 1;
+  font-weight: 600; letter-spacing: 0;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  transform: translateY(0);      /* JS will center vertically */
+  will-change: transform;
+  font-size: var(--typing-size); /* caret digit matches typing size */
+}
+
+/* caret rectangle that fills the mini stage */
+.stage .overlay {
+  position: absolute; inset: 0;
+  background: var(--overlay-fill);
+  border: 0; border-radius: 0;
+  pointer-events: none; z-index: 2;
+}
+
+/* the caret is absolutely positioned over the marker (no layout shift) */
+.caret-abs {
+  position: absolute; left: 0; top: 0;
+  transform: translate(0,0);     /* JS moves it each char */
+  pointer-events: none; z-index: 5;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .digit { transition: none; transform: none !important; }
+  .glyph { transform: none !important; }
+}

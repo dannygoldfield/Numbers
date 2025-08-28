@@ -1,0 +1,39 @@
+body {
+  background-color: #111;
+  color: #ddd;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  font-size: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0; /* avoid default body margin */
+}
+
+#typing-effect {
+  display: flex;
+  gap: 0.1em;
+  flex-wrap: wrap;
+}
+
+.char {
+  position: relative;
+  display: inline-block;
+  text-align: center;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.ghost {
+  visibility: hidden;
+  display: inline-block;
+}
+
+.active {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  width: 100%;
+}

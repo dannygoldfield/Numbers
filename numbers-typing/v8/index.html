@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Numbers — v7 (counting rectangle as caret)</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <!-- Typing line: text + zero-width marker; caret-stage overlays marker -->
+  <div id="typing" class="typing" aria-live="polite" aria-atomic="true">
+    <span id="typed"></span><span id="marker" class="marker" aria-hidden="true"></span>
+    <span id="caret-stage" class="stage caret-abs" aria-hidden="true">
+      <span class="digit layer a visible"><span class="glyph">0</span></span>
+      <span class="digit layer b hidden"><span class="glyph">0</span></span>
+      <div class="overlay"></div>
+    </span>
+  </div>
+
+  <script src="script.js" type="module"></script>
+</body>
+</html>

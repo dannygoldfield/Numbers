@@ -1,0 +1,101 @@
+/* ===== Numbers v5 — constant rectangle + centered digit + smooth crossfade ===== */
+
+:root{
+  /* colors / translucency */
+  --bg-alpha: 0.90;
+  --fg-alpha: 0.95;
+
+  /* sizing */
+  --font-size: clamp(48px, 14vw, 160px);
+
+  /* crossfade timing (JS SPEED_MS should be >= --fade-ms) */
+  --fade-ms: 760ms;
+  --fade-in-ease: cubic-bezier(1,1,1,1);   /* ease-out for the layer fading IN */
+  --fade-out-ease: cubic-bezier(1,1,1,1);  /* ease-in for the layer fading OUT */
+  --scale-dim: 0.995;                       /* tiny scale dip on the fading OUT layer */
+
+  /* overlay look (square corners, no border) */
+  --overlay-fill: rgba(0,0,0,0.20);   /* adjust opacity here */
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+
+body {
+  background: rgba(17,17,17,var(--bg-alpha));
+  color: rgba(221,221,221,var(--fg-alpha));
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  display: grid;
+  place-items: center;
+}
+
+/* Stage is sized by JS to a constant box (width = max digit, height = max digit + padding) */
+#stage {
+  position: relative;
+  line-height: 1;
+}
+
+/* Two overlaid layers for crossfade */
+.digit {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;  /* vertical position handled by translateY on .glyph */
+  justify-content: center;  /* horizontal center */
+
+  /* define per-property transitions (timing overridden per-state below) */
+  transition-property: opacity, transform;
+  transition-duration: var(--fade-ms), var(--fade-ms);
+  transition-timing-function: linear, linear;
+  will-change: opacity, transform;
+  pointer-events: none;
+  z-index: 1;               /* overlay sits above by default */
+}
+
+/* when becoming visible, use ease-OUT for a gentle landing */
+.digit.visible {
+  transition-timing-function: var(--fade-in-ease), var(--fade-in-ease);
+}
+
+/* when becoming hidden, use ease-IN so the other layer's ease-out dominates */
+.digit.hidden {
+  transition-timing-function: var(--fade-out-ease), var(--fade-out-ease);
+}
+
+/* end states for the layer container */
+.visible { opacity: 1; transform: scale(1); }
+.hidden  { opacity: 0; transform: scale(var(--scale-dim)); }
+
+/* The actual character inside each layer */
+.glyph {
+  display: block;                 /* remove inline baseline quirks */
+  line-height: 1;
+  font-size: var(--font-size);
+  font-variation-settings: "wght" 600;
+  letter-spacing: 0;
+
+  /* equal width digits where supported */
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+
+  /* JS sets translateY each tick to center vertically inside the box */
+  transform: translateY(0);
+  will-change: transform;
+}
+
+/* Constant rectangle that fills the stage (in FRONT of digits) */
+#overlay {
+  position: absolute;
+  inset: 0;                       /* fill the stage */
+  background: var(--overlay-fill);
+  border: none;
+  border-radius: 0;
+  pointer-events: none;
+  z-index: 2;                     /* put 0 if you want it behind the digits */
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .digit { transition: none; transform: none !important; }
+  .glyph { transform: none !important; }
+}
