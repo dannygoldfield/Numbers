@@ -1,1 +1,28 @@
-Notes
+### 25-08-06 
+### Casey uses mdbook-i18n-helpers:
+This is a collection of mdBook plugins that leverage the Gettext standard for internationalization. It includes:
+mdbook-xgettext: An mdBook renderer that extracts translatable strings from your Markdown source files into a .pot (Portable Object Template) file. This file serves as the basis for creating language-specific translation files.
+mdbook-gettext: An mdBook preprocessor that takes the generated .po (Portable Object) translation files and integrates them into the build process, producing translated versions of your mdBook.
+
+### mdBook additional improvements 
+🧱 Add These Next (developer-facing structure)
+Filename	Why It Helps
+roadmap.md	Tracks phases (MVP → Alpha → Mainnet), and dev milestones
+api.md or api-spec.md	Internal endpoints like /start, /bid, /status, /inscribe
+wallet.md	Details on how the Bitcoin Testnet wallet works (RPC calls, address handling)
+inscribe.md	How the actual satpoint inscriptions work; your logic vs ord
+indexing.md	JSON/SQLite schema and philosophy (no rarity, no heuristics)
+settlement.md	How winners are confirmed, tx settled, and logs stored
+testing.md	Your plans for CLI testing, performance logs, or simulations
+architecture.md	Diagrams or text for modular layout: wallet, auction, inscribe, etc.
+cli.md	How to use the CLI version — flags, flow, mock wallets
+ui-design.md	More formal than Prompt-Notes, this is where you describe the home page flow for Alpha
+
+🧠 Optional / Stretch Docs
+Filename	Use Case
+contributors.md	If open-sourced, how to contribute modules or features
+glossary.md	Explain terms like “satpoint”, “inscribe”, “ordinal vs number” clearly
+inspiration.md	Links to Ordinals, Runes, Casey’s blog, Nouns, etc.
+build.md	Install instructions for developers (Rust, Bitcoin Core, RPC setup)
+
+-----

@@ -1,0 +1,77 @@
+# Motion Notes — Numbers (State-0 → State-4)
+
+## Global
+- **FPS target:** 60. Use only `transform` + `opacity` for motion.
+- **Easing default:** `cubic-bezier(0.22, 0.61, 0.36, 1)` (standard “ease-out”).
+- **Color:** `cta.orange` = `#F7931A`.
+- **Accessibility:** Respect `prefers-reduced-motion` → pause all loops, keep static states.
+
+---
+
+## 1) Slogan “typing effect” (State-0 idle loop)
+- **Source:** rotating list of slogans (external list OK).
+- **Typing speed:** 70 ms/char with jitter ±25 ms.
+- **Caret:** 1ch wide, blink 0.8 s (`opacity: 1 → 0`).
+- **After full line:** hold 1.2 s, then either:
+  - **Erase:** 40 ms/char backspace, or
+  - **Crossfade:** 300 ms fade to next line.
+- **Loop schedule:** 12–18 s total per slogan (randomize ±2 s).
+- **User focus event (field tap, scroll, key):** freeze on the current full line, caret fades out in 200 ms.
+
+---
+
+## 2) Number-as-Art “counter bar”
+- **Visual:** a 1ch-wide vertical rect inside the Art Canvas acts as a “digit slot.”
+- **Cycle:** show `0→9` one at a time; each digit visible for 600 ms with 120 ms crossfade.
+- **Idle loop length:** 6 s, repeats.
+- **User focus:** pause at the current digit; opacity settles to 0.6.
+
+---
+
+## 3) “Bid” micro-animation (quiet lure)
+- **Segments:** `B`, `i-dot`, `i-stem`, `d` (4 parts).
+- **Loop:** 6 s total; each segment turns `cta.orange` for 800 ms, then back to white for 700 ms, staggered 150 ms between segments.
+- **Easing:** same global ease-out; no scale, color + subtle 2% glow only.
+- **When active:**
+  - Field focused or button enabled → stop loop, all segments go white.
+  - On press → button bg lightens 10% for 120 ms.
+
+---
+
+## 4) Countdown (`12345 s`)
+- **Tick animation:** every second, text opacity `1 → 0.7 → 1` over 200 ms (no position shift in Penpot).
+- **Inactive auction:** keep static 50–70% gray.
+
+---
+
+## 5) Keypad interactions
+- **Press:** scale `0.98` + bg brighten 8% for 80 ms, then return 80 ms.
+- `"."` and `"⌫"` keys → same treatment; long-press not modeled in Penpot.
+
+---
+
+## 6) Focus & overlay transitions
+- **Field focus → Keypad in:** `translateY(+24px → 0)` & `opacity 0 → 1` over 200 ms.
+- **Submit (enabled) → Wallet modal:**
+  - Overlay fades `0 → 1` in 180 ms.
+  - Modal pops in with scale `0.98 → 1` over 180 ms.
+- **Cancel modal:** reverse timings.
+
+---
+
+## 7) State gates (what stops what)
+- Any user focus stops: slogan typing, counter bar, “Bid” lure.
+- Leaving focus for 10 s returns to State-0 idle loop (restart animations at next cycle start).
+
+---
+
+## 8) Performance budget
+- Concurrent animated layers ≤ 6.
+- Avoid text layer transforms during typing; animate a caret layer instead.
+
+---
+
+## 9) Dev handoff hints
+- CSS keyframes for caret & color loops.
+- JS/Framer Motion for typing + digit cycle.
+- Provide `pauseIdle()` / `resumeIdle()` hook tied to focus/blur.
