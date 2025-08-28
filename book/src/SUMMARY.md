@@ -1,24 +1,26 @@
 # Summary
 
-- [Welcome](README.md)
-- [Why Numbers?](WHY.md)
-- [Slogans](SLOGANS.md)
-- [Prompt Notes](Prompt-Notes.md)
+- [Introduction](README.md)
+  - [Why Numbers](WHY.md)
+  - [Glossary](glossary.md)
 
+- [Architecture](architecture.md)
+  - [System Map](build.md)
+  - [Auction Engine](cli.md)
+  - [Wallet](wallet.md)
+  - [Settlement](settlement.md)
+  - [Indexing](indexing.md)
+  - [Inscriptions](inscribe.md)
+
+- [UI / Design](ui-design.md)
+  - [Slogans](SLOGANS.md)
+  - [Inspiration](inspiration.md)
+  - [Prompt Notes](Prompt-Notes.md)
+
+- [Infrastructure](testing.md)
+  - [Build & CI](build.md)
+  - [API](api.md)
 
 - [Roadmap](roadmap.md)
-- [Architecture](architecture.md)
-- [Wallet](wallet.md)
-- [Auction CLI](cli.md)
-- [Inscriptions](inscribe.md)
-- [Indexing](indexing.md)
-- [Settlement](settlement.md)
-- [API Spec](api.md)
-- [Testing](testing.md)
-- [UI Design](ui-design.md)
 
-
-- [Build](build.md)
-- [Glossary](glossary.md)
 - [Contributors Guide](contributors.md)
-- [Inspiration](inspiration.md)
