@@ -1,180 +1,144 @@
-# Product Requirements Document (PRD) --- Numbers
+# Product Requirements Document (PRD) — Numbers
 
-## 1. Product Overview
+This document defines normative constraints for Numbers.
 
-**Numbers** is an experimental auction system that inscribes sequential
-integers (1, 2, 3, ...) onto individual satoshis on Bitcoin using the
-Ordinals protocol.\
-It explores digital ownership, permanence, and value by creating a new
-asset class: the number itself.
+## Why This Is Not a Typical PRD
 
-Key pillars: 1. **Auction**: Live, timed bidding for each number. 2.
-**Inscribe**: Immutable ownership on Bitcoin. 3. **Minimal Art**: The
-number is rendered in each user's default font. 4. **System**:
-Sequential, one number at a time. No skipping.
+This document does not describe a roadmap, feature set, or user experience.
 
-------------------------------------------------------------------------
+It defines constraints.
 
-## 2. Problem Statement
+A typical Product Requirements Document exists to guide decisions about what to build next.  
+This document exists to prevent accidental changes to what already exists.
 
-Today's digital ownership often feels abstract: tokens, coins, and
-assets with complex rules. *Numbers* reduces ownership to its simplest
-form---claiming a number.\
-By combining: - Bitcoin's permanence and security, - Ordinals'
-satoshi-level tracking, - Auctions that build community around symbolic,
-personal numbers,
+Numbers is a system with fixed semantics. Once the sequence begins, outcomes cannot be revised, retried, or reinterpreted. Flexibility is therefore a liability, not a goal.
 
-we create an **accessible, cultural, and conceptual system of value**.
+This PRD focuses on:
+- Invariants rather than features
+- Constraints rather than opportunities
+- Correctness rather than optimization
+- Permanence rather than iteration
 
-------------------------------------------------------------------------
+If a change violates an invariant defined here, the result is no longer Numbers.
 
-## 3. Goals & Non-Goals
+This document should be read as a protocol boundary, not a product plan.
 
-### Goals
+---
 
--   Enable sequential number auctions starting from 1.
--   Bind each number immutably to a satoshi via inscription.
--   Create a lightweight, modular architecture (Wallet, Auction,
-    Inscribe, Payment, Settle, Website).
--   Ensure transparent, public record of ownership (JSON → SQLite →
-    persistent DB).
--   Design minimal conceptual artwork (numbers in default system font).
+## 1. Definition
 
-### Non-Goals
+Numbers is a system that auctions integers sequentially and inscribes each result onto Bitcoin.
 
--   Not a token project (no ERC-20 style abstraction).
--   Not about rare satoshis or rarity markets.
--   Not a trading platform beyond auctions.
--   Not initially focused on scalability beyond a few concurrent users
-    (early stages).
+Each auction resolves exactly once.  
+Each resolution produces exactly one inscription.  
+The sequence advances without retry.
 
-------------------------------------------------------------------------
+The inscription content is the number.
 
-## 4. Users & Audience
+---
 
-**Primary User**:\
-The *Collector of the Immutable*: values symbolism, permanence, and the
-cultural weight of numbers (birthdays, jersey numbers, lucky digits).
+## 2. Invariants
 
-**Secondary Users**:\
-- Crypto enthusiasts experimenting with Ordinals.\
-- Artists, philosophers, or collectors drawn to minimal digital art.\
-- Developers interested in extending auction and inscription
-infrastructure.
+These properties must remain true across all implementations, environments, and versions.
 
-------------------------------------------------------------------------
+1. Numbers are auctioned strictly in order, starting from 1.
+2. Each auction has a fixed duration.
+3. Each auction resolves exactly once.
+4. Each number produces exactly one inscription.
+5. There are no retries and no re-auctions.
+6. Settlement does not block progression to the next number.
+7. Nonpayment and no-bid outcomes are final and normal.
+8. Inscription content is the number only.
+9. Rendering is determined entirely by the viewer’s environment.
 
-## 5. Product Features
+Violation of any invariant means the system is no longer Numbers.
 
-### Core Features
+---
 
-1.  **Auction**
-    -   Real-time countdown (e.g., 12,345 seconds).\
-    -   Sequential auctions: 1 → 2 → 3...\
-    -   Bidding via connected Bitcoin wallet.
-2.  **Wallet Integration**
-    -   MVP: simulated wallet via username.\
-    -   Testnet: RPC to Bitcoin Core.\
-    -   Mainnet: secure wallet connection and funding.
-3.  **Inscribe**
-    -   Bind number → satpoint → transaction ID.\
-    -   Track forever via Ordinals.
-4.  **Payment & Settlement**
-    -   Simulated in MVP.\
-    -   Testnet BTC transactions in Alpha.\
-    -   Mainnet BTC confirmations in v1.0.
-5.  **Index & Record**
-    -   MVP: flat JSON file.\
-    -   Beta: SQLite database.\
-    -   Launch: production-grade DB (SQLite/Postgres).
-6.  **Website UI**
-    -   Minimal interface for live auctions, history, and results.\
-    -   Numbers displayed in user's default system font.
+## 3. Scope
 
-------------------------------------------------------------------------
+Numbers concerns only:
 
-## 6. Technical Requirements
+- Auction sequencing
+- Resolution and finalization
+- Inscription of numbers onto satoshis
+- Durable recording of outcomes
 
--   **Language**: Rust (v1.67+)\
--   **Blockchain**: Bitcoin Core (Testnet → Mainnet)\
--   **Storage**:
-    -   Testnet blockchain: \~500 GB\
-    -   Index: JSON → SQLite → Postgres\
--   **Infrastructure**:
-    -   Server hosting for Bitcoin node + RPC\
-    -   Monitoring, logging, error recovery\
--   **Dependencies**:
-    -   `bitcoincore-rpc` for blockchain interaction\
-    -   Open-source libraries for auctions, logging, persistence
+The system does not interpret, decorate, or add meaning to numbers.
 
-------------------------------------------------------------------------
+---
 
-## 7. Roadmap
+## 4. Explicit Non-Goals
 
-**MVP (v0.1.0)** --- Simulated CLI demo\
-- Bidding via stdin\
-- Mock wallet + mock inscription\
-- Store results in JSON
+Numbers does not provide:
 
-**MVP+ (v0.1.1)** --- Testnet integration\
-- Real Bitcoin Core RPC\
-- Real Testnet wallets + inscriptions
+- Traits, attributes, or rarity mechanics
+- Visual styling or customization
+- Interpretive or narrative metadata
+- Token abstractions or synthetic assets
+- Buy-now pricing or secondary market mechanics
+- Logic based on number symbolism or perceived value
 
-**Alpha (v0.2.x)** --- User testing\
-- Web UI + Testnet auctions\
-- Simulated payments, mock settlement
+Any such extensions must live outside the core system.
 
-**Beta (v0.3.x)** --- Scale & performance\
-- Multi-user concurrent bidding (5--10 users)\
-- Sub-second latency feedback\
-- SQLite database
+---
 
-**Launch (v1.0.0)** --- Mainnet release\
-- Secure wallet connection + BTC payments\
-- Live web auctions with real inscriptions\
-- Full persistence, monitoring, onboarding
+## 5. Operational Stages
 
-------------------------------------------------------------------------
+Numbers operates in distinct stages.  
+Auction semantics do not change between stages.
 
-## 8. Success Metrics
+- **Prototype**  
+  Local execution. Simulated settlement. Local persistence.
 
--   **Functional**:
-    -   Auctions proceed sequentially without error.\
-    -   Numbers inscribed immutably on satoshis.
--   **Adoption**:
-    -   Testnet: ≥50 participants.\
-    -   Mainnet: successful auctions of first 100 numbers.
--   **Community**:
-    -   Engagement in live auction events.\
-    -   Repeat bidders.
+- **Testnet**  
+  Bitcoin Testnet execution. Real inscriptions. Lightweight indexing.
 
-------------------------------------------------------------------------
+- **Mainnet**  
+  Bitcoin Mainnet execution. Production persistence and monitoring.
 
-## 9. Risks & Mitigations
+Differences between stages are environmental only.
 
--   **Blockchain sync/storage** --- Requires large storage.\
-    *Mitigation*: external SSD + pruning strategy.\
--   **Scalability** --- Auctions may lag under load.\
-    *Mitigation*: staged rollout, stress testing in Beta.\
--   **Legal/Regulatory** --- Bitcoin auction system might face
-    regulatory attention.\
-    *Mitigation*: open-source, minimal handling of user funds beyond
-    payments.\
--   **User onboarding friction** --- Non-Ordinals users may struggle.\
-    *Mitigation*: clear guides + Testnet practice flow.
+---
 
-------------------------------------------------------------------------
+## 6. Interface Constraints
 
-## 10. Future Opportunities
+Any interface exposing Numbers must:
 
--   Expand beyond integers (fractions, sequences).\
--   Sub-number "points" (community extensions).\
--   AR/VR experiences tied to owned numbers.\
--   Treasury: auction revenue funds new projects.
+- Display the current auction number
+- Display time remaining in the current auction
+- Display resolution and finalization state
+- Display inscription results once available
 
-------------------------------------------------------------------------
+An interface must not:
+- Imply ownership before finalization
+- Add interpretation or aesthetic meaning
+- Emphasize outcomes beyond their factual state
 
-## References
+The interface exists to expose state, not to explain it.
 
-For detailed definitions of technical terms (TXID, SegWit, Satpoint,
-RPC, Merkle Tree), see the [Glossary](Glossary.md).
+---
+
+## 7. Failure Handling Principles
+
+Failures do not alter semantics.
+
+- The sequence continues.
+- Outcomes are not retried.
+- Finalization occurs exactly once.
+- Inscriptions complete eventually or fail visibly.
+
+Correctness and traceability take priority over performance or convenience.
+
+---
+
+## 8. Authority and References
+
+This document defines invariant behavior.
+
+- Sequence rules are defined in `CORE-SEQUENCE.md`.
+- System structure is defined in `ARCHITECTURE.md`.
+- Rationale and motivation live in `WHY.md`.
+- Implementation details live in `DEV.md`.
+
+If there is a conflict, invariants defined here take precedence.
