@@ -1,0 +1,108 @@
+# Observability
+
+This document defines how the health and correctness of the Numbers system is observed.
+
+Observability exists to detect risk early,
+before it becomes irreversible.
+
+---
+
+## Observability Goals
+
+At all times, the operator must be able to determine:
+
+- whether the auction sequence is progressing correctly
+- whether the system is operating on accurate chain state
+- whether financial exposure remains within defined bounds
+- whether failures are isolated or compounding
+
+If this cannot be determined, the system must be treated as degraded.
+
+---
+
+## Required Signals
+
+The following signals must be continuously observable.
+
+### Chain and Network
+
+- Bitcoin node sync status
+- Chain tip height and lag
+- Mempool fee levels
+
+### Auction State
+
+- Current auction number
+- Auction open or closed state
+- Time remaining in active auction
+- Pause or degraded status
+
+### Settlement and Inscription
+
+- Pending settlements count
+- Pending inscriptions count
+- Oldest pending age
+- Finalization outcomes
+
+### Wallet and Funds
+
+- Available wallet balance
+- Reserved funds for pending inscriptions
+- Safety threshold margin
+
+### System Health
+
+- Error counts by category
+- Repeated or escalating failures
+- Unexpected state transitions
+
+---
+
+## Alerts
+
+Alerts indicate conditions requiring human attention.
+
+Alerts trigger when:
+
+- Fee ceilings or cost thresholds are exceeded
+- Node falls behind chain tip beyond tolerance
+- Wallet balance drops below safety threshold
+- Error rates exceed defined limits
+- State transitions violate expected order
+
+Alerts do not take corrective action automatically.
+
+---
+
+## Operator Response
+
+On alert:
+
+- Investigate the underlying condition
+- Determine whether the system remains safe to continue
+- Pause auctions at the next auction boundary if uncertainty persists
+
+Automatic recovery must not mask underlying faults.
+
+---
+
+## Visibility and Records
+
+The system must provide durable visibility into:
+
+- logs with sufficient context to reconstruct events
+- timestamps for all state transitions
+- pause and resume events with causes
+- configuration and limit context at time of events
+
+Observability data must be retained long enough to support post-incident analysis.
+
+---
+
+## Design Principle
+
+Silence is suspicious.
+Noise is worse.
+
+If the system cannot explain itself clearly,
+it should not continue unattended.

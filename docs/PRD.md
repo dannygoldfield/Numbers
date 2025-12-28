@@ -1,4 +1,4 @@
-# Product Requirements Document (PRD) — Numbers
+# Product Requirements Document
 
 This document defines normative constraints for Numbers.
 
@@ -27,10 +27,10 @@ This document should be read as a protocol boundary, not a product plan.
 
 ## 1. Definition
 
-Numbers is a system that auctions integers sequentially and inscribes each result onto Bitcoin.
+Numbers is a system that auctions integers sequentially and inscribes each outcome onto Bitcoin.
 
 Each auction resolves exactly once.  
-Each resolution produces exactly one inscription.  
+Each resolution produces exactly one canonical inscription.  
 The sequence advances without retry.
 
 The inscription content is the number.
@@ -42,9 +42,9 @@ The inscription content is the number.
 These properties must remain true across all implementations, environments, and versions.
 
 1. Numbers are auctioned strictly in order, starting from 1.
-2. Each auction has a fixed duration.
+2. Each auction has a fixed duration defined by configuration.
 3. Each auction resolves exactly once.
-4. Each number produces exactly one inscription.
+4. Each number produces exactly one canonical inscription.
 5. There are no retries and no re-auctions.
 6. Settlement does not block progression to the next number.
 7. Nonpayment and no-bid outcomes are final and normal.
@@ -97,7 +97,7 @@ Auction semantics do not change between stages.
 - **Mainnet**  
   Bitcoin Mainnet execution. Production persistence and monitoring.
 
-Differences between stages are environmental only.
+Differences between stages are environmental, not semantic.
 
 ---
 
@@ -109,6 +109,8 @@ Any interface exposing Numbers must:
 - Display time remaining in the current auction
 - Display resolution and finalization state
 - Display inscription results once available
+
+Expressive behavior may apply to interface copy, not to auctioned numbers or inscriptions.
 
 An interface must not:
 - Imply ownership before finalization
@@ -126,7 +128,7 @@ Failures do not alter semantics.
 - The sequence continues.
 - Outcomes are not retried.
 - Finalization occurs exactly once.
-- Inscriptions complete eventually or fail visibly.
+- Inscriptions either complete or fail visibly.
 
 Correctness and traceability take priority over performance or convenience.
 
@@ -138,7 +140,7 @@ This document defines invariant behavior.
 
 - Sequence rules are defined in `CORE-SEQUENCE.md`.
 - System structure is defined in `ARCHITECTURE.md`.
-- Rationale and motivation live in `WHY.md`.
+- Rationale and motivation live in `WHAT-IF.md`.
 - Implementation details live in `DEV.md`.
 
 If there is a conflict, invariants defined here take precedence.

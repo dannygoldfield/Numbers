@@ -1,13 +1,13 @@
-# Website Product Requirements Document — Numbers
+# Website Product Requirements Document
 
-This document defines normative constraints for Numbers.
+This document defines normative constraints for the Numbers website.
 
 ## 1. Purpose
 
 The Numbers website exists to expose the live auction sequence and allow participation.
 
-It does not explain, interpret, or embellish the system.  
-It reflects system state accurately and in real time.
+It does not define auction semantics or interpret ownership. 
+It reflects canonical system state accurately and in real time.
 
 The website is an interface layer only.  
 It does not define auction semantics or ownership rules.
@@ -16,7 +16,7 @@ It does not define auction semantics or ownership rules.
 
 ## 2. Inputs and Authority
 
-The website consumes the Numbers system as defined by:
+The Numbers website consumes the system as defined by:
 
 - PRD.md (invariants)
 - CORE-SEQUENCE.md
@@ -80,7 +80,7 @@ The UI must explicitly support the following states:
 - Awaiting settlement
 - Finalized (destination known)
 - Inscribing
-- Inscribed (txid and satpoint visible)
+- Inscribed (canonical txid and satpoint visible)
 - Degraded (partial or delayed data)
 
 All states must be visible and legible.  
@@ -104,7 +104,7 @@ The website must not:
 - Add narrative or explanatory overlays by default
 - Suggest rarity, value, or symbolism through design
 
-## 6.1 Tone, Rhythm, and Non-Semantic Motion
+## 7. Tone, Rhythm, and Non-Semantic Motion
 
 The website may express time and system rhythm, but not meaning.
 
@@ -115,7 +115,7 @@ Motion, transitions, and temporal cues may be used to signal:
 
 These expressions must be:
 - Outcome-agnostic
-- Identical regardless of winner, no-bid, or null outcomes
+- Identical across all resolution outcomes
 - Brief and non-accumulative
 - Non-repeatable outside their triggering state transition
 
@@ -125,14 +125,14 @@ The website must not use motion, color, sound, or effects to:
 - Create reward loops
 - Assign emotional value to specific numbers
 
-TTemporal cadence (e.g. fixed auction duration) may carry character.
+Temporal cadence (e.g. fixed auction duration) may carry character.
 State transitions may be perceptible.
 Meaning must remain untouched by presentation.
 
 
 ---
 
-## 7. Design Freedom
+## 8. Design Freedom
 
 The following are explicitly allowed:
 
@@ -147,7 +147,7 @@ Design choices must not alter meaning.
 
 ---
 
-## 8. Error and Degraded States
+## 9. Error and Degraded States
 
 The website must handle degraded conditions visibly.
 
@@ -161,7 +161,7 @@ The UI should communicate uncertainty without drama.
 
 ---
 
-## 9. Non-Goals
+## 10. Non-Goals
 
 The website does not:
 
@@ -175,7 +175,7 @@ Those concerns live elsewhere, if at all.
 
 ---
 
-## 10. Success Criteria
+## 11. Success Criteria
 
 The website is successful if:
 

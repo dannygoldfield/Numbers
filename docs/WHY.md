@@ -1,10 +1,9 @@
-# WHY — Numbers
+# What if you could own a number?
 
-What if you could own a number?
+Blockchain technology enables irreversible, publicly verifiable records without a central operator.
 
-1, 2, 3, ... 
+The numbers we share across cultures also operate without a central authority.
 
-They arrive one at a time.
+**Numbers** applies an irreversible record to a number.
 
-Everything else is your interpretation.
-
+Ownership is the question.

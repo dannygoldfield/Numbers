@@ -1,11 +1,21 @@
 # Core Sequence
 
-Numbers auctions numbers sequentially.
+This document defines the invariants of Numbers.
 
-Each auction has a fixed duration.
-Each auction resolves exactly once.
-Each resolution produces exactly one inscription.
+Numbers are auctioned sequentially.
 
-If a winner settles, the inscription is sent to them.
+Each auction:
+- has a predefined end condition
+- accepts only valid bids
+- resolves exactly once
+- produces exactly one canonical inscription.
 
-The sequence never pauses or retries.
+Content alone does not determine canonicity.
+
+If the winning bidder settles, the inscription is sent to them.
+
+If the winning bidder does not settle, the inscription is sent to a provably unspendable address.
+
+Bid validity is determined at auction start and remains fixed for the duration of that auction.
+
+The sequence never pauses, retries, or rewinds.

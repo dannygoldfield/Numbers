@@ -4,7 +4,7 @@
 
 Numbers is a system that auctions numbers sequentially.
 
-Each result is inscribed directly on Bitcoin.
+Each auction result produces a canonical inscription on Bitcoin.
 
 The inscription content is the number itself.
 

@@ -1,6 +1,13 @@
 [book]
-title = "Numbers Docs"
-author = "Danny Goldfield"
-language = "en"
-multilingual = false
-src = "src"
+title = "Numbers Documentation"
+src = "../docs"
+
+[build]
+build-dir = "build"
+
+[output.html]
+additional-css = ["theme/custom.css"]
+
+[output.html.fold]
+enable = true
+level = 0
