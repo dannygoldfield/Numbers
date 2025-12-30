@@ -1,0 +1,56 @@
+You said:
+### **Yesterday (Penpot Components)**
+
+* **Accomplished:**
+
+  * Built the **Key** component (individual button with number/character).
+  * Built the **Keyboard** component (two rows, numbers + dot + backspace).
+  * Wrestled with **flex layouts** (Row vs Row-Reverse, Justify Content). Learned how Penpot handles alignment.
+  * Confirmed how to make **Components** (diamond icons) and the difference between **Groups** and **Frames** in practice. And that "Frames" is not a term used in Penpot. 
+  * Workflow for building Components is more clear.
+
+* **Learned:**
+
+  * Layout alignment needs to be verified before creating Components (otherwise tedious fixes later).
+  * **Row direction + naming consistency** matter for intuitive order.
+  * Penpot undo is limited → careful sequencing saves time.
+  * Components are reusable but require **clean setup of instances** before conversion.
+
+---
+
+### **Today’s Plan (7 hrs)**
+
+**Goal: Build the core UI Components needed for Alpha demo.**
+
+1. **Auction Card (3 hrs)**
+
+   * Layout: number, timer, current bid.
+   * Use Key and Keyboard as references for spacing/alignment discipline.
+   * Make it a Component → this will be the central piece of the UI.
+
+2. **Input Field (1.5 hrs)**
+
+   * Basic text entry box for bid amount.
+   * Keep minimal (system default look).
+   * Turn into Component.
+
+3. **Action Buttons (1 hr)**
+
+   * Submit / Cancel. Do we need a cancel option or user just backspaces to remove bid? Map out the User experience. What do we want to be intuitive and also interrogate for possible edge cases?
+   * Style consistent with Key component (board + text).
+
+4. **Status/Message Banner (1 hr)**
+
+   * Lightweight component for feedback messages.
+   * Error, Success, Info. color palette?
+
+5. **Buffer/Refactor (0.5 hr)**
+
+   * Review all components.
+   * Check naming, alignment, and hierarchy cleanliness.
+
+---
+
+⚠️ **Rule for today**: Don’t get stuck 8 hours on a single component. If one eats more than double its budget, freeze progress, document the issue, and move to the next.
+
+Want me to also rank which of these could be *cut* without breaking the Sept 2 Alpha goal, so you have a fallback if you only finish part of the list?

@@ -1,0 +1,371 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Website PRD - Numbers Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="book/theme/custom.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Numbers Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="website-product-requirements-document"><a class="header" href="#website-product-requirements-document">Website Product Requirements Document</a></h1>
+<p>This document defines normative constraints for the Numbers website.</p>
+<h2 id="1-purpose"><a class="header" href="#1-purpose">1. Purpose</a></h2>
+<p>The Numbers website exists to expose the live auction sequence and allow participation.</p>
+<p>It reflects canonical system state accurately, as reported by the system.
+It does not define auction semantics or interpret ownership.</p>
+<p>The website is an interface layer only.
+It adapts to the system; it does not shape it.</p>
+<hr />
+<h2 id="2-inputs-and-authority"><a class="header" href="#2-inputs-and-authority">2. Inputs and Authority</a></h2>
+<p>The Numbers website consumes the system as defined by:</p>
+<ul>
+<li>PRD.md (invariants)</li>
+<li>CORE-SEQUENCE.md</li>
+<li>ARCHITECTURE.md</li>
+</ul>
+<p>If there is a conflict, the system definition always wins.</p>
+<p>The website must adapt to the system, never the reverse.</p>
+<hr />
+<h2 id="3-user-modes"><a class="header" href="#3-user-modes">3. User Modes</a></h2>
+<p>The website supports interaction modes, not personas.</p>
+<ul>
+<li><strong>Observer</strong> — views the live sequence and past outcomes</li>
+<li><strong>Active Bidder</strong> — participates during open auctions</li>
+<li><strong>Past Winner</strong> — verifies finalized inscription details</li>
+<li><strong>Archivist</strong> — inspects historical auctions and inscriptions</li>
+</ul>
+<p>No mode is visually privileged.</p>
+<hr />
+<h2 id="4-core-user-tasks"><a class="header" href="#4-core-user-tasks">4. Core User Tasks</a></h2>
+<p>The website must allow users to:</p>
+<ol>
+<li>See the current auction number</li>
+<li>See time remaining in the auction</li>
+<li>See the current high bid, if any</li>
+<li>Place a bid during the open window</li>
+<li>Observe auction closure</li>
+<li>Observe settlement and finalization state</li>
+<li>View inscription results once available</li>
+<li>Browse completed numbers</li>
+</ol>
+<p>No task may require interpretation.</p>
+<hr />
+<h2 id="5-system-derived-ui-states"><a class="header" href="#5-system-derived-ui-states">5. System-Derived UI States</a></h2>
+<p>The UI must expose the following states:</p>
+<ul>
+<li>Open auction</li>
+<li>Closing / resolving</li>
+<li>Awaiting settlement</li>
+<li>Finalized (destination known)</li>
+<li>Inscribing</li>
+<li>Inscribed (canonical txid and satpoint visible)</li>
+<li>Degraded (partial or delayed data)</li>
+</ul>
+<p>All states must be visible.
+No state may be hidden to simplify presentation.</p>
+<hr />
+<h2 id="6-ux-constraints"><a class="header" href="#6-ux-constraints">6. UX Constraints</a></h2>
+<p>The website must:</p>
+<ul>
+<li>Avoid implying ownership before finalization</li>
+<li>Avoid ranking or highlighting numbers</li>
+<li>Avoid decorating or stylizing the number itself</li>
+<li>Display no-bid and nonpayment outcomes plainly</li>
+<li>Distinguish delay from error</li>
+</ul>
+<p>The website must not:</p>
+<ul>
+<li>Assign meaning to specific numbers</li>
+<li>Suggest rarity, value, or symbolism through design</li>
+<li>Add narrative or explanatory overlays by default</li>
+</ul>
+<hr />
+<h2 id="7-tone-rhythm-and-non-semantic-motion"><a class="header" href="#7-tone-rhythm-and-non-semantic-motion">7. Tone, Rhythm, and Non-Semantic Motion</a></h2>
+<p>The website may express time and system rhythm, but not meaning.</p>
+<p>Motion and transitions may indicate:</p>
+<ul>
+<li>Passage of time</li>
+<li>Auction closure</li>
+<li>State change</li>
+</ul>
+<p>These cues must be:</p>
+<ul>
+<li>Outcome-agnostic</li>
+<li>Uniform across all resolutions</li>
+<li>Brief and non-accumulative</li>
+<li>Triggered only by state transitions</li>
+</ul>
+<p>The website must not use motion, color, sound, or effects to:</p>
+<ul>
+<li>Celebrate outcomes</li>
+<li>Signal success or failure</li>
+<li>Create reward loops</li>
+<li>Assign emotional value</li>
+</ul>
+<p>Temporal cadence may carry character.
+Meaning must remain untouched by presentation.</p>
+<hr />
+<h2 id="8-design-freedom"><a class="header" href="#8-design-freedom">8. Design Freedom</a></h2>
+<p>The following are permitted:</p>
+<ul>
+<li>Typography outside the number itself</li>
+<li>Non-semantic motion tied to time or state</li>
+<li>Optional sound without semantic meaning</li>
+<li>Information density choices</li>
+<li>Progressive disclosure</li>
+<li>Distinct live vs historical layouts</li>
+</ul>
+<p>Design freedom ends where meaning begins.</p>
+<hr />
+<h2 id="9-error-and-degraded-states"><a class="header" href="#9-error-and-degraded-states">9. Error and Degraded States</a></h2>
+<p>Degraded conditions must be visible.</p>
+<p>Examples:</p>
+<ul>
+<li>RPC unavailable</li>
+<li>Delayed confirmations</li>
+<li>Settlement pending beyond expectation</li>
+</ul>
+<p>Degraded does not mean broken.
+Uncertainty should be communicated plainly.</p>
+<hr />
+<h2 id="10-non-goals"><a class="header" href="#10-non-goals">10. Non-Goals</a></h2>
+<p>The website does not:</p>
+<ul>
+<li>Educate users about Bitcoin or Ordinals</li>
+<li>Explain why numbers matter</li>
+<li>Encourage bidding behavior</li>
+<li>Provide social features</li>
+<li>Optimize engagement</li>
+</ul>
+<hr />
+<h2 id="11-success-criteria"><a class="header" href="#11-success-criteria">11. Success Criteria</a></h2>
+<p>The website succeeds if:</p>
+<ul>
+<li>System state is accurately reflected</li>
+<li>State transitions are legible</li>
+<li>No UI element contradicts system invariants</li>
+<li>The sequence can be observed without confusion</li>
+</ul>
+<p>Aesthetic success is secondary to semantic correctness.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="PRD.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="UI-SPEC.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="PRD.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="UI-SPEC.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
