@@ -3,6 +3,10 @@
    Goal: lighter typography, calmer hierarchy, grayscale only
    ========================================================= */
 
+/* Base typography scale */
+html { font-size: 19px; }
+body { font-size: 1rem; line-height: 1.7; }
+
 
 /* ---------------------------------------------------------
    1) COLOR PALETTE
@@ -62,7 +66,6 @@ body{
     Arial,
     sans-serif;
 
-  font-size: 1.15rem;
   line-height: 1.7;
   font-weight: 400;
 
