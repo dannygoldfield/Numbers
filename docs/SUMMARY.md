@@ -4,7 +4,7 @@
 - [Read This First](READ-THIS-FIRST.md)
 - [What If](WHAT-IF.md)
 - [Bidder](BIDDER.md)
-- [Joke](JOKE.md)
+- [Glossary](GLOSSARY.md)
 
 # System Definition
 - [Core Sequence](CORE-SEQUENCE.md)
@@ -21,7 +21,6 @@
 - [Platform](PLATFORM.md)
 - [Data Model](DATA-MODEL.md)
 - [API Specification](API-SPEC.md)
-- [Glossary](GLOSSARY.md)
 
 # Security and Risk
 - [Threat Model](THREAT-MODEL.md)
@@ -34,7 +33,7 @@
 - [Observability](OBSERVABILITY.md)
 - [Operational Runbook](OPERATIONAL-RUNBOOK.md)
 
-# Launch and Evolution
+# Validation and Continuity
 - [Testing](TESTING.md)
 - [Launch Checklist](LAUNCH-CHECKLIST.md)
 - [Roadmap](ROADMAP.md)

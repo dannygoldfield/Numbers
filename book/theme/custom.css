@@ -1,60 +1,68 @@
 /* =========================================================
-   Numbers mdBook — low-contrast grayscale
-   Goal: lighter typography, calmer hierarchy, grayscale only
+   Numbers mdBook custom.css
+   Grayscale, calm hierarchy, readable on mobile
+   Fixes:
+   - Light mode sidebar contrast
+   - Variable driven colors
+   - Avoid hardcoded white text in light mode
    ========================================================= */
 
-/* Base typography scale */
+
+/* ---------------------------------------------------------
+   0) BASE SCALE
+   --------------------------------------------------------- */
+
 html {
   font-size: 125%;
 }
 
 
-
 /* ---------------------------------------------------------
    1) COLOR PALETTE
-   Adjust these variables to tune overall contrast.
+   Tune these variables to adjust contrast.
    --------------------------------------------------------- */
 
-/* Default = dark mode */
+/* Default is dark mode */
 :root{
-  --bg:#161616;
-  --fg:#c2c2c2;            /* body text */
+  --bg: #161616;
+  --fg: #c2c2c2;
 
-  --sidebar-bg:#161616;
-  --sidebar-fg:#b3b3b3;
+  --sidebar-bg: #161616;
+  --sidebar-fg: #b3b3b3;
 
-  --links:#e6e6e6;
-  --links-hover:#ffffff;
+  --links: #e6e6e6;
+  --links-hover: #ffffff;
 
-  --inline-code-bg:#1c1c1c;
-  --code-bg:#1c1c1c;
+  --inline-code-bg: #1c1c1c;
+  --code-bg: #1c1c1c;
 
-  --border-color:#2a2a2a;
+  --border-color: #2a2a2a;
+
+  --nav-gutter: 9rem;
 }
 
 /* Light mode overrides */
 @media (prefers-color-scheme: light){
   :root{
-    --bg:#f6f6f6;
-    --fg:#2f2f2f;
+    --bg: #f6f6f6;
+    --fg: #2f2f2f;
 
-    --sidebar-bg:#ededed;
-    --sidebar-fg:#2f2f2f;
+    --sidebar-bg: #ededed;
+    --sidebar-fg: #2f2f2f;
 
-    --links:#111111;
-    --links-hover:#000000;
+    --links: #111111;
+    --links-hover: #000000;
 
-    --inline-code-bg:#e6e6e6;
-    --code-bg:#e6e6e6;
+    --inline-code-bg: #e6e6e6;
+    --code-bg: #e6e6e6;
 
-    --border-color:#d0d0d0;
+    --border-color: #d0d0d0;
   }
 }
 
 
 /* ---------------------------------------------------------
-   2) TYPOGRAPHY
-   Lighter body text. Restrained headings.
+   2) GLOBAL TYPOGRAPHY AND BACKGROUNDS
    --------------------------------------------------------- */
 
 body{
@@ -73,6 +81,9 @@ body{
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  background: var(--bg);
+  color: var(--fg);
 }
 
 /* Reinforce body color */
@@ -80,36 +91,26 @@ p, li, blockquote, .content{
   color: var(--fg);
 }
 
+p{ margin: .75em 0; }
+li{ margin: .35em 0; }
+
 
 /* ---------------------------------------------------------
-   2a) TITLE ALIGNMENT
-   Book title and page H1 are intentionally identical.
-   Change here if you want hierarchy back.
+   2a) TITLES
+   Book title and page H1 intentionally identical.
    --------------------------------------------------------- */
 
-/* Page title */
 .page h1,
-/* Header title ("Numbers Documentation") */
 .book-header h1,
 .menu-title{
-  font-size: 2.4rem;       /* single source of truth */
+  font-size: 2.4rem;
   font-weight: 400;
   line-height: 1.25;
   letter-spacing: 0.01em;
   color: var(--fg);
 }
 
-/* Light mode title color */
-@media (prefers-color-scheme: light){
-  .page h1,
-  .book-header h1,
-  .menu-title{
-    color: var(--fg);
-  }
-}
-
-
-/* Secondary headings retain hierarchy */
+/* Secondary headings keep hierarchy */
 h2{
   font-size: 1.8rem;
   font-weight: 450;
@@ -122,9 +123,10 @@ h3{
   color: #c8c8c8;
 }
 
+/* Light mode heading colors */
 @media (prefers-color-scheme: light){
   h2, h3{
-    color:#1a1a1a;
+    color: #1a1a1a;
   }
 }
 
@@ -134,18 +136,11 @@ h3{
    Keep nav arrows from overlapping text.
    --------------------------------------------------------- */
 
-:root{
-  --nav-gutter: 9rem; /* adjust to tune arrow clearance */
-}
-
 .content{
   max-width: 760px;
   padding-left: var(--nav-gutter);
   padding-right: var(--nav-gutter);
 }
-
-p{ margin: .75em 0; }
-li{ margin: .35em 0; }
 
 /* Keep arrows visually minimal */
 .nav-chapters{
@@ -176,10 +171,16 @@ li{ margin: .35em 0; }
 
 
 /* ---------------------------------------------------------
-   5) SIDEBAR BEHAVIOR
+   5) SIDEBAR BACKGROUND AND BEHAVIOR
    Desktop pinned. Mobile remains mobile.
    --------------------------------------------------------- */
 
+.sidebar,
+.sidebar-scrollbox{
+  background: var(--sidebar-bg) !important;
+}
+
+/* Desktop pin behavior */
 @media (min-width:1200px){
   html.sidebar-hidden .sidebar,
   html.sidebar-hidden .sidebar-scrollbox{
@@ -195,27 +196,74 @@ li{ margin: .35em 0; }
 
 /* ---------------------------------------------------------
    6) SIDEBAR LINK STATES
-   Quiet by default. Emphasis only on active.
+   Variable driven, readable in light mode.
+   This replaces the hardcoded white and gray that broke mobile.
    --------------------------------------------------------- */
 
+/* Base sidebar links */
 .sidebar a,
 .sidebar a:visited{
-  color:#a9a9a9 !important;
-  text-decoration:none !important;
-  font-weight:400;
+  color: var(--sidebar-fg) !important;
+  text-decoration: none !important;
+  font-weight: 450;
+  opacity: 0.75;
 }
 
 .sidebar a:hover,
 .sidebar a:focus{
-  color:#ffffff !important;
+  color: var(--links-hover) !important;
+  opacity: 1;
 }
 
+/* Active link */
 .sidebar a.active,
 .sidebar a.active:hover,
 .sidebar a.active:focus{
-  color:#ffffff !important;
-  font-weight:600;
-  background:transparent !important;
+  color: var(--links-hover) !important;
+  font-weight: 650;
+  opacity: 1;
+  background: transparent !important;
+}
+
+/* Sidebar section labels like Orientation, System Definition */
+.sidebar .chapter > li > strong,
+.sidebar .chapter li.part-title,
+.sidebar h2,
+.sidebar h3{
+  color: var(--sidebar-fg) !important;
+  opacity: 0.95;
+  font-weight: 600;
+}
+
+/* Light mode specificity */
+@media (prefers-color-scheme: light){
+  .sidebar a,
+  .sidebar a:visited{
+    color: #2b2b2b !important;
+    opacity: 0.80;
+  }
+
+  .sidebar a:hover,
+  .sidebar a:focus{
+    color: #000000 !important;
+    opacity: 1;
+  }
+
+  .sidebar a.active,
+  .sidebar a.active:hover,
+  .sidebar a.active:focus{
+    color: #000000 !important;
+    font-weight: 700;
+    opacity: 1;
+  }
+
+  .sidebar .chapter > li > strong,
+  .sidebar .chapter li.part-title,
+  .sidebar h2,
+  .sidebar h3{
+    color: #1a1a1a !important;
+    opacity: 1;
+  }
 }
 
 
@@ -235,6 +283,7 @@ th, td{
   padding-bottom: 0.6rem;
 }
 
+/* Space multiple tables */
 table + table{
   margin-top: 2rem;
 }
@@ -248,4 +297,30 @@ table:first-of-type{
 .content table{
   width: calc(100vw - (2 * var(--nav-gutter)));
   max-width: 750px;
+}
+
+
+/* ---------------------------------------------------------
+   8) CODE BLOCKS AND INLINE CODE
+   Consistent with palette.
+   --------------------------------------------------------- */
+
+code{
+  background: var(--inline-code-bg);
+  padding: 0.1em 0.25em;
+  border-radius: 6px;
+}
+
+pre code{
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+pre{
+  background: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1rem;
+  overflow: auto;
 }
