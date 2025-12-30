@@ -5,7 +5,8 @@ This document defines the security boundaries, assumptions, and accepted risks o
 Numbers prioritizes correctness and containment over availability.
 If a choice must be made, the system fails safe.
 
-This document defines what Numbers guarantees and what it explicitly does not.
+This document defines what Numbers guarantees
+and what it explicitly does not.
 
 ---
 
@@ -19,33 +20,38 @@ Numbers separates responsibility into two layers:
 2. **Outcome layer**  
    The final inscription recorded on the Bitcoin blockchain.
 
-These layers have different trust assumptions and failure modes.
+These layers have distinct trust assumptions
+and distinct failure modes.
 
 ---
 
 ## Assets
 
+The system protects:
+
 - User funds submitted as bids
-- System-controlled funds for fees
+- System-controlled funds used for fees
 - Private keys for operational wallets
 - Auction ordering and resolution integrity
-- Correct association between auction numbers and inscriptions
+- Correct association between numbers and inscriptions
 - Public confidence in recorded outcomes
 
 ---
 
 ## Outcome Layer (Bitcoin)
 
-Once an inscription transaction is created and confirmed on the Bitcoin blockchain:
+Once an inscription transaction is confirmed on Bitcoin:
 
-- Control of outputs is enforced by Bitcoin consensus.
-- Records are publicly verifiable and append-only.
-- The inscription cannot be altered, revoked, or reassigned without invalidating the chain.
-- No operator, bidder, or administrator can retroactively change a confirmed outcome.
+- Output control is enforced by Bitcoin consensus
+- Records are public, verifiable, and append-only
+- Inscription content cannot be altered or reassigned
+- No operator or bidder can retroactively change a confirmed outcome
 
-This layer inherits Bitcoin’s security properties and failure modes.
+This layer inherits Bitcoin’s security properties
+and Bitcoin’s failure modes.
 
-Subsequent transfers of the inscription are permitted and do not affect the recorded outcome.
+Subsequent transfers of an inscription
+do not affect the recorded outcome.
 
 ---
 
@@ -53,60 +59,62 @@ Subsequent transfers of the inscription are permitted and do not affect the reco
 
 Auction execution relies on off-chain coordination.
 
-Assumptions at this layer include:
+At this layer:
 
-- The auction operator executes the published rules faithfully.
-- Auction timing and resolution are enforced by the operator.
-- Bid submission and settlement coordination are subject to standard Web-based risks.
-- Temporary service interruption or operator failure may affect participation, but not confirmed outcomes.
+- The operator enforces published auction rules
+- Timing and resolution are enforced procedurally
+- Bid submission and settlement are subject to standard Web risks
+- Temporary outages may affect participation
 
 This layer does **not** provide trustless execution guarantees.
+
+Failure at this layer may prevent participation,
+but cannot alter confirmed outcomes.
 
 ---
 
 ## Threat Considerations
 
-The following are common operational risks and mitigations.
-They operate within the trust boundaries defined above.
+The following risks operate within the trust boundaries defined above.
 
 ### High Fee Environment
-- Risk: Transactions become uneconomical or delayed
-- Mitigation:
+- **Risk:** Inscription transactions become uneconomical or delayed
+- **Mitigation:**
   - Fee ceilings enforced
-  - Automatic auction pause if fee thresholds are exceeded
+  - Automatic auction pause when thresholds are exceeded
   - Manual intervention required to resume
 
 ### Settlement Failure
-- Risk: Winning bidder does not pay
-- Mitigation:
+- **Risk:** Winning bidder does not settle
+- **Mitigation:**
   - Settlement window enforced
-  - On failure, inscription routed to the null steward
-  - Auction sequence advances without rollback
+  - On failure, destination defaults to Null Steward
+  - Sequence advances without rollback
 
 ### Wallet Compromise
-- Risk: Loss of system-controlled funds
-- Mitigation:
+- **Risk:** Loss of system-controlled funds
+- **Mitigation:**
   - Minimal hot wallet balances
   - No long-term custody of user funds
-  - Null steward outputs intentionally unspendable
+  - Null Steward outputs intentionally unspendable
 
 ### Double Spend or RBF Abuse
-- Risk: Bid payment invalidated
-- Mitigation:
-  - Confirmation threshold required before settlement
+- **Risk:** Bid payment invalidated
+- **Mitigation:**
+  - Confirmation threshold required
   - Conservative mempool policy
   - No optimistic settlement
 
 ### Denial of Service
-- Risk: Flooding bids or requests
-- Mitigation:
+- **Risk:** Flooding bids or requests
+- **Mitigation:**
   - Rate limiting
   - Auction caps
   - Automatic pause on error thresholds
 
 ### Data Corruption
-- Risk: Incorrect auction state or history
-- Mitigation:
+- **Risk:** Incorrect auction state or history
+- **Mitigation:**
   - Append-only records
   - Immutable sequence guarantees
   - External verification via txid and satpoint
@@ -119,23 +127,24 @@ Numbers does not guarantee:
 
 - Trustless auction execution
 - On-chain enforcement of bidding rules
-- Automatic remediation for settlement failure
-- Protection against all forms of operator error or misconduct
+- Automatic remediation for operator error
+- Immunity from all forms of operator failure
 - Continuous availability
 
-These constraints are intentional.
+These limits are intentional and disclosed.
 
 ---
 
 ## Irreversibility
 
-The system is designed so that:
+The system enforces the following:
 
-- Each auction resolves exactly once.
-- The sequence does not rewind, retry, or re-auction.
-- Outcomes, once recorded on-chain, are final.
+- Each auction resolves exactly once
+- The sequence never rewinds, retries, or re-auctions
+- Confirmed on-chain outcomes are final
 
-Irreversibility applies to outcomes, not to the auction process itself.
+Irreversibility applies to outcomes,
+not to the off-chain auction process.
 
 ---
 
@@ -143,15 +152,16 @@ Irreversibility applies to outcomes, not to the auction process itself.
 
 By participating, bidders accept that:
 
-- The auction process is not fully autonomous.
-- The final inscription, once created, is permanent.
-- There is no appeals process for completed outcomes.
+- The auction process is not fully autonomous
+- Operator execution is required
+- Confirmed inscriptions are permanent
+- There is no appeals process for completed outcomes
 
 ---
 
 ## Design Intent
 
-Numbers makes its trust boundaries explicit rather than implicit.
+Numbers makes its trust boundaries explicit.
 
-The system records outcomes.
+It records outcomes.
 It does not attempt to automate trust away.

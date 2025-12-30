@@ -1,131 +1,236 @@
 # Architecture
 
-This document describes the structure and constraints of Numbers. It is implementation-oriented and procedural. It does not justify the system. See `WHAT-IF.md` for the premise.
+This document defines how Numbers behaves.
 
-## System Summary
+It describes structure, sequencing, authority boundaries, and lifecycle.
+It is implementation-oriented and procedural.
 
-Numbers runs sequential auctions of numbers and advances monotonically from one number to the next. The interface exposes auction state and timing only. It does not interpret outcomes or add meaning.
+It does not justify the premise.
+See WHAT-IF.md and POETICS.md for conceptual framing.
+
+---
+
+## System Overview
+
+Numbers runs a sequential series of auctions.
+Each auction resolves exactly once.
+
+The system advances monotonically from one number to the next.
+It does not pause, rewind, or reinterpret past outcomes.
+
+The system records outcomes.
+It does not enforce meaning.
+
+---
+
+## Core Components
+
+Numbers consists of four conceptual components:
+
+1. Auction
+2. Resolution and Settlement
+3. Inscription
+4. Catalog
+
+Each component has a narrow responsibility.
+No component interprets the others.
+
+---
 
 ## Timing Policy
 
-- **Auction duration:** fixed by configuration (default: 12:34:56)
-- **Inter-auction gap:** fixed at 1:23
-- The inter-auction gap provides a boundary between auctions
-- Auction timing is independent of settlement state
-- Settlement does not block progression
+- **Auction duration:** fixed by configuration  
+- **Inter-auction gap:** fixed and non-zero  
 
-## Lifecycle
+The inter-auction gap provides a boundary between auctions.
 
-For auction number **N**:
+Auction timing is independent of settlement and inscription.
+Settlement and inscription do not block progression.
 
-### 1. Open
-- Auction N opens for the configured duration
-- Bids are accepted until close
+See CORE-SEQUENCE.md for timing guarantees.
 
-### 2. Close
-- At close, the auction resolves exactly once
-- A resolution record is written: winner (if any), winning bid (if any), timestamps
-- The system advances to auction N+1 after the inter-auction gap
+---
 
-### 3. Settlement
-- Settlement runs asynchronously, in parallel with later auctions
-- Settlement has a deadline
-- If settlement succeeds before the deadline, N is finalized to the winner
-- If settlement fails, times out, or there are no bids, N is finalized to the null steward
+## 1. Auction
 
-The null steward is a provably unspendable address.
+For each number **N**, the system opens an auction.
 
-### 4. Inscription
-- After finalization, an inscription transaction is constructed and broadcast
-- Inscription content is the number only
-- Multiple inscriptions of the same number may exist on-chain
-- An inscription is canonical only if it satisfies the Numbers authenticity rule
-- The txid and satpoint are recorded in the Numbers registry
+- The auction runs for a fixed duration.
+- Bids may be submitted until the auction closes.
+- Bids are compared strictly by value.
+- Ties are resolved deterministically.
 
-## Canonical Inscription
+The auction does not:
+- validate bidder intent
+- assess bidder identity beyond transaction validity
+- interpret the significance of the number
 
-Numbers distinguishes its own inscriptions from arbitrary lookalike inscriptions on-chain. Anyone can inscribe the number N. Content alone does not prove it came from Numbers.
+---
 
-Numbers recognizes exactly one canonical inscription per auction number N, which must satisfy all of the following:
+## 2. Resolution and Settlement
 
-1. Auction N is finalized (winner or null steward)
-2. The inscription txid and satpoint are recorded in the Numbers registry
-3. The inscription satisfies the Numbers authenticity rule
+At auction close, the auction resolves exactly once.
 
-### Numbers authenticity rule
+Resolution produces a provisional outcome:
+- a winning bidder, or
+- no valid bids
 
-The reveal path must require a valid signature from the Numbers Operator key. This proves provenance without changing what is rendered. The rendered content remains the number only. This rule applies to all canonical inscriptions, including null steward outcomes.
+Settlement runs asynchronously and has a deadline.
 
-## Resolution Outcomes
+Finalization produces exactly one destination:
+- **Winner settles before deadline → winning address**
+- **Winner fails to settle → Null Steward**
+- **No valid bids → Null Steward**
 
-Each auction finalizes to exactly one destination:
+The **Null Steward** is a provably unspendable address.
 
-- Winner settles before deadline → winner
-- Winner does not settle → null steward
-- No bids → null steward
+Resolution and settlement do not delay subsequent auctions.
 
-## Components
+---
 
-### Auction Engine
+## 3. Inscription
 
-**Responsibilities**
-- Maintain the current auction number (monotonic, sequential)
-- Track open and close times
-- Accept bids during the open window
-- Resolve once at close and record the resolution
-- Advance to the next number after the inter-auction gap
+After finalization, an inscription transaction is constructed and broadcast.
 
-**Non-responsibilities**
-- Bitcoin transaction construction
-- Fee estimation
-- UI rendering
+- Inscription content is the number only.
+- The number is recorded as witness data in a Bitcoin transaction.
+- Multiple inscriptions of the same number may exist on-chain.
 
-### Settlement
+An inscription is **recognized by the system** only if:
+- it is produced by the system’s finalized outcome for that number
+- its txid and satpoint are recorded in the Numbers Catalog
 
-**Responsibilities**
-- Enforce settlement deadline
-- Verify payment for a winning bidder
-- Finalize destination: winner or null steward
-- Emit a finalization record used by inscription
+Content alone does not establish provenance.
+Recognition is procedural, not visual.
 
-Finalization determines the inscription destination but does not delay subsequent auctions.
+Finalization to the Null Steward also produces an inscription.
+Absence of a winner does not halt inscription.
 
-**Non-responsibilities**
-- Auction winner selection
-- UI behavior beyond exposing settlement state
+---
 
-### Inscription Builder and Broadcaster
+## Canonical Recognition
 
-**Responsibilities**
-- Construct the inscription payload (the number only)
-- Select inputs and bind to satpoints according to wallet policy
-- Construct and broadcast the transaction
-- Persist txid and satpoint
+Numbers distinguishes its own inscriptions
+from arbitrary lookalike inscriptions on-chain.
 
-**Non-responsibilities**
-- Deciding winner or destination
-- Interpreting inscription meaning
+Anyone can inscribe the number **N**.
+That does not make it part of Numbers.
 
-### Wallet and UTXO Inventory
+Recognition answers only:
 
-**Responsibilities**
-- Provide addresses and signing
-- Track spendable UTXOs used for inscriptions
-- Reserve and release UTXOs for pending inscriptions
-- Prevent double-spends across concurrent pending inscriptions
+> “Which inscription resulted from auction **N**?”
 
-Notes:
-- Settlement may lag behind auctions
-- Multiple auctions may be pending inscription simultaneously
-- The wallet must reserve sufficient UTXOs to support concurrent inscriptions
+It does not answer:
+- whether ownership is real
+- whether value exists
+- whether meaning should be assigned
 
-### Storage and Index
+Recognition is procedural.
+Interpretation happens elsewhere.
 
-**Responsibilities**
-- Persist auction records and resolutions
-- Persist settlement and finalization state
-- Persist inscription metadata (txid, satpoint)
+---
 
-**Non-responsibilities**
-- Interpreting outcomes
-- Enforcing auction or settlement rules
+## 4. Catalog
+
+The Numbers Catalog is a derived index.
+
+It records, for each auction number:
+- final destination (winning address or Null Steward)
+- inscription txid
+- inscription satpoint
+- associated timestamps
+
+The catalog exists to support:
+- observability
+- retrieval
+- inspection
+
+It does not define ownership, meaning, or validity.
+
+See CATALOG.md for schema and access patterns.
+
+---
+
+### Authority
+
+The catalog is not authoritative.
+
+Errors or omissions in the catalog do not alter outcomes recorded on-chain.
+The blockchain is the only durable record.
+
+The catalog may be corrected, rebuilt, or discarded
+without changing system history.
+
+---
+
+### Derivation
+
+All catalog entries are derived from Bitcoin data.
+
+No catalog entry may depend on:
+- private state
+- operator memory
+- off-chain metadata
+- discretionary interpretation
+
+Every entry must be reconstructible
+from transactions and inscriptions alone.
+
+---
+
+### Rebuildability
+
+The Numbers Catalog is not a source of truth.
+It is a derived view over Bitcoin data.
+
+Given:
+- the Bitcoin blockchain
+- public knowledge of the Numbers auction rules
+- the ability to inspect transactions and inscriptions
+
+the catalog can be deleted and rebuilt from scratch.
+
+Rebuilding must converge on the same sequence of recognized outcomes.
+No private data, off-chain state, or discretionary judgment is required.
+
+If knowledge of the Numbers system itself is lost,
+only the underlying Bitcoin data remains.
+
+---
+
+## Invariants
+
+The following invariants hold at all times:
+
+- Each auction resolves exactly once.
+- The sequence advances monotonically.
+- Every finalized outcome produces an inscription.
+- Recognition depends on system provenance, not content.
+- The catalog is derived, not authoritative.
+
+---
+
+## Non-Goals
+
+The architecture explicitly does not:
+
+- prevent duplicate inscriptions
+- enforce ownership semantics
+- guarantee economic value
+- privilege interpretation
+- provide dispute resolution
+
+Those concerns exist outside the system.
+
+---
+
+## Summary
+
+Numbers is a system that records outcomes
+and refuses to explain them.
+
+It advances.
+It records.
+It stops.
+
+Everything else is external.

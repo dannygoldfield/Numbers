@@ -9,7 +9,7 @@ This document does not describe a roadmap, feature set, or user experience.
 It defines constraints.
 
 A typical Product Requirements Document exists to guide decisions about what to build next.  
-This document exists to prevent accidental changes to what already exists.
+This document exists to prevent accidental changes to to system semantics.
 
 Numbers is a system with fixed semantics. Once the sequence begins, outcomes cannot be revised, retried, or reinterpreted. Flexibility is therefore a liability, not a goal.
 
@@ -27,7 +27,7 @@ This document should be read as a protocol boundary, not a product plan.
 
 ## 1. Definition
 
-Numbers is a system that auctions integers sequentially and inscribes each outcome onto Bitcoin.
+Numbers is a system that auctions integers sequentially and inscribes each outcome onto Bitcoin transactions.
 
 Each auction resolves exactly once.  
 Each resolution produces exactly one canonical inscription.  
@@ -47,9 +47,9 @@ These properties must remain true across all implementations, environments, and 
 4. Each number produces exactly one canonical inscription.
 5. There are no retries and no re-auctions.
 6. Settlement does not block progression to the next number.
-7. Nonpayment and no-bid outcomes are final and normal.
+7. Nonpayment and no-bid outcomes are final and normal, and resolve to the Null Steward.
 8. Inscription content is the number only.
-9. Rendering is determined entirely by the viewer’s environment.
+9. Rendering is determined entirely by the viewing environment.
 
 Violation of any invariant means the system is no longer Numbers.
 
@@ -64,7 +64,7 @@ Numbers concerns only:
 - Inscription of numbers onto satoshis
 - Durable recording of outcomes
 
-The system does not interpret, decorate, or add meaning to numbers.
+The system does not interpret, decorate, or assign meaning to numbers.
 
 ---
 
@@ -99,6 +99,8 @@ Auction semantics do not change between stages.
 
 Differences between stages are environmental, not semantic.
 
+No stage permits semantic divergence or retrospective correction.
+
 ---
 
 ## 6. Interface Constraints
@@ -110,7 +112,7 @@ Any interface exposing Numbers must:
 - Display resolution and finalization state
 - Display inscription results once available
 
-Expressive behavior may apply to interface copy, not to auctioned numbers or inscriptions.
+Expressive behavior may apply to interface copy only, not to auctioned numbers or inscriptions.
 
 An interface must not:
 - Imply ownership before finalization
@@ -143,4 +145,4 @@ This document defines invariant behavior.
 - Rationale and motivation live in `WHAT-IF.md`.
 - Implementation details live in `DEV.md`.
 
-If there is a conflict, invariants defined here take precedence.
+If there is a conflict, invariants defined here take precedence over all other documents.

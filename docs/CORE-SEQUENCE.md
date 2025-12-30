@@ -2,20 +2,88 @@
 
 This document defines the invariants of Numbers.
 
-Numbers are auctioned sequentially.
+It describes what must always happen,
+in what order,
+and without exception.
 
-Each auction:
-- has a predefined end condition
-- accepts only valid bids
-- resolves exactly once
-- produces exactly one canonical inscription.
+It does not explain purpose or meaning.
+See ARCHITECTURE.md for component responsibilities.
 
-Content alone does not determine canonicity.
+---
 
-If the winning bidder settles, the inscription is sent to them.
+## Sequence Invariants
 
-If the winning bidder does not settle, the inscription is sent to a provably unspendable address.
+Numbers advances through a monotonically increasing sequence of numbers.
 
-Bid validity is determined at auction start and remains fixed for the duration of that auction.
+For each number **N**, the system executes the following sequence exactly once.
 
 The sequence never pauses, retries, or rewinds.
+
+---
+
+## Auction
+
+For number **N**:
+
+- An auction opens.
+- The auction has a predefined end condition (time expiry or bid cap).
+- Only bids that are valid at auction start are accepted.
+- Bid validity remains fixed for the duration of the auction.
+
+At auction close, bidding ends permanently.
+
+---
+
+## Resolution
+
+At auction close, the auction resolves exactly once.
+
+Resolution produces a provisional outcome:
+- a winning bidder, or
+- no valid bids
+
+No further bids are accepted after resolution.
+
+---
+
+## Settlement
+
+If a winning bidder exists, settlement begins.
+
+- Settlement runs asynchronously.
+- Settlement has a fixed deadline.
+- Settlement success or failure does not affect subsequent auctions.
+
+Finalization produces exactly one destination:
+- settlement succeeds → winning address
+- settlement fails → Null Steward
+- no valid bids → Null Steward
+
+---
+
+## Inscription
+
+After finalization, exactly one inscription is produced for number **N**.
+
+- The inscription content is the number only.
+- The inscription is recorded in a Bitcoin transaction.
+- The destination is determined by finalization.
+
+The inscription is constructed and broadcast.
+The sequence then advances to **N + 1**.
+
+---
+
+## Guarantees
+
+For every number **N**:
+
+- The auction resolves exactly once.
+- Finalization produces exactly one destination.
+- An inscription is produced.
+- The sequence advances.
+
+These guarantees hold regardless of:
+- bidder behavior
+- settlement success
+- inscription interpretation

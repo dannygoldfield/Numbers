@@ -22,26 +22,31 @@ The default response to ambiguity is to stop starting new auctions.
 The following signals must be monitored continuously.
 
 ### Chain and Network
+
 - Bitcoin node sync status
 - Chain tip height and lag
 - Mempool fee levels
 
 ### Funds
+
 - Wallet balance
 - Reserved funds
 - Safety margin
 
 ### Auctions
+
 - Current auction number
 - Auction open or closed state
-- Pause or degraded status
+- Paused or degraded status
 
 ### Settlement and Inscription
+
 - Pending settlements count
 - Pending inscriptions count
-- Oldest pending age
+- Age of oldest pending item
 
 ### System Health
+
 - Error rates by category
 - Repeated or escalating failures
 - Unexpected state transitions
@@ -57,7 +62,7 @@ The following signals must be monitored continuously.
 
 **Response**
 1. Pause auctions at the next auction boundary
-2. Allow existing auctions to resolve
+2. Allow any open auction to resolve
 3. Defer inscription broadcasts if applicable
 4. Monitor fee normalization
 5. Resume auctions manually when acceptable
@@ -72,7 +77,7 @@ The following signals must be monitored continuously.
 **Response**
 1. Pause auctions at the next auction boundary
 2. Allow backlog to clear or finalize naturally
-3. Verify wallet and inscription capacity
+3. Verify wallet balance and inscription capacity
 4. Resume auctions manually when stable
 
 ---
@@ -84,14 +89,14 @@ The following signals must be monitored continuously.
 
 **Response**
 1. Do not retry automatically
-2. Record failure state durably
+2. Record the failure state durably
 3. Apply fee bump or alternate broadcast only if policy allows
 4. Finalize to Null Steward if required
 5. Do not reopen or re-resolve the auction
 
 ---
 
-### Node Failure or Desync
+### Node Failure or Desynchronization
 
 **Condition**
 - Node unavailable, desynced, or reporting inconsistent state
@@ -109,9 +114,9 @@ The following signals must be monitored continuously.
 
 1. Initiate pause (manual or automatic)
 2. Confirm no auction is currently accepting bids
-3. Verify pause status is visible in the UI
+3. Verify paused status is visible in the UI
 4. Record pause reason and timestamp
-5. Investigate and resolve underlying condition
+5. Investigate and resolve the underlying condition
 
 Pausing does not alter past outcomes.
 

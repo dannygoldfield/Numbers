@@ -2,7 +2,7 @@
 
 This document describes the intentional sequencing of the Numbers project.
 
-This is not a feature wishlist.
+This is not a feature wishlist.  
 It is a risk-reduction plan.
 
 Progress is measured by reduced uncertainty.
@@ -36,7 +36,7 @@ Phase 0 is complete only when ambiguity is intentional, not accidental.
 
 **Exit Conditions**
 - Repeated Testnet auctions complete without manual intervention
-- Pause and resume work as designed
+- Pause and resume behave as designed
 - Failure scenarios are understood, bounded, and survivable
 - No unresolved correctness questions remain
 
@@ -58,7 +58,7 @@ If Testnet behavior is surprising, this phase is not complete.
 - Operational procedures are exercised and reliable
 - Operator confidence is based on experience, not optimism
 
-Mainnet Pilot is still an experimental phase.
+The Mainnet Pilot remains experimental.  
 Safety takes precedence over throughput.
 
 ---
@@ -71,11 +71,11 @@ Safety takes precedence over throughput.
 - Improved tooling and automation
 - Reduced manual overhead where justified
 
-Expansion occurs only through adjustment of existing parameters.
+Expansion occurs only through adjustment of existing parameters.  
 No new core mechanisms are introduced casually.
 
 **Preconditions for Adjustment**
-- Review of incidents since last change
+- Review of incidents since the last change
 - Review of operational load and failure modes
 - Reaffirmation of threat assumptions
 - Explicit acceptance of increased exposure
@@ -96,5 +96,5 @@ Those outcomes emerge from system behavior, not planning.
 
 ## Design Principle
 
-Progress is defined by reduced uncertainty,
+Progress is defined by reduced uncertainty,  
 not increased scope.

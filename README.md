@@ -1,12 +1,37 @@
 # Numbers
 
+## What This Repository Is
+
+This repository defines the specification, constraints, and operational rules of the Numbers system.
+
+It is the reference definition of system behavior.
+It is not a product roadmap, marketplace, or general-purpose auction framework.
+
+Implementation details may evolve.
+The semantics defined here do not.
+
+---
+
 ## Overview
 
 Numbers is a system that auctions numbers sequentially.
 
-Each auction result produces a canonical inscription on Bitcoin.
-
+Each auction resolves exactly once.
+Each resolution produces a canonical inscription on Bitcoin.
 The inscription content is the number itself.
+
+The system records outcomes.
+It does not interpret meaning.
+
+---
+
+## Authorship and Operation
+
+Numbers is authored and operated by Danny Goldfield,
+operating under the system identity **123456789 and 0**.
+
+This repository defines the reference specification.
+Running code is expected to conform to it.
 
 ---
 
@@ -14,53 +39,55 @@ The inscription content is the number itself.
 
 Numbers is defined by fixed, non-negotiable semantics.
 
-These semantics are enforced by the system and documented in the project specifications. They do not change across environments or stages of development.
+These semantics are enforced by the system and documented in the specifications.
+They do not change across environments or stages of development.
+
+If an implementation violates these semantics, it is not Numbers.
 
 ---
 
 ## Project Structure
 
-Numbers is designed to run in multiple environments:
+Numbers operates across multiple environments:
 
 - Prototype
 - Testnet
 - Mainnet
 
-Environments differ by infrastructure only. 
-Auction behavior and invariants remain constant.
+Environments differ by infrastructure only.
+Auction behavior, sequencing, and invariants remain constant.
 
 ---
 
 ## Documentation
 
-Canonical system behavior and constraints are defined in the `docs/` directory:
+Canonical system behavior is defined in `docs/`:
 
-- `docs/PRD.md`  
-  Non-negotiable system invariants.
+- `PRD.md`  
+  System invariants and non-goals.
 
-- `docs/CORE-SEQUENCE.md`  
-  The auction and inscription sequence.
+- `CORE-SEQUENCE.md`  
+  The auction, settlement, and inscription sequence.
 
-- `docs/ARCHITECTURE.md`  
-  System structure and component responsibilities.
+- `ARCHITECTURE.md`  
+  System structure and authority boundaries.
 
-- `docs/WEBSITE-PRD.md`  
-  UI/UX requirements for the Numbers website.
+- `WEBSITE-PRD.md`  
+  Constraints for the public interface.
 
-- `docs/WHY.md`  
-  Rationale and motivation.
+- `WHY.md`  
+  Conceptual framing.
 
-See `docs/README.md` for a full documentation index.
+See `docs/README.md` for the full documentation index.
 
 ---
 
-## Development
+## Development Status
 
 Numbers currently operates on Bitcoin Testnet.
 
-Setup and execution instructions are provided in:
-
-- `docs/DEV.md`
+Development and execution details are intentionally scoped.
+This repository prioritizes correctness and definition over velocity.
 
 ---
 

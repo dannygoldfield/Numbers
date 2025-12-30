@@ -1,10 +1,14 @@
 # What if you could own a number?
 
-Some systems exist without a central authority.
+There are systems that operate without a central authority.
 
-Public blockchains record irreversible outcomes.
-Numbers circulate freely across cultures.
+1. Public blockchains record irreversible outcomes.  
+2. Numbers circulate freely across cultures.
 
 **Numbers** applies an irreversible record to a number.
 
-Ownership is the question.
+Nothing more.
+
+Ownership is not asserted.  
+Ownership is tested.
+

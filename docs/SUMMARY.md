@@ -4,10 +4,12 @@
 - [Read This First](READ-THIS-FIRST.md)
 - [What If](WHAT-IF.md)
 - [Bidder](BIDDER.md)
+- [Joke](JOKE.md)
 
 # System Definition
 - [Core Sequence](CORE-SEQUENCE.md)
 - [Architecture](ARCHITECTURE.md)
+- [Catalog](CATALOG.md)
 - [Environment-Determined Rendering](ENVIRONMENT-DETERMINED-RENDERING.md)
 
 # Product and Interface

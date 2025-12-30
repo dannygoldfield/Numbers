@@ -1,8 +1,11 @@
-# Bidder
+# Who is a Bidder?
 
-A bidder in **Numbers**:
+A bidder is someone who:
 
-1. Participates in auctions of Bitcoin inscriptions  
-2. Values minimal primitives  
-3. Accepts irreversible outcomes  
-4. Bids on a number
+1. participates in auctions of Bitcoin inscriptions  
+2. accepts irreversible outcomes  
+3. values minimal primitives  
+4. bids on a number  
+
+A bidder does not receive guarantees.  
+A bidder receives an outcome.

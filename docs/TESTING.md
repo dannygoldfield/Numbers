@@ -71,7 +71,7 @@ Mocks must not conceal real-world failure modes.
 **Includes**
 - Auction start and close
 - Bid submission
-- Cap reached scenarios
+- Cap-reached scenarios
 - Settlement success and failure
 - Inscription construction and broadcast
 - Durable recording of outcomes
@@ -127,7 +127,7 @@ Mainnet deployment requires all of the following:
 - Successful end-to-end Testnet runs across multiple auctions
 - Manual verification of pause and resume behavior
 - Manual verification of cap enforcement
-- Manual verification of failure handling paths
+- Manual verification of failure-handling paths
 - Review of logs for unexplained or ambiguous states
 
 If any test produces ambiguity, the system is not ready.

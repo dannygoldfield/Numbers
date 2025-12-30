@@ -2,7 +2,7 @@
 
 This document defines how secrets and configuration are handled by Numbers.
 
-Secrets and configuration are distinct.
+Secrets and configuration are distinct.  
 They are managed, rotated, and audited differently.
 
 ---
@@ -13,6 +13,7 @@ This document applies to all secrets and configuration values used by the Number
 
 It does not govern:
 - user wallet secrets
+- bidder key management
 - third-party client configuration
 - external infrastructure not directly controlled by Numbers
 
@@ -34,14 +35,14 @@ Secrets are subject to the following rules:
 - Never transmitted to clients
 - Never hard-coded in binaries
 
-Secrets must be treated as compromised if exposed outside their intended boundary.
+Any secret exposed outside its intended boundary must be treated as compromised.
 
 ---
 
 ## Secret Storage
 
 - Secrets are provided at runtime via environment variables or OS-secured keystores
-- Secrets are not persisted in application state or data stores
+- Secrets are not persisted in application state or databases
 - Access is limited to the operator and the running process
 - Offline backups are permitted only where recovery requires them
 
@@ -72,9 +73,10 @@ Configuration changes must be intentional and reviewable.
 
 ## Configuration Boundaries
 
-- Configuration must not redefine system invariants
-- Configuration must not override auction sequencing rules
-- Configuration must not bypass limits or circuit breakers
+Configuration must not:
+- redefine system invariants
+- override auction sequencing rules
+- bypass limits or circuit breakers
 
 If a behavior change cannot be expressed safely through configuration,
 it requires a code change.
@@ -90,11 +92,17 @@ it requires a code change.
 - Old secrets are retired immediately
 - Rotation events are documented
 
+Key rotation does not alter past outcomes.
+
+---
+
 ### Configuration Changes
 
 - Configuration changes are applied at startup
-- Configuration changes that reduce limits require an auction-boundary pause
-- Configuration changes that increase limits may be applied without interruption
+- Changes that reduce limits require an auction-boundary pause
+- Changes that increase limits may be applied without interruption
+
+Configuration changes must never retroactively affect completed auctions.
 
 ---
 
@@ -107,14 +115,14 @@ The system must be able to determine:
 - who performed the change
 - why the change occurred
 
-Secrets themselves are never logged.
+Secrets themselves are never logged.  
 Metadata about changes is.
 
 ---
 
 ## Design Principle
 
-Secrets confer power.
+Secrets confer power.  
 Configuration constrains behavior.
 
 If something cannot be rotated safely,

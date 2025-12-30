@@ -34,27 +34,27 @@ The following signals must be continuously observable.
 
 - Current auction number
 - Auction open or closed state
-- Time remaining in active auction
-- Pause or degraded status
+- Time remaining in the active auction
+- Paused or degraded status
 
 ### Settlement and Inscription
 
 - Pending settlements count
 - Pending inscriptions count
-- Oldest pending age
+- Age of oldest pending item
 - Finalization outcomes
 
 ### Wallet and Funds
 
 - Available wallet balance
-- Reserved funds for pending inscriptions
-- Safety threshold margin
+- Funds reserved for pending inscriptions
+- Safety margin relative to configured thresholds
 
 ### System Health
 
 - Error counts by category
 - Repeated or escalating failures
-- Unexpected state transitions
+- Unexpected or invalid state transitions
 
 ---
 
@@ -65,10 +65,10 @@ Alerts indicate conditions requiring human attention.
 Alerts trigger when:
 
 - Fee ceilings or cost thresholds are exceeded
-- Node falls behind chain tip beyond tolerance
-- Wallet balance drops below safety threshold
+- The Bitcoin node falls behind the chain tip beyond tolerance
+- Wallet balance drops below the safety threshold
 - Error rates exceed defined limits
-- State transitions violate expected order
+- State transitions violate the expected sequence
 
 Alerts do not take corrective action automatically.
 
@@ -90,10 +90,10 @@ Automatic recovery must not mask underlying faults.
 
 The system must provide durable visibility into:
 
-- logs with sufficient context to reconstruct events
-- timestamps for all state transitions
-- pause and resume events with causes
-- configuration and limit context at time of events
+- Logs with sufficient context to reconstruct events
+- Timestamps for all state transitions
+- Pause and resume events, including cause
+- Configuration and limit context active at the time of events
 
 Observability data must be retained long enough to support post-incident analysis.
 
@@ -101,7 +101,7 @@ Observability data must be retained long enough to support post-incident analysi
 
 ## Design Principle
 
-Silence is suspicious.
+Silence is suspicious.  
 Noise is worse.
 
 If the system cannot explain itself clearly,

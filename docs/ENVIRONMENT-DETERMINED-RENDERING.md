@@ -1,6 +1,8 @@
 # Environment-Determined Rendering
 
-This document defines how Numbers are rendered at view time.
+This document defines how Numbers are rendered at view time. 
+
+An environment may include a browser, operating system, wallet, indexer, or display context.
 
 Numbers inscriptions contain the number only.
 No appearance is specified at inscription time.
@@ -27,7 +29,7 @@ To preserve environment-determined rendering:
 - No styling is applied at inscription time.
 - Text must not be replaced with pixel-based renderings.
 - The number itself is never animated.
-- Text semantics and accessibility must be preserved by the environment.
+- Text semantics and accessibility are delegated to the environment.
 
 ## Implications
 
@@ -38,3 +40,4 @@ These differences are expected and accepted.
 
 Rendering variation is not customization.
 It is the consequence of deferring appearance to the environment.
+No variation changes the recorded outcome.

@@ -1,9 +1,14 @@
 # What if you could own a number?
 
-Blockchain technology enables irreversible, publicly verifiable records without a central operator.
+There are systems that operate without a central authority.
 
-The numbers we share across cultures also operate without a central authority.
+1. Public blockchains record irreversible outcomes.  
+2. Numbers circulate freely across cultures.
 
 **Numbers** applies an irreversible record to a number.
 
-Ownership is the question.
+Nothing more.
+
+Ownership is not asserted.  
+Ownership is tested.
+

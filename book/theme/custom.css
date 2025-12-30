@@ -6,13 +6,13 @@
 
 /* ---------------------------------------------------------
    1) COLOR PALETTE
-   Reduce perceived weight by lowering text brightness.
+   Adjust these variables to tune overall contrast.
    --------------------------------------------------------- */
 
 /* Default = dark mode */
 :root{
   --bg:#161616;
-  --fg:#c2c2c2;            /* dimmer body text */
+  --fg:#c2c2c2;            /* body text */
 
   --sidebar-bg:#161616;
   --sidebar-fg:#b3b3b3;
@@ -48,7 +48,7 @@
 
 /* ---------------------------------------------------------
    2) TYPOGRAPHY
-   Make default text lighter and headings less aggressive.
+   Lighter body text. Restrained headings.
    --------------------------------------------------------- */
 
 body{
@@ -62,26 +62,49 @@ body{
     Arial,
     sans-serif;
 
-  font-size: 1.15rem;   /* ↓ main body text size */
-  line-height:1.7;
-  font-weight:400;
+  font-size: 1.15rem;
+  line-height: 1.7;
+  font-weight: 400;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Body text color comes from mdBook variables, but we reinforce it */
+/* Reinforce body color */
 p, li, blockquote, .content{
   color: var(--fg);
 }
 
-/* Headings — align H1 with header title */
-h1{
-  font-size: 2.4rem;      /* match mdBook header title size */
+
+/* ---------------------------------------------------------
+   2a) TITLE ALIGNMENT
+   Book title and page H1 are intentionally identical.
+   Change here if you want hierarchy back.
+   --------------------------------------------------------- */
+
+/* Page title */
+.page h1,
+/* Header title ("Numbers Documentation") */
+.book-header h1,
+.menu-title{
+  font-size: 2.4rem;       /* single source of truth */
   font-weight: 400;
-  color: #cfcfcf;
+  line-height: 1.25;
   letter-spacing: 0.01em;
+  color: var(--fg);
 }
 
+/* Light mode title color */
+@media (prefers-color-scheme: light){
+  .page h1,
+  .book-header h1,
+  .menu-title{
+    color: var(--fg);
+  }
+}
+
+
+/* Secondary headings retain hierarchy */
 h2{
   font-size: 1.8rem;
   font-weight: 450;
@@ -95,33 +118,19 @@ h3{
 }
 
 @media (prefers-color-scheme: light){
-  h1, h2, h3{
+  h2, h3{
     color:#1a1a1a;
-  }
-}
-
-
-/* Top header title “Numbers Documentation” */
-.menu-title{
-  font-weight:400 !important;
-  color:#bdbdbd !important;
-  letter-spacing:0.01em;
-}
-
-@media (prefers-color-scheme: light){
-  .menu-title{
-    color:#2b2b2b !important;
   }
 }
 
 
 /* ---------------------------------------------------------
    3) CONTENT LAYOUT
-   Prevent nav arrows from covering text without widening them.
+   Keep nav arrows from overlapping text.
    --------------------------------------------------------- */
 
 :root{
-  --nav-gutter: 9.0rem; /* space to keep text clear of arrows */
+  --nav-gutter: 9rem; /* adjust to tune arrow clearance */
 }
 
 .content{
@@ -135,7 +144,7 @@ li{ margin: .35em 0; }
 
 /* Keep arrows visually minimal */
 .nav-chapters{
-  background: transparent !important; /* kills the blue slab */
+  background: transparent !important;
 }
 
 /* Smaller gutters on small screens */
@@ -145,48 +154,48 @@ li{ margin: .35em 0; }
 
 
 /* ---------------------------------------------------------
-   4) INLINE LINKS (CONTENT AREA)
-   Keep readable, not loud.
+   4) INLINE LINKS
+   Visible, not loud.
    --------------------------------------------------------- */
 
 .content a{
   color: var(--links);
-  text-decoration:none;
-  font-weight:450;
+  text-decoration: none;
+  font-weight: 450;
 }
 
 .content a:hover{
   color: var(--links-hover);
-  text-decoration:underline;
+  text-decoration: underline;
 }
 
 
 /* ---------------------------------------------------------
    5) SIDEBAR BEHAVIOR
-   Desktop pinned. Mobile behaves like mobile.
+   Desktop pinned. Mobile remains mobile.
    --------------------------------------------------------- */
 
 @media (min-width:1200px){
   html.sidebar-hidden .sidebar,
   html.sidebar-hidden .sidebar-scrollbox{
-    transform:none !important;
-    visibility:visible !important;
+    transform: none !important;
+    visibility: visible !important;
   }
 
   html.sidebar-hidden .page-wrapper{
-    margin-left:var(--sidebar-width) !important;
+    margin-left: var(--sidebar-width) !important;
   }
 }
 
 
 /* ---------------------------------------------------------
    6) SIDEBAR LINK STATES
-   Make left nav lighter: 400 normal, 600 only for active.
+   Quiet by default. Emphasis only on active.
    --------------------------------------------------------- */
 
 .sidebar a,
 .sidebar a:visited{
-  color:#a9a9a9 !important;   /* quieter default */
+  color:#a9a9a9 !important;
   text-decoration:none !important;
   font-weight:400;
 }
@@ -194,7 +203,6 @@ li{ margin: .35em 0; }
 .sidebar a:hover,
 .sidebar a:focus{
   color:#ffffff !important;
-  text-decoration:none !important;
 }
 
 .sidebar a.active,
@@ -203,4 +211,36 @@ li{ margin: .35em 0; }
   color:#ffffff !important;
   font-weight:600;
   background:transparent !important;
+}
+
+
+/* ---------------------------------------------------------
+   7) TABLES
+   Calm, left-aligned, readable.
+   --------------------------------------------------------- */
+
+table{
+  margin-left: 0;
+  margin-right: 0;
+}
+
+th, td{
+  text-align: left;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+}
+
+table + table{
+  margin-top: 2rem;
+}
+
+/* Optional epigraph feel for first table */
+table:first-of-type{
+  max-width: 30rem;
+}
+
+/* Allow tables to exceed text column */
+.content table{
+  width: calc(100vw - (2 * var(--nav-gutter)));
+  max-width: 750px;
 }

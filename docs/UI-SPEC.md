@@ -2,10 +2,10 @@
 
 This document defines the user interface behavior for Numbers.
 
-It constrains design decisions.
+It constrains design decisions.  
 It does not describe visual style.
 
-If there is a conflict between this document and any other specification,
+If there is a conflict between this document and any other specification,  
 `ARCHITECTURE.md` and `CORE-SEQUENCE.md` take precedence.
 
 ---
@@ -18,7 +18,7 @@ The Numbers interface exists to:
 - Allow participation only where the system allows it
 - Avoid interpretation, ranking, or narrative framing
 
-The interface reflects outcomes.
+The interface reflects outcomes.  
 It does not explain or justify them.
 
 ---
@@ -29,7 +29,10 @@ It does not explain or justify them.
 - There are no routes or modes
 - Navigation changes **scroll position**, not context
 
-The page always initializes at **the current auction**
+Content sections (e.g. About, Docs) do not constitute modes  
+and do not alter system state.
+
+The page always initializes at **the current auction**.
 
 There is no deep-linking to past or future numbers.
 
@@ -60,7 +63,8 @@ The interface must represent all system states explicitly.
 - Inscribed
 - Degraded
 
-The Inscribed state refers only to canonical inscriptions produced by the Numbers system.
+The Inscribed state refers only to canonical inscriptions  
+produced by the Numbers system.
 
 No UI-only states may be introduced.
 
@@ -76,6 +80,9 @@ Between auctions:
 - Auction timer displays `12:34:56` in an inactive state
 - Touching bidding elements has no effect
 - Menu remains active
+
+Timing values shown during the inter-auction pause are presentation defaults  
+and do not define protocol semantics.
 
 Liveness is communicated only through:
 - Countdown
@@ -174,6 +181,9 @@ The menu:
 - Does not introduce modes
 - Is always accessible
 
+Menu interaction never alters auction state  
+or temporal position.
+
 ---
 
 ## 12. About and Docs Sections
@@ -183,14 +193,15 @@ The menu:
 - Content expands inline
 - No overlays, modals, or windows
 
-Disclosure uses simple expansion.
+Disclosure uses simple expansion.  
 Scroll continuity is preserved.
 
 ---
 
 ## 13. Metadata Display Policy
 
-The interface displays only canonical inscriptions as defined by the system.
+The interface displays only canonical inscriptions  
+as defined by the system.
 
 ### Live Auction and Recent Results
 - No addresses displayed
@@ -229,7 +240,8 @@ Bid amount for no-bid outcomes is recorded as `0`.
 - Each links to its canonical external viewer
 - They are never embedded or interpreted by Numbers
 
-Transaction references are shown only for canonical system outcomes.
+Transaction references are shown only  
+for canonical system outcomes.
 
 ---
 
@@ -252,7 +264,9 @@ Any feature not explicitly described here is out of scope.
 
 ## 17. Guiding Principle
 
-The interface must never imply meaning beyond recorded outcomes.
+The interface must never imply meaning  
+beyond recorded outcomes.
 
-Numbers records.
+Numbers records.  
+The interface reflects.  
 Viewers interpret.

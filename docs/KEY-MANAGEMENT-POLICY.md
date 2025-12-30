@@ -24,47 +24,69 @@ Numbers never requires access to user private keys.
 
 ### Operational Wallet
 
-The operational wallet is used to facilitate system operations.
+The operational wallet supports system execution.
 
-- Receives bid payments
-- Pays transaction fees for inscriptions
-- Holds only the minimum balance required for operation
-- Balance is monitored continuously
+It is used to:
+- receive bid payments
+- pay transaction fees for inscriptions
+- coordinate settlement
 
-The operational wallet is a hot wallet by necessity, but exposure is intentionally minimized.
+Constraints:
+- holds only the minimum balance required for operation
+- balance is monitored continuously
+- funds are not custodied long-term
+
+The operational wallet is a hot wallet by necessity.
+Exposure is minimized by balance limits and operational discipline.
 
 ---
 
 ### Null Steward Addresses
 
-Null Steward addresses are used as final destinations when an auction does not result in successful settlement.
+Null Steward addresses are used when an auction does not finalize to a bidder.
 
-- Generated per occurrence
-- No private keys are retained or stored
-- The system does not possess spendable material for these addresses
-- Funds sent to these addresses are intentionally unrecoverable
+Properties:
+- generated per occurrence
+- intentionally unspendable
+- no private keys are retained or stored
+- no spendable material exists within the system
 
-Null Steward addresses are not controlled by any participant, including the operator.
+Funds routed to Null Steward addresses are unrecoverable by design.
+
+Null Steward addresses are not controlled by:
+- bidders
+- operators
+- the Numbers system itself
+
+They exist only to ensure the sequence advances without retry.
 
 ---
 
 ## Key Storage
 
-- Operational keys are stored using hardware-backed or OS-secured keystores where available
-- Plaintext private keys are never committed to source control
-- Keys are never logged or exposed via application output
-- Environment variables may be used for runtime configuration only, not long-term storage
+Operational keys are handled with the following constraints:
+
+- stored using hardware-backed or OS-secured keystores where available
+- never committed to source control
+- never logged or emitted in application output
+- never exposed via API responses
+
+Environment variables may be used for runtime configuration only.
+They are not a long-term storage mechanism.
 
 ---
 
 ## Backups
 
-- Operational keys are backed up offline
-- Backup access is strictly limited
-- Backup procedures are documented and tested periodically
-- Backup materials are stored separately from operational systems
+Operational keys are backed up offline.
 
-Backups exist solely to prevent accidental loss, not to enable routine access.
+Backup policy:
+- access is strictly limited
+- procedures are documented and periodically tested
+- backups are stored separately from operational systems
+
+Backups exist to prevent accidental loss only.
+They do not enable routine access.
 
 ---
 
@@ -72,23 +94,29 @@ Backups exist solely to prevent accidental loss, not to enable routine access.
 
 If key compromise is suspected or confirmed:
 
-- Auctions are paused at the next auction boundary
-- Remaining funds are swept to a newly generated wallet
-- Compromised keys are retired
-- New keys are generated and installed
-- The incident and response are documented
+1. Auctions pause at the next auction boundary
+2. Remaining funds are swept to newly generated keys
+3. Compromised keys are retired
+4. New keys are installed
+5. The incident and response are recorded
 
-Key rotation does not alter past auction outcomes.
+Key rotation does not alter:
+- past auction outcomes
+- recorded inscriptions
+- sequence history
 
 ---
 
 ## Design Principle
 
-Numbers does not custody user funds long-term.
+Numbers does not custody user funds as a service.
 
-Keys exist only to:
+System-controlled keys exist only to:
 - facilitate settlement
 - construct and broadcast inscriptions
-- maintain continuity of the auction sequence
+- preserve continuity of the sequence
 
-Key exposure is minimized in time, balance, and authority.
+Key exposure is minimized across:
+- time
+- balance
+- authority

@@ -2,6 +2,8 @@
 
 This checklist must be completed before Mainnet launch.
 
+Launch is an operational decision, not a calendar event.
+
 ---
 
 ## Documentation
@@ -19,30 +21,40 @@ This checklist must be completed before Mainnet launch.
 
 ---
 
-## Technical
+## Technical Readiness
 
-- [ ] Testnet end-to-end run complete
-- [ ] Failure scenarios tested
+- [ ] End-to-end Testnet run completed
+- [ ] Failure and degradation scenarios tested
 - [ ] Null Steward behavior verified
-- [ ] Fee spike simulation tested
+- [ ] Fee spike and high-cost conditions simulated
 
 ---
 
-## Operational
+## Operational Readiness
 
-- [ ] Monitoring in place
-- [ ] Backups verified
-- [ ] Manual controls tested
-- [ ] Pause / resume tested
+- [ ] Monitoring and alerts in place
+- [ ] Backups verified and accessible
+- [ ] Manual pause and resume controls tested
 - [ ] Incident response rehearsed
+- [ ] Operator familiar with runbook procedures
 
 ---
 
 ## Launch Decision
 
-- [ ] Caps configured
+- [ ] Auction caps configured
 - [ ] Circuit breakers enabled
-- [ ] Operator ready
-- [ ] Risk accepted
+- [ ] Operator available and prepared
+- [ ] Residual risk explicitly accepted
 
-Launch is a decision, not a date.
+---
+
+## Final Assertion
+
+Launch occurs only when:
+
+- The system behaves as specified
+- Failure modes are understood
+- Operators are prepared to pause first
+
+There is no urgency premium.

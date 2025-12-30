@@ -38,4 +38,11 @@ Numbers-Assets/
 *.mp4
 *.png
 *.jpg
+
+# mdBook generated output
 book/build/
+book/book/
+book/docs/
+
+
+

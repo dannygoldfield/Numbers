@@ -2,7 +2,7 @@
 
 This document defines the limits and circuit breaker framework governing Numbers.
 
-Limits exist to bound risk.
+Limits exist to bound risk.  
 Circuit breakers exist to contain failure.
 
 They are safety mechanisms, not market features.
@@ -24,10 +24,12 @@ Failures may arise from:
 
 Limits exist to ensure that no single auction, transaction, or failure mode can create unbounded financial or operational exposure.
 
-The goal is not to prevent failure.
+The goal is not to prevent failure.  
 The goal is to **bound the impact of failure**.
 
-Limits in Numbers take two forms: hard caps that bound exposure, and circuit breakers that constrain behavior under adverse conditions.
+Limits in Numbers take two forms:
+- hard caps that bound exposure
+- circuit breakers that constrain behavior under adverse conditions
 
 ---
 
@@ -49,7 +51,7 @@ It defends equally against bugs, automation errors, and adversarial behavior.
 
 When the cap is reached:
 
-- The auction resolves immediately
+- The auction resolves immediately at the moment the cap is reached
 - No further bids are accepted
 - The resolution is final and recorded
 - Settlement proceeds as normal
@@ -109,7 +111,8 @@ Limits may only be reduced at an auction boundary to avoid invalidating in-fligh
 
 ## Circuit Breaker Philosophy
 
-Circuit breakers protect the system under adverse conditions. Circuit breakers may degrade behavior without entering a paused state.
+Circuit breakers protect the system under adverse conditions.
+Circuit breakers may degrade behavior without entering a paused state.
 
 They are designed to keep auctions as independent as possible from:
 - payment success
@@ -122,7 +125,7 @@ Default rules:
 - Prefer degrading downstream processes over stopping the sequence
 - Avoid rewriting outcomes or timelines
 
-Circuit breakers do not correct failures.
+Circuit breakers do not correct failures.  
 They contain them.
 
 ---
@@ -212,6 +215,8 @@ This prevents oscillation and flapping.
 
 ## Paused State
 
+A paused state is distinct from the normal inter-auction pause.
+
 A paused state may occur only between auctions.
 
 When paused:
@@ -254,11 +259,13 @@ Pause and resume events are immutable records.
 
 Limits are features.
 
-They protect users.
-They protect operators.
+They protect users.  
+They protect operators.  
 They protect the integrity of the sequence.
 
 Safety mechanisms must never rewrite history.
+
+---
 
 ## Non-Goals
 
@@ -266,4 +273,3 @@ Limits and circuit breakers are not intended to:
 - shape bidding behavior
 - enforce fairness or price discovery
 - optimize market outcomes
-

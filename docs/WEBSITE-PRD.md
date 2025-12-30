@@ -6,11 +6,11 @@ This document defines normative constraints for the Numbers website.
 
 The Numbers website exists to expose the live auction sequence and allow participation.
 
-It does not define auction semantics or interpret ownership. 
-It reflects canonical system state accurately and in real time.
+It reflects canonical system state accurately, as reported by the system.
+It does not define auction semantics or interpret ownership.
 
-The website is an interface layer only.  
-It does not define auction semantics or ownership rules.
+The website is an interface layer only.
+It adapts to the system; it does not shape it.
 
 ---
 
@@ -30,27 +30,14 @@ The website must adapt to the system, never the reverse.
 
 ## 3. User Modes
 
-The website supports different modes of interaction, not personas.
+The website supports interaction modes, not personas.
 
-- **Observer**
-  - Views the live count
-  - Watches auctions progress
-  - Browses past numbers
+- **Observer** — views the live sequence and past outcomes
+- **Active Bidder** — participates during open auctions
+- **Past Winner** — verifies finalized inscription details
+- **Archivist** — inspects historical auctions and inscriptions
 
-- **Active Bidder**
-  - Views the current auction
-  - Places bids during the open window
-  - Monitors auction outcome
-
-- **Past Winner**
-  - Views finalized results
-  - Confirms inscription details
-
-- **Archivist**
-  - Browses historical auctions
-  - Inspects outcomes and inscriptions
-
-No mode is privileged visually.
+No mode is visually privileged.
 
 ---
 
@@ -62,18 +49,18 @@ The website must allow users to:
 2. See time remaining in the auction
 3. See the current high bid, if any
 4. Place a bid during the open window
-5. Observe when an auction closes
+5. Observe auction closure
 6. Observe settlement and finalization state
 7. View inscription results once available
-8. Browse previously completed numbers
+8. Browse completed numbers
 
-No task should require interpretation.
+No task may require interpretation.
 
 ---
 
 ## 5. System-Derived UI States
 
-The UI must explicitly support the following states:
+The UI must expose the following states:
 
 - Open auction
 - Closing / resolving
@@ -83,8 +70,8 @@ The UI must explicitly support the following states:
 - Inscribed (canonical txid and satpoint visible)
 - Degraded (partial or delayed data)
 
-All states must be visible and legible.  
-No state should be hidden to simplify the interface.
+All states must be visible.
+No state may be hidden to simplify presentation.
 
 ---
 
@@ -92,72 +79,72 @@ No state should be hidden to simplify the interface.
 
 The website must:
 
-- Never imply ownership before finalization
-- Never rank or highlight numbers by perceived importance
-- Never decorate or stylize the number itself
-- Never suppress failure or no-bid outcomes
-- Never reframe delays as errors unless they are errors
+- Avoid implying ownership before finalization
+- Avoid ranking or highlighting numbers
+- Avoid decorating or stylizing the number itself
+- Display no-bid and nonpayment outcomes plainly
+- Distinguish delay from error
 
 The website must not:
 
 - Assign meaning to specific numbers
-- Add narrative or explanatory overlays by default
 - Suggest rarity, value, or symbolism through design
+- Add narrative or explanatory overlays by default
+
+---
 
 ## 7. Tone, Rhythm, and Non-Semantic Motion
 
 The website may express time and system rhythm, but not meaning.
 
-Motion, transitions, and temporal cues may be used to signal:
-- The passage of time
-- The closing of an auction
-- A change in system state
+Motion and transitions may indicate:
+- Passage of time
+- Auction closure
+- State change
 
-These expressions must be:
+These cues must be:
 - Outcome-agnostic
-- Identical across all resolution outcomes
+- Uniform across all resolutions
 - Brief and non-accumulative
-- Non-repeatable outside their triggering state transition
+- Triggered only by state transitions
 
 The website must not use motion, color, sound, or effects to:
 - Celebrate outcomes
 - Signal success or failure
 - Create reward loops
-- Assign emotional value to specific numbers
+- Assign emotional value
 
-Temporal cadence (e.g. fixed auction duration) may carry character.
-State transitions may be perceptible.
+Temporal cadence may carry character.
 Meaning must remain untouched by presentation.
-
 
 ---
 
 ## 8. Design Freedom
 
-The following are explicitly allowed:
+The following are permitted:
 
-- Typography choices outside the number itself
-- Motion and transitions that reflect time or state changes
-- Sound (optional, non-semantic)
-- Density of information
-- Collapsible or progressive disclosure
-- Different layouts for live vs historical views
+- Typography outside the number itself
+- Non-semantic motion tied to time or state
+- Optional sound without semantic meaning
+- Information density choices
+- Progressive disclosure
+- Distinct live vs historical layouts
 
-Design choices must not alter meaning.
+Design freedom ends where meaning begins.
 
 ---
 
 ## 9. Error and Degraded States
 
-The website must handle degraded conditions visibly.
+Degraded conditions must be visible.
 
 Examples:
 - RPC unavailable
 - Delayed confirmations
 - Settlement pending beyond expectation
 
-Degraded does not mean broken.  
-The UI should communicate uncertainty without drama.
+Degraded does not mean broken.
+Uncertainty should be communicated plainly.
 
 ---
 
@@ -167,21 +154,19 @@ The website does not:
 
 - Educate users about Bitcoin or Ordinals
 - Explain why numbers matter
-- Encourage specific bidding behavior
-- Provide social features or commentary
-- Optimize for engagement metrics
-
-Those concerns live elsewhere, if at all.
+- Encourage bidding behavior
+- Provide social features
+- Optimize engagement
 
 ---
 
 ## 11. Success Criteria
 
-The website is successful if:
+The website succeeds if:
 
 - System state is accurately reflected
-- Transitions between states are clear
+- State transitions are legible
 - No UI element contradicts system invariants
-- Users can observe the sequence without confusion
+- The sequence can be observed without confusion
 
 Aesthetic success is secondary to semantic correctness.
