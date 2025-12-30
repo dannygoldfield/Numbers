@@ -1,0 +1,62 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start bitcoind (testnet)",
+      "type": "shell",
+      "command": "bitcoind -testnet -datadir=/Volumes/DannyGoldfield-WorkDrive/bitcoin-testnet",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "bitcoind"
+      }
+    },
+    {
+      "label": "Run Numbers App (cargo run)",
+      "type": "shell",
+      "command": "cargo run",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "cargo"
+      }
+    },
+    {
+      "label": "Check testnet blockchaininfo",
+      "type": "shell",
+      "command": "bitcoin-cli -testnet -rpcuser=Numbers -rpcpassword=auction123 getblockchaininfo",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "cli"
+      },
+      "options": {
+        "env": {
+          "RPC_USER": "Numbers",
+          "RPC_PASS": "auction123"
+        }
+      }
+    },
+    {
+      "label": "Open results folder",
+      "type": "shell",
+      "command": "open results",
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "results"
+      }
+    }
+  ]
+}
