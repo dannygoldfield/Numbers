@@ -30,7 +30,7 @@
         <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="book/theme/custom.css">
+        <link rel="stylesheet" href="theme/custom.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -207,19 +207,90 @@ Ownership is tested.</p>
 </ol>
 <p>A bidder does not receive guarantees.<br />
 A bidder receives an outcome.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="is-this-a-joke"><a class="header" href="#is-this-a-joke">Is this a Joke?</a></h1>
-<p>Yes.</p>
-<p><strong>Numbers</strong> begins as a joke in the ordinary sense:
-an absurd question taken seriously.</p>
-<p>But for the joke to work:</p>
-<ol>
-<li>it cannot live in the system.</li>
-<li>the technology must be exact.</li>
-<li>the rules must be strict.</li>
-<li>the outcomes must be irreversible.</li>
-</ol>
-<p>Nothing in the protocol acknowledges the joke.</p>
-<p>The system asserts nothing beyond the outcome.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="glossary"><a class="header" href="#glossary">Glossary</a></h1>
+<p>This glossary defines terms used elsewhere in the project.<br />
+Definitions are descriptive, not binding.</p>
+<hr />
+<h2 id="auction"><a class="header" href="#auction">Auction</a></h2>
+<p>A fixed-duration process in which bids may be placed for the next number in the sequence.</p>
+<p>Each auction resolves exactly once.</p>
+<hr />
+<h2 id="bitcoin"><a class="header" href="#bitcoin">Bitcoin</a></h2>
+<p>The Bitcoin network and blockchain used as the settlement and recording layer for Numbers.</p>
+<p>Bitcoin is the sole durable record of transactions and inscriptions.</p>
+<hr />
+<h2 id="canonical-numbers"><a class="header" href="#canonical-numbers">Canonical (Numbers)</a></h2>
+<p>Recognized by the Numbers system as the outcome for a given number.</p>
+<p>Canonical status is procedural.
+It is not a claim about uniqueness, authority, or meaning on Bitcoin.</p>
+<hr />
+<h2 id="inscription"><a class="header" href="#inscription">Inscription</a></h2>
+<p>Data embedded in a Bitcoin transaction using the Ordinals protocol.</p>
+<p>In Numbers:</p>
+<ul>
+<li>the inscription content is the number only</li>
+<li>inscriptions are recorded as witness data</li>
+<li>multiple inscriptions of the same number may exist on-chain</li>
+</ul>
+<p>Only inscriptions produced by the Numbers system are treated as system-recognized outcomes.</p>
+<hr />
+<h2 id="null-steward"><a class="header" href="#null-steward">Null Steward</a></h2>
+<p>A system-defined destination used when an auction produces no settled winner.</p>
+<p>The Null Steward:</p>
+<ul>
+<li>is a provably unspendable address</li>
+<li>is not controlled by any participant</li>
+<li>ensures the sequence advances without retry</li>
+</ul>
+<p>Null Steward is a destination, not an outcome.</p>
+<hr />
+<h2 id="number"><a class="header" href="#number">Number</a></h2>
+<p>An integer in the sequential series starting at 1.</p>
+<p>Each number is auctioned exactly once.</p>
+<hr />
+<h2 id="numbers-catalog"><a class="header" href="#numbers-catalog">Numbers Catalog</a></h2>
+<p>A derived index of Numbers auction outcomes and their corresponding on-chain inscription references (txid, satpoint, timestamps).</p>
+<p>The Catalog records what happened.
+It does not define ownership, meaning, or validity.</p>
+<p>Bitcoin remains the sole source of truth.</p>
+<hr />
+<h2 id="ordinals"><a class="header" href="#ordinals">Ordinals</a></h2>
+<p>A protocol and indexing convention that associates data with specific satoshis.</p>
+<p>Ordinals provide legibility and location.
+They do not provide consensus, enforcement, or meaning.</p>
+<hr />
+<h2 id="satoshi"><a class="header" href="#satoshi">Satoshi</a></h2>
+<p>The smallest unit of Bitcoin.</p>
+<hr />
+<h2 id="satpoint"><a class="header" href="#satpoint">Satpoint</a></h2>
+<p>A reference that identifies a specific satoshi within a specific transaction output.</p>
+<hr />
+<h2 id="resolution"><a class="header" href="#resolution">Resolution</a></h2>
+<p>The act of determining the provisional outcome of an auction at close.</p>
+<p>Resolution identifies:</p>
+<ul>
+<li>a winning bidder, or</li>
+<li>no valid bids</li>
+</ul>
+<p>Resolution occurs exactly once per auction.</p>
+<hr />
+<h2 id="settlement"><a class="header" href="#settlement">Settlement</a></h2>
+<p>The process that determines the final destination for an auction’s inscription.</p>
+<p>Settlement finalizes to:</p>
+<ul>
+<li>the winning bidder (if settlement succeeds), or</li>
+<li>the Null Steward (if settlement fails or no bids exist)</li>
+</ul>
+<p>Settlement does not block progression of the sequence.</p>
+<hr />
+<h2 id="system-recognized"><a class="header" href="#system-recognized">System-Recognized</a></h2>
+<p>Designated by the Numbers system as the authoritative outcome for a given auction number.</p>
+<p>There is exactly one system-recognized outcome per number.</p>
+<p>Recognition is procedural, not semantic.</p>
+<hr />
+<h2 id="viewer-determined-rendering"><a class="header" href="#viewer-determined-rendering">Viewer-Determined Rendering</a></h2>
+<p>A property of Numbers in which the appearance of a number is defined by the viewing environment, not by the system.</p>
+<p>Numbers specify content only, not presentation.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="core-sequence"><a class="header" href="#core-sequence">Core Sequence</a></h1>
 <p>This document defines the invariants of Numbers.</p>
 <p>It describes what must always happen,
@@ -233,7 +304,7 @@ See ARCHITECTURE.md for component responsibilities.</p>
 <p>For each number <strong>N</strong>, the system executes the following sequence exactly once.</p>
 <p>The sequence never pauses, retries, or rewinds.</p>
 <hr />
-<h2 id="auction"><a class="header" href="#auction">Auction</a></h2>
+<h2 id="auction-1"><a class="header" href="#auction-1">Auction</a></h2>
 <p>For number <strong>N</strong>:</p>
 <ul>
 <li>An auction opens.</li>
@@ -243,7 +314,7 @@ See ARCHITECTURE.md for component responsibilities.</p>
 </ul>
 <p>At auction close, bidding ends permanently.</p>
 <hr />
-<h2 id="resolution"><a class="header" href="#resolution">Resolution</a></h2>
+<h2 id="resolution-1"><a class="header" href="#resolution-1">Resolution</a></h2>
 <p>At auction close, the auction resolves exactly once.</p>
 <p>Resolution produces a provisional outcome:</p>
 <ul>
@@ -252,7 +323,7 @@ See ARCHITECTURE.md for component responsibilities.</p>
 </ul>
 <p>No further bids are accepted after resolution.</p>
 <hr />
-<h2 id="settlement"><a class="header" href="#settlement">Settlement</a></h2>
+<h2 id="settlement-1"><a class="header" href="#settlement-1">Settlement</a></h2>
 <p>If a winning bidder exists, settlement begins.</p>
 <ul>
 <li>Settlement runs asynchronously.</li>
@@ -266,7 +337,7 @@ See ARCHITECTURE.md for component responsibilities.</p>
 <li>no valid bids → Null Steward</li>
 </ul>
 <hr />
-<h2 id="inscription"><a class="header" href="#inscription">Inscription</a></h2>
+<h2 id="inscription-1"><a class="header" href="#inscription-1">Inscription</a></h2>
 <p>After finalization, exactly one inscription is produced for number <strong>N</strong>.</p>
 <ul>
 <li>The inscription content is the number only.</li>
@@ -1220,7 +1291,7 @@ not what the system claims is true.</p>
 not arbitrary on-chain activity.</p>
 <p>Each record is immutable once written.</p>
 <hr />
-<h2 id="auction-1"><a class="header" href="#auction-1">Auction</a></h2>
+<h2 id="auction-2"><a class="header" href="#auction-2">Auction</a></h2>
 <p>Represents a single auction in the sequence.</p>
 <p><strong>Fields</strong></p>
 <ul>
@@ -1247,7 +1318,7 @@ It is never modified after close.</p>
 and remains fixed for the duration of that auction.</p>
 <p>Bids are never deleted or rewritten.</p>
 <hr />
-<h2 id="resolution-1"><a class="header" href="#resolution-1">Resolution</a></h2>
+<h2 id="resolution-2"><a class="header" href="#resolution-2">Resolution</a></h2>
 <p>Represents the outcome determined at auction close.</p>
 <p><strong>Fields</strong></p>
 <ul>
@@ -1259,7 +1330,7 @@ and remains fixed for the duration of that auction.</p>
 <p>Resolution occurs exactly once per auction.</p>
 <p>Resolution does not depend on settlement success.</p>
 <hr />
-<h2 id="settlement-1"><a class="header" href="#settlement-1">Settlement</a></h2>
+<h2 id="settlement-2"><a class="header" href="#settlement-2">Settlement</a></h2>
 <p>Represents whether the provisional winner fulfilled settlement requirements.</p>
 <p><strong>Fields</strong></p>
 <ul>
@@ -1271,7 +1342,7 @@ and remains fixed for the duration of that auction.</p>
 <p>Settlement finalizes the inscription destination.
 It does not delay or alter subsequent auctions.</p>
 <hr />
-<h2 id="inscription-1"><a class="header" href="#inscription-1">Inscription</a></h2>
+<h2 id="inscription-2"><a class="header" href="#inscription-2">Inscription</a></h2>
 <p>Represents the on-chain inscription produced by a finalized outcome.</p>
 <p><strong>Fields</strong></p>
 <ul>
@@ -1465,90 +1536,6 @@ The system does not adapt to clients.</p>
 <h2 id="guiding-principle"><a class="header" href="#guiding-principle">Guiding Principle</a></h2>
 <p>The API exposes facts.</p>
 <p>Interpretation happens elsewhere.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="glossary"><a class="header" href="#glossary">Glossary</a></h1>
-<p>This glossary defines terms used elsewhere in the project.<br />
-Definitions are descriptive, not binding.</p>
-<hr />
-<h2 id="auction-2"><a class="header" href="#auction-2">Auction</a></h2>
-<p>A fixed-duration process in which bids may be placed for the next number in the sequence.</p>
-<p>Each auction resolves exactly once.</p>
-<hr />
-<h2 id="bitcoin"><a class="header" href="#bitcoin">Bitcoin</a></h2>
-<p>The Bitcoin network and blockchain used as the settlement and recording layer for Numbers.</p>
-<p>Bitcoin is the sole durable record of transactions and inscriptions.</p>
-<hr />
-<h2 id="canonical-numbers"><a class="header" href="#canonical-numbers">Canonical (Numbers)</a></h2>
-<p>Recognized by the Numbers system as the outcome for a given number.</p>
-<p>Canonical status is procedural.
-It is not a claim about uniqueness, authority, or meaning on Bitcoin.</p>
-<hr />
-<h2 id="inscription-2"><a class="header" href="#inscription-2">Inscription</a></h2>
-<p>Data embedded in a Bitcoin transaction using the Ordinals protocol.</p>
-<p>In Numbers:</p>
-<ul>
-<li>the inscription content is the number only</li>
-<li>inscriptions are recorded as witness data</li>
-<li>multiple inscriptions of the same number may exist on-chain</li>
-</ul>
-<p>Only inscriptions produced by the Numbers system are treated as system-recognized outcomes.</p>
-<hr />
-<h2 id="null-steward"><a class="header" href="#null-steward">Null Steward</a></h2>
-<p>A system-defined destination used when an auction produces no settled winner.</p>
-<p>The Null Steward:</p>
-<ul>
-<li>is a provably unspendable address</li>
-<li>is not controlled by any participant</li>
-<li>ensures the sequence advances without retry</li>
-</ul>
-<p>Null Steward is a destination, not an outcome.</p>
-<hr />
-<h2 id="number"><a class="header" href="#number">Number</a></h2>
-<p>An integer in the sequential series starting at 1.</p>
-<p>Each number is auctioned exactly once.</p>
-<hr />
-<h2 id="numbers-catalog"><a class="header" href="#numbers-catalog">Numbers Catalog</a></h2>
-<p>A derived index of Numbers auction outcomes and their corresponding on-chain inscription references (txid, satpoint, timestamps).</p>
-<p>The Catalog records what happened.
-It does not define ownership, meaning, or validity.</p>
-<p>Bitcoin remains the sole source of truth.</p>
-<hr />
-<h2 id="ordinals"><a class="header" href="#ordinals">Ordinals</a></h2>
-<p>A protocol and indexing convention that associates data with specific satoshis.</p>
-<p>Ordinals provide legibility and location.
-They do not provide consensus, enforcement, or meaning.</p>
-<hr />
-<h2 id="satoshi"><a class="header" href="#satoshi">Satoshi</a></h2>
-<p>The smallest unit of Bitcoin.</p>
-<hr />
-<h2 id="satpoint"><a class="header" href="#satpoint">Satpoint</a></h2>
-<p>A reference that identifies a specific satoshi within a specific transaction output.</p>
-<hr />
-<h2 id="resolution-2"><a class="header" href="#resolution-2">Resolution</a></h2>
-<p>The act of determining the provisional outcome of an auction at close.</p>
-<p>Resolution identifies:</p>
-<ul>
-<li>a winning bidder, or</li>
-<li>no valid bids</li>
-</ul>
-<p>Resolution occurs exactly once per auction.</p>
-<hr />
-<h2 id="settlement-2"><a class="header" href="#settlement-2">Settlement</a></h2>
-<p>The process that determines the final destination for an auction’s inscription.</p>
-<p>Settlement finalizes to:</p>
-<ul>
-<li>the winning bidder (if settlement succeeds), or</li>
-<li>the Null Steward (if settlement fails or no bids exist)</li>
-</ul>
-<p>Settlement does not block progression of the sequence.</p>
-<hr />
-<h2 id="system-recognized"><a class="header" href="#system-recognized">System-Recognized</a></h2>
-<p>Designated by the Numbers system as the authoritative outcome for a given auction number.</p>
-<p>There is exactly one system-recognized outcome per number.</p>
-<p>Recognition is procedural, not semantic.</p>
-<hr />
-<h2 id="viewer-determined-rendering"><a class="header" href="#viewer-determined-rendering">Viewer-Determined Rendering</a></h2>
-<p>A property of Numbers in which the appearance of a number is defined by the viewing environment, not by the system.</p>
-<p>Numbers specify content only, not presentation.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="threat-model"><a class="header" href="#threat-model">Threat Model</a></h1>
 <p>This document defines the security boundaries, assumptions, and accepted risks of Numbers.</p>
 <p>Numbers prioritizes correctness and containment over availability.
@@ -3059,6 +3046,22 @@ not for narrative or symbolism.</p>
 
         </div>
 
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
 
 
 
