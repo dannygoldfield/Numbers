@@ -1,0 +1,13 @@
+[book]
+title = "Numbers Documentation"
+src = "docs"
+
+[build]
+build-dir = "book/build"
+
+[output.html]
+additional-css = ["book/theme/custom.css"]
+
+[output.html.fold]
+enable = true
+level = 0
