@@ -1,4 +1,4 @@
-# Architecture
+# Architecture — Numbers
 
 This document defines how Numbers behaves.
 
@@ -79,10 +79,10 @@ Settlement runs asynchronously and has a deadline.
 
 Finalization produces exactly one destination:
 - **Winner settles before deadline → winning address**
-- **Winner fails to settle → Null Steward**
-- **No valid bids → Null Steward**
+- **Winner fails to settle → NullSteward**
+- **No valid bids → NullSteward**
 
-The **Null Steward** is a provably unspendable address.
+The **NullSteward** is a provably unspendable address.
 
 Resolution and settlement do not delay subsequent auctions.
 
@@ -98,12 +98,12 @@ After finalization, an inscription transaction is constructed and broadcast.
 
 An inscription is **recognized by the system** only if:
 - it is produced by the system’s finalized outcome for that number
-- its txid and satpoint are recorded in the Numbers Catalog
+- its txid and satpoint are recorded in the NumbersCatalog
 
 Content alone does not establish provenance.
 Recognition is procedural, not visual.
 
-Finalization to the Null Steward also produces an inscription.
+Finalization to the NullSteward also produces an inscription.
 Absence of a winner does not halt inscription.
 
 ---
@@ -132,10 +132,10 @@ Interpretation happens elsewhere.
 
 ## 4. Catalog
 
-The Numbers Catalog is a derived index.
+The NumbersCatalog is a derived index.
 
 It records, for each auction number:
-- final destination (winning address or Null Steward)
+- final destination (winning address or NullSteward)
 - inscription txid
 - inscription satpoint
 - associated timestamps
@@ -180,7 +180,7 @@ from transactions and inscriptions alone.
 
 ### Rebuildability
 
-The Numbers Catalog is not a source of truth.
+The NumbersCatalog is not a source of truth.
 It is a derived view over Bitcoin data.
 
 Given:

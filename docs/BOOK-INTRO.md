@@ -1,4 +1,4 @@
-# Numbers Documentation
+# Numbers Documentation — Numbers
 
 This book renders documentation sourced from the `/docs` directory.
 

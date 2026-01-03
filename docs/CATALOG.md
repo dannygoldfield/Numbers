@@ -1,4 +1,4 @@
-# Catalog
+# Catalog — Numbers
 
 The system-maintained record of auction outcomes and their corresponding
 on-chain inscription references (txid, satpoint, timestamps).

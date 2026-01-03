@@ -1,4 +1,4 @@
-# Product Requirements Document
+# Product Requirements Document — Numbers
 
 This document defines normative constraints for Numbers.
 
@@ -47,7 +47,7 @@ These properties must remain true across all implementations, environments, and 
 4. Each number produces exactly one canonical inscription.
 5. There are no retries and no re-auctions.
 6. Settlement does not block progression to the next number.
-7. Nonpayment and no-bid outcomes are final and normal, and resolve to the Null Steward.
+7. Nonpayment and no-bid outcomes are final and normal, and resolve to the NullSteward.
 8. Inscription content is the number only.
 9. Rendering is determined entirely by the viewing environment.
 

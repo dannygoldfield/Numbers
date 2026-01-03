@@ -1,4 +1,4 @@
-# Poetics
+# Poetics — Numbers
 
 These poems are not requirements.
 They are recorded thoughts, partial models, and conceptual probes.
@@ -63,7 +63,7 @@ Absence is treated as a legitimate outcome, not a bug to patch.
 Influence:
 - CORE-SEQUENCE.md
 - PRD.md (nonpayment invariants)
-- Null Steward definition
+- NullSteward definition
 
 ---
 

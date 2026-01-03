@@ -221,9 +221,9 @@ Every auction resolves to a destination.
   - Destination = winner’s address
 
 - No-bid or failed-settlement auction:
-  - Destination = Null Steward
+  - Destination = NullSteward
 
-Null Steward:
+NullSteward:
 - Is a system-controlled destination
 - Uses a new address per occurrence
 - Is intentionally unspendable

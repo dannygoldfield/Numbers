@@ -1,4 +1,4 @@
-# Key Management Policy
+# Key Management Policy — Numbers
 
 This document defines how cryptographic keys are generated, stored, and handled by Numbers.
 
@@ -41,9 +41,9 @@ Exposure is minimized by balance limits and operational discipline.
 
 ---
 
-### Null Steward Addresses
+### NullSteward Addresses
 
-Null Steward addresses are used when an auction does not finalize to a bidder.
+NullSteward addresses are used when an auction does not finalize to a bidder.
 
 Properties:
 - generated per occurrence
@@ -51,9 +51,9 @@ Properties:
 - no private keys are retained or stored
 - no spendable material exists within the system
 
-Funds routed to Null Steward addresses are unrecoverable by design.
+Funds routed to NullSteward addresses are unrecoverable by design.
 
-Null Steward addresses are not controlled by:
+NullSteward addresses are not controlled by:
 - bidders
 - operators
 - the Numbers system itself

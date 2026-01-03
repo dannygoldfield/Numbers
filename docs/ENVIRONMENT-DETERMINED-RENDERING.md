@@ -1,4 +1,4 @@
-# Environment-Determined Rendering
+# Environment-Determined Rendering — Numbers
 
 This document defines how Numbers are rendered at view time. 
 

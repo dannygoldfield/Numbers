@@ -1,4 +1,4 @@
-# Glossary
+# Glossary — Numbers
 
 This glossary defines terms used elsewhere in the project.  
 Definitions are descriptive, not binding.
@@ -39,15 +39,15 @@ Only inscriptions produced by the Numbers system are treated as system-recognize
 
 ---
 
-## Null Steward
+## NullSteward
 A system-defined destination used when an auction produces no settled winner.
 
-The Null Steward:
+The NullSteward:
 - is a provably unspendable address
 - is not controlled by any participant
 - ensures the sequence advances without retry
 
-Null Steward is a destination, not an outcome.
+NullSteward is a destination, not an outcome.
 
 ---
 
@@ -58,7 +58,7 @@ Each number is auctioned exactly once.
 
 ---
 
-## Numbers Catalog
+## NumbersCatalog
 A derived index of Numbers auction outcomes and their corresponding on-chain inscription references (txid, satpoint, timestamps).
 
 The Catalog records what happened.
@@ -102,7 +102,7 @@ The process that determines the final destination for an auction’s inscription
 
 Settlement finalizes to:
 - the winning bidder (if settlement succeeds), or
-- the Null Steward (if settlement fails or no bids exist)
+- the NullSteward (if settlement fails or no bids exist)
 
 Settlement does not block progression of the sequence.
 

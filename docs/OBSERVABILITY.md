@@ -1,4 +1,4 @@
-# Observability
+# Observability — Numbers
 
 This document defines how the health and correctness of the Numbers system is observed.
 

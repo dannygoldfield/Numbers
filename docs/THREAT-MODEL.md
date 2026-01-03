@@ -88,7 +88,7 @@ The following risks operate within the trust boundaries defined above.
 - **Risk:** Winning bidder does not settle
 - **Mitigation:**
   - Settlement window enforced
-  - On failure, destination defaults to Null Steward
+  - On failure, destination defaults to NullSteward
   - Sequence advances without rollback
 
 ### Wallet Compromise
@@ -96,7 +96,7 @@ The following risks operate within the trust boundaries defined above.
 - **Mitigation:**
   - Minimal hot wallet balances
   - No long-term custody of user funds
-  - Null Steward outputs intentionally unspendable
+  - NullSteward outputs intentionally unspendable
 
 ### Double Spend or RBF Abuse
 - **Risk:** Bid payment invalidated

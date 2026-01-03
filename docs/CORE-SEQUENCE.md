@@ -1,4 +1,4 @@
-# Core Sequence
+# Core Sequence — Numbers
 
 This document defines the invariants of Numbers.
 
@@ -56,8 +56,8 @@ If a winning bidder exists, settlement begins.
 
 Finalization produces exactly one destination:
 - settlement succeeds → winning address
-- settlement fails → Null Steward
-- no valid bids → Null Steward
+- settlement fails → NullSteward
+- no valid bids → NullSteward
 
 ---
 

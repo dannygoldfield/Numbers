@@ -1,4 +1,4 @@
-# Secrets and Configuration
+# Secrets and Configuration — Numbers
 
 This document defines how secrets and configuration are handled by Numbers.
 

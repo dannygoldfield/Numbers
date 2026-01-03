@@ -1,4 +1,4 @@
-# Launch Checklist
+# Launch Checklist — Numbers
 
 This checklist must be completed before Mainnet launch.
 
@@ -25,7 +25,7 @@ Launch is an operational decision, not a calendar event.
 
 - [ ] End-to-end Testnet run completed
 - [ ] Failure and degradation scenarios tested
-- [ ] Null Steward behavior verified
+- [ ] NullSteward behavior verified
 - [ ] Fee spike and high-cost conditions simulated
 
 ---

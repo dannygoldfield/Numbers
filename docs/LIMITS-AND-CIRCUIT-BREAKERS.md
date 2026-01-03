@@ -1,4 +1,4 @@
-# Limits and Circuit Breakers
+# Limits and Circuit Breakers — Numbers
 
 This document defines the limits and circuit breaker framework governing Numbers.
 
@@ -141,7 +141,7 @@ Circuit breakers may act only at the following points, listed in order of prefer
 
 2. **Settlement handling**
    - allow deadlines to expire naturally
-   - finalize to Null Steward when required
+   - finalize to NullSteward when required
 
 3. **Bid intake**
    - temporarily disable new bids

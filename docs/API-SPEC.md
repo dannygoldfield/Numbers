@@ -1,4 +1,4 @@
-# Application Programming Interface Specification
+# Application Programming Interface Specification — Numbers
 
 This document defines the external API exposed by the Numbers backend.
 
@@ -68,7 +68,7 @@ Returns finalized auction outcomes in sequence order.
 
 Includes, per entry:
 - auction number
-- final destination (winner address or Null Steward)
+- final destination (winner address or NullSteward)
 - inscription txid
 - inscription satpoint
 - timestamps

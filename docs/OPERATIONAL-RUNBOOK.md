@@ -1,4 +1,4 @@
-# Operational Runbook
+# Operational Runbook — Numbers
 
 This document defines how Numbers is operated in production.
 
@@ -91,7 +91,7 @@ The following signals must be monitored continuously.
 1. Do not retry automatically
 2. Record the failure state durably
 3. Apply fee bump or alternate broadcast only if policy allows
-4. Finalize to Null Steward if required
+4. Finalize to NullSteward if required
 5. Do not reopen or re-resolve the auction
 
 ---

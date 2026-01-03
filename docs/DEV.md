@@ -1,27 +1,91 @@
-# Development# Development Setup (Testnet)
+# DEV — Development and Implementation Contract — Numbers
 
-This document describes how to run Numbers locally for development and testing on Bitcoin Testnet.
+This document defines how Numbers is implemented and run in development.
+It is procedural and binding.
 
-It assumes familiarity with Rust and Bitcoin Core.  
-It does not describe system behavior or design rationale.  
-See `README.md` and `ARCHITECTURE.md` for those.
+This document:
+- Describes how to run Numbers locally on Bitcoin Testnet
+- Defines implementation constraints and boundaries
+- Defines what developers must and must not implement
 
-The earlier prototype that runs without Bitcoin Core is intentionally not documented here.
+This document does not:
+- Define system behavior or semantics
+- Justify design decisions
+- Describe UI behavior
+- Describe future features
+
+Authoritative behavior is defined in:
+- CORE-SEQUENCE.md
+- STATE-MACHINE.md
+- PRD.md
+
+If there is a conflict, those documents take precedence.
 
 ---
 
-## Requirements
+## 1. Supported Environment
 
-- macOS or Linux
+### Operating Systems
+- macOS
+- Linux
+
+Windows is not supported.
+
+### Language and Tooling
 - Rust 1.67 or later
+- Cargo
 - Bitcoin Core (Testnet enabled)
-- Sufficient disk space for the Testnet blockchain
-
-Windows is not currently supported.
 
 ---
 
-## Bitcoin Core (Testnet)
+## 2. Execution Model
+
+Numbers runs as a **single long-lived backend process** per environment.
+
+The backend process:
+- Maintains auction state
+- Accepts bids
+- Coordinates settlement
+- Initiates inscriptions
+- Persists all canonical records
+
+Only **one instance** of the backend may run per environment.
+
+Running multiple instances against the same datastore is forbidden.
+
+---
+
+## 3. Process Lifecycle
+
+### Startup
+
+On startup, the backend must:
+
+1. Load configuration
+2. Verify required secrets are present
+3. Connect to Bitcoin Core
+4. Load persisted auction state
+5. Resume execution from persisted states
+6. Never recompute resolution or finalization
+
+If any step fails, the process must exit visibly.
+
+---
+
+### Shutdown
+
+Shutdown must be graceful.
+
+- No open auction may be interrupted
+- Shutdown may occur only:
+  - between auctions
+  - or while auctions are paused
+
+Forced shutdown during uncertainty must be treated as a crash.
+
+---
+
+## 4. Bitcoin Core (Testnet)
 
 Numbers requires a local Bitcoin Core node running in Testnet mode.
 

@@ -1,11 +1,11 @@
-# Is this a Joke?
+# Is this a Joke? — Numbers
 
-Yes.
+Yes and no.
 
-**Numbers** begins as a joke in the ordinary sense:
-an absurd question taken seriously.
+**Numbers** began as a joke in the ordinary sense:
+an absurd question - What if you could own a number? - taken seriously.
 
-But for the joke to work: 
+Whether it is a joke or not: 
 1. it cannot live in the system. 
 2. the technology must be exact.
 3. the rules must be strict.

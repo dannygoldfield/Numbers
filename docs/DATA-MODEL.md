@@ -1,4 +1,4 @@
-# Data Model
+# Data Model — Numbers
 
 This document defines the canonical data recorded by Numbers.
 
@@ -96,7 +96,7 @@ Represents whether the provisional winner fulfilled settlement requirements.
 
 **Fields**
 - `auction_id`
-- `destination` (winner address or Null Steward)
+- `destination` (winner address or NullSteward)
 - `status` (settled, failed, no-bid)
 - `finalization_time`
 
