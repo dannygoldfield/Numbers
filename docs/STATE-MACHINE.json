@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "name": "Numbers State Machine",
+    "authoritative_source": "STATE-MACHINE-TABLE.md",
+    "normative": true,
+    "version": "1.0",
+    "notes": [
+      "Ambiguity is not a state",
+      "Pause is an overlay, not a lifecycle state",
+      "Any transition not listed is forbidden"
+    ]
+  },
+
+  "states": {
+    "Scheduled": {
+      "terminal": false,
+      "description": "Auction is known but not yet open"
+    },
+    "Open": {
+      "terminal": false,
+      "description": "Auction is accepting bids"
+    },
+    "Closed": {
+      "terminal": false,
+      "description": "Auction has closed to bids"
+    },
+    "AwaitingSettlement": {
+      "terminal": false,
+      "description": "Winning bid exists, settlement pending"
+    },
+    "Finalized": {
+      "terminal": false,
+      "description": "Auction destination finalized; inscription must follow"
+    },
+    "Inscribing": {
+      "terminal": false,
+      "description": "Inscription attempt in progress"
+    },
+    "Inscribed": {
+      "terminal": true,
+      "description": "Canonical inscription observed"
+    }
+  },
+
+  "overlays": {
+    "Paused": {
+      "description": "System pause overlay",
+      "affects_state": false,
+      "notes": [
+        "Does not advance lifecycle",
+        "Does not infer outcomes",
+        "Resumes only to previous state"
+      ]
+    }
+  },
+
+  "allowed_transitions": [
+    {
+      "from": "Scheduled",
+      "trigger": "start_time_reached",
+      "to": "Open",
+      "automatic": true
+    },
+    {
+      "from": "Open",
+      "trigger": "end_time_reached",
+      "to": "Closed",
+      "automatic": true
+    },
+    {
+      "from": "Closed",
+      "trigger": "resolution_with_winning_bid",
+      "to": "AwaitingSettlement"
+    },
+    {
+      "from": "Closed",
+      "trigger": "resolution_with_no_bids",
+      "to": "Finalized",
+      "destination": "NullSteward"
+    },
+    {
+      "from": "AwaitingSettlement",
+      "trigger": "settlement_completed",
+      "to": "Finalized",
+      "authority_exercised": true
+    },
+    {
+      "from": "AwaitingSettlement",
+      "trigger": "settlement_deadline_expired",
+      "to": "Finalized",
+      "destination": "NullSteward"
+    },
+    {
+      "from": "Finalized",
+      "trigger": "inscription_initiated",
+      "to": "Inscribing",
+      "authority_exercised": true
+    },
+    {
+      "from": "Inscribing",
+      "trigger": "inscription_confirmed",
+      "to": "Inscribed",
+      "terminal": true
+    }
+  ],
+
+  "forbidden_transitions": [
+    { "from": "Open", "to": "Scheduled" },
+    { "from": "Closed", "to": "Open" },
+    { "from": "Finalized", "to": "AwaitingSettlement" },
+    { "from": "Finalized", "to": "Open" },
+    { "from": "Finalized", "to": "Closed" },
+    { "from": "Inscribed", "to": "*" },
+    { "from": "AwaitingSettlement", "to": "Open" },
+    { "from": "Inscribing", "to": "AwaitingSettlement" },
+    { "from": "*", "to": "Inscribing", "condition": "no_finalization" },
+    { "from": "Paused", "to": "any_non_previous_state" }
+  ],
+
+  "ambiguity_rules": {
+    "is_state": false,
+    "causes_transition": false,
+    "effects": [
+      "freeze_authority",
+      "forbid_retries",
+      "forbid_rebroadcast",
+      "allow_observation_only"
+    ]
+  },
+
+  "persistence_points": [
+    "enter_Open",
+    "enter_Closed",
+    "enter_AwaitingSettlement",
+    "enter_Finalized",
+    "before_inscription_attempt",
+    "on_ambiguity_detected",
+    "on_terminal_state"
+  ],
+
+  "final_rule": "If a transition is not explicitly listed as allowed, it is forbidden."
+}
