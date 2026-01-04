@@ -72,27 +72,28 @@ The skeleton must not:
 ## 3. State Machine Artifact
 
 ### Status
-❌ MISSING
+✅ PRESENT
 
 ### Description
 
-A canonical, machine-readable representation of the state machine defined in
-STATE-MACHINE.md.
+A canonical, machine-readable representation of the Numbers state machine.
 
-This artifact may be expressed as:
+This artifact defines:
 
-- A table
-- JSON
-- YAML
-- A diagram with an accompanying machine-readable form
-
-At minimum, it must define:
-
-- All states
+- All valid states
 - All allowed transitions
 - All forbidden transitions
 - Transition triggers
 - Persistence points
+
+This artifact is authoritative.
+
+If any textual document conflicts with this artifact,
+the artifact takes precedence.
+
+### Artifact Location
+
+- `docs/STATE-MACHINE-ARTIFACT.json`
 
 ### Required Properties
 
@@ -101,15 +102,12 @@ At minimum, it must define:
 - Unambiguous
 - Machine-parseable
 
-Text in STATE-MACHINE.md must never contradict this artifact.
-If a conflict exists, this artifact is authoritative.
-
 ### Purpose
 
 This artifact exists so that:
 
 - Implementations can validate transitions automatically
-- LLMs cannot “invent” transitions
+- LLMs cannot invent or infer transitions
 - Reviewers can reason about safety without prose
 
 ---
@@ -155,7 +153,7 @@ These files exist to:
 In case of conflict:
 
 1. State Machine Artifact
-2. Textual spec documents
+2. Textual specification documents
 3. Reference code skeleton
 4. Example configuration files
 
