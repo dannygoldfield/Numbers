@@ -1,0 +1,23 @@
+Independence
+Numbers is designed to stand on its own. I can execute it solo. I’m not looking for rescue or free labor.
+
+
+Why you
+You already did exactly the right thing by surfacing a real failure case: payment made, inscription not delivered. That kind of pressure testing is what I need.
+
+
+The ask
+One architectural review after I update the reimbursement and delivery spec. One break-the-system scenario, end to end.
+
+
+Compensation
+$100 honorarium when you deliver architecture review. Or if the project reaches revenue someday, $1,000 for this review, paid before I pay myself.
+
+
+Scope boundary
+Implementation stays single-authored for coherence for now. I’m asking for logic and failure-boundary review, not coding.
+
+
+If coding ever happens
+We can consider coding together if it clearly makes the system faster to build and more precise, without diluting coherence. 
+
