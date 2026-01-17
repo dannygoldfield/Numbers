@@ -1,6 +1,6 @@
 # Observability — Numbers
 
-This document defines how the health and correctness of the Numbers system is observed.
+This document defines how signals related to the health and integrity of the Numbers system are observed.
 
 Observability exists to detect risk early,
 before it becomes irreversible.
@@ -21,6 +21,8 @@ If this cannot be determined, the system must be treated as degraded.
 ---
 
 ## Required Signals
+
+Absence or staleness of any required signal is itself a degraded condition.
 
 The following signals must be continuously observable.
 
@@ -60,7 +62,7 @@ The following signals must be continuously observable.
 
 ## Alerts
 
-Alerts indicate conditions requiring human attention.
+Alerts indicate conditions requiring human attention. Alerts must never initiate retries, retries-with-variation, or compensating actions.
 
 Alerts trigger when:
 
@@ -81,6 +83,7 @@ On alert:
 - Investigate the underlying condition
 - Determine whether the system remains safe to continue
 - Pause auctions at the next auction boundary if uncertainty persists
+- If system state cannot be confidently explained, auctions must remain paused
 
 Automatic recovery must not mask underlying faults.
 
@@ -95,7 +98,7 @@ The system must provide durable visibility into:
 - Pause and resume events, including cause
 - Configuration and limit context active at the time of events
 
-Observability data must be retained long enough to support post-incident analysis.
+Observability data must be retained long enough to support post-incident analysis. Observability data is descriptive and non-authoritative.
 
 ---
 

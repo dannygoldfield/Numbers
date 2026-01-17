@@ -10,6 +10,28 @@ Nothing here is enforced.
 
 ---
 
+### Poem 0: Loss  
+
+Loss is the price of refusing to invent certainty.
+
+Numbers accepts this price in advance. It does not treat loss as failure, damage, or exception. Loss is a structural consequence of honesty in a system where outcomes are irreversible and knowledge is incomplete.
+
+When certainty cannot be established, the system does not substitute belief, probability, consensus, or time. It abstains. Authority is not repaired. The sequence continues without recovery or compensation.
+
+Influence:
+- CORE-SEQUENCE.md
+- STATE-MACHINE.md
+- ERROR-TAXONOMY.md
+- DATA-MODEL.md
+- CATALOG.md
+- LIMITS-AND-CIRCUIT-BREAKERS.md
+- NON-REQUIREMENTS.md
+- UI-SPEC.md
+- THREAT-MODEL.md
+
+
+---
+
 ### Poem 1: Bitcoin as Memory, Not Mind  
 
 Bitcoin behaves like a memory device.

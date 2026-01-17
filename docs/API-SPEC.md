@@ -25,6 +25,34 @@ It does not predict, summarize, or explain.
 
 ---
 
+## Knowledge Representation (Normative)
+
+APIs represent **knowledge only**.
+
+API responses must distinguish explicitly between:
+- what is known
+- what is unknown
+
+APIs must not:
+- infer outcomes
+- express probability
+- manufacture certainty
+- fill gaps with assumed values
+
+Absence of data must not be represented as resolution.
+
+Changes in knowledge do not imply new permission or authority.
+
+Knowledge exposed by the API originates exclusively from deterministic system observation
+(e.g. Bitcoin nodes, indexers, or internal state machines).
+
+Human judgment, operator intent, or manual interpretation
+does not constitute observation,
+is never represented,
+and cannot alter API state or authority.
+
+---
+
 ## Authority Model
 
 The API is **not authoritative**.
@@ -49,7 +77,7 @@ Returns the current system state.
 
 Includes:
 - current auction number
-- auction open / closed state
+- auction open or closed state
 - time remaining (if applicable)
 - inter-auction pause status
 

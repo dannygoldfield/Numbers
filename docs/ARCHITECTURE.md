@@ -1,6 +1,8 @@
 # Architecture — Numbers
 
-This document defines how Numbers behaves.
+This document is descriptive, not normative.
+
+This document describes the system structure that emerges from the Numbers specification.
 
 It describes structure, sequencing, authority boundaries, and lifecycle.
 It is implementation-oriented and procedural.
@@ -39,8 +41,8 @@ No component interprets the others.
 
 ## Timing Policy
 
-- **Auction duration:** fixed by configuration  
-- **Inter-auction gap:** fixed and non-zero  
+Auction timing parameters are defined in CORE-SEQUENCE.md and configuration.
+This document assumes those guarantees and does not redefine them. 
 
 The inter-auction gap provides a boundary between auctions.
 
@@ -58,7 +60,7 @@ For each number **N**, the system opens an auction.
 - The auction runs for a fixed duration.
 - Bids may be submitted until the auction closes.
 - Bids are compared strictly by value.
-- Ties are resolved deterministically.
+- Ties are resolved deterministically as defined in CORE-SEQUENCE.md.
 
 The auction does not:
 - validate bidder intent
@@ -103,7 +105,7 @@ An inscription is **recognized by the system** only if:
 Content alone does not establish provenance.
 Recognition is procedural, not visual.
 
-Finalization to the NullSteward also produces an inscription.
+Finalization to the NullSteward attempts inscription under the same policies as any finalized outcome.
 Absence of a winner does not halt inscription.
 
 ---
@@ -198,15 +200,8 @@ only the underlying Bitcoin data remains.
 
 ---
 
-## Invariants
-
-The following invariants hold at all times:
-
-- Each auction resolves exactly once.
-- The sequence advances monotonically.
-- Every finalized outcome produces an inscription.
-- Recognition depends on system provenance, not content.
-- The catalog is derived, not authoritative.
+This document assumes all invariants defined in INVARIANTS.md and TRANSITION-INVARIANTS.md.
+If there is a conflict, those documents take precedence.
 
 ---
 

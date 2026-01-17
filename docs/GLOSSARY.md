@@ -5,6 +5,15 @@ Definitions are descriptive, not binding.
 
 ---
 
+### Ambiguity
+
+Ambiguity means the system cannot prove whether an authority-bearing action occurred.
+
+Ambiguity is resolved only by deterministic system observation.
+Human belief, operator intent, or external knowledge does not resolve ambiguity.
+
+---
+
 ## Auction
 A fixed-duration process in which bids may be placed for the next number in the sequence.
 
@@ -65,6 +74,16 @@ The Catalog records what happened.
 It does not define ownership, meaning, or validity.
 
 Bitcoin remains the sole source of truth.
+
+---
+
+### Observation
+
+Observation is the act of deterministically querying external sources of record
+(e.g. a Bitcoin node or indexer) to update system knowledge.
+
+Human judgment, interpretation, or intent does not constitute observation
+and cannot change system state or restore authority.
 
 ---
 

@@ -57,7 +57,7 @@ Example of an auction actively accepting bids.
 }
 ```
 
-## 3. Auction — Finalized (No Bids)
+## 3. Auction — Finalized (After Resolution, No Bids)
 
 Example of an auction that completed without any bids.
 
@@ -170,7 +170,7 @@ Example of a read-only aggregation returned to clients.
   "auction": {
     "auction_id": "auc_000124",
     "number": 124,
-    "state": "Inscribed",
+    "state": "Finalized",
     "start_time": "2026-01-01T00:02:00Z",
     "end_time": "2026-01-01T00:03:00Z",
     "opened_at": "2026-01-01T00:02:00Z",

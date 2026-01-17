@@ -35,7 +35,6 @@ At most one auction may be in a non-terminal lifecycle state at any time.
 
 - Auctions must not overlap
 - No concurrent bidding windows are permitted
-- No parallel settlement or inscription processes may exist
 
 This invariant applies globally.
 
@@ -110,7 +109,15 @@ Observation may update knowledge only.
 - Observation must not restore authority
 - Observation must not enable retries or substitutions
 
+Observation is limited to deterministic system processes.
+Human interpretation, operator intent, or subjective assessment does not constitute observation
+and must not change system state.
+
 Knowledge change does not imply permission.
+
+Reimbursement or compensation, if performed by the operator, is an external human action
+and does not restore, alter, substitute, or imply any auction, settlement, inscription,
+or authority outcome.
 
 ---
 
@@ -150,7 +157,7 @@ Once a terminal state is reached:
 - No background process may mutate state
 - No operator action may revive the auction
 
-Terminality applies across all subsystems.
+Terminality applies to authority and lifecycle progression across all subsystems.
 
 ---
 
@@ -191,26 +198,9 @@ System pause:
 
 ---
 
-## 9. Representation Integrity
+## 9. Error Classification
 
-### I-16. APIs Represent Knowledge Only
-
-API output must represent:
-
-- What is known
-- What is unknown
-
-APIs must not represent:
-
-- Inference
-- Probability
-- Assumed certainty
-
----
-
-## 10. Error Classification
-
-### I-17. Errors Cannot Downgrade
+### I-16. Errors Cannot Downgrade
 
 Once an error escalates:
 
@@ -221,7 +211,7 @@ Ambiguous and Fatal errors are terminal with respect to authority.
 
 ---
 
-## 11. Final Rule
+## 10. Final Rule
 
 If any behavior would violate an invariant:
 

@@ -70,6 +70,8 @@ After finalization, exactly one inscription is produced for number **N**.
 - The destination is determined by finalization.
 
 The inscription is constructed and broadcast.
+Broadcast uncertainty corresponds to the **Ambiguous** inscription state defined in STATE-MACHINE.md and permanently revokes inscription authority.
+
 The sequence then advances to **N + 1**.
 
 ---
