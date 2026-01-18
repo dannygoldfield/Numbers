@@ -1,5 +1,7 @@
 # Core Sequence — Numbers
 
+This document assumes familiarity with ARCHITECTURE.md.
+
 This document defines the invariants of Numbers.
 
 It describes what must always happen,
@@ -7,7 +9,8 @@ in what order,
 and without exception.
 
 It does not explain purpose or meaning.
-See ARCHITECTURE.md for component responsibilities.
+
+If there is a conflict, PRD.md takes precedence.
 
 ---
 

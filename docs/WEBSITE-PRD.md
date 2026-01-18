@@ -22,7 +22,7 @@ The Numbers website consumes the system as defined by:
 - CORE-SEQUENCE.md
 - ARCHITECTURE.md
 
-If there is a conflict, the system definition always wins.
+If there is a conflict, PRD.md takes precedence.
 
 The website must adapt to the system, never the reverse.
 
@@ -144,7 +144,7 @@ Examples:
 - Settlement pending beyond expectation
 
 Degraded does not mean broken.
-Uncertainty should be communicated plainly.
+Uncertainty must be communicated plainly.
 
 ---
 

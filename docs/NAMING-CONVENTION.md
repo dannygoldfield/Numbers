@@ -24,7 +24,7 @@ The purpose of these conventions is to:
 Invented, project-specific concepts are ProperNouns.  
 Generic system concepts remain descriptive phrases.
 
-A name should signal whether a concept:
+A name signals whether a concept:
 - exists only within Numbers, or
 - is a general technical or domain concept.
 

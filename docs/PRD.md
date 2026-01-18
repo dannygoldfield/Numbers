@@ -21,7 +21,7 @@ This PRD focuses on:
 
 If a change violates an invariant defined here, the result is no longer Numbers.
 
-This document should be read as a protocol boundary, not a product plan.
+This document is a protocol boundary, not a product plan.
 
 ---
 
@@ -145,4 +145,5 @@ This document defines invariant behavior.
 - Rationale and motivation live in `WHAT-IF.md`.
 - Implementation details live in `DEV.md`.
 
-If there is a conflict, invariants defined here take precedence over all other documents.
+If there is a conflict, this document takes precedence.
+

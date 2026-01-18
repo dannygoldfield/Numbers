@@ -1,5 +1,7 @@
 # Observability — Numbers
 
+This document assumes familiarity with INVARIANTS.md and STATE-MACHINE.md.
+
 This document defines how signals related to the health and integrity of the Numbers system are observed.
 
 Observability exists to detect risk early,
@@ -108,4 +110,4 @@ Silence is suspicious.
 Noise is worse.
 
 If the system cannot explain itself clearly,
-it should not continue unattended.
+it must not continue unattended.

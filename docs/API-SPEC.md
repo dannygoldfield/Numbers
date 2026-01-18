@@ -1,194 +1,317 @@
 # Application Programming Interface Specification — Numbers
 
-This document defines the external API exposed by the Numbers backend.
+This document defines the **entire external API surface** exposed by the Numbers backend.
 
-The API exists to expose canonical system state and allow permitted actions.
-It does not interpret outcomes, infer meaning, or provide convenience abstractions.
+It is **normative**.
 
-If there is a conflict, `CORE-SEQUENCE.md`, `ARCHITECTURE.md`, and `PRD.md` take precedence.
+This document assumes familiarity with:
+- INVARIANTS.md
+- STATE-MACHINE.md
+- ERROR-TAXONOMY.md
+
+If there is a conflict,
+PRD.md, CORE-SEQUENCE.md, STATE-MACHINE-TABLE.md, STATE-MACHINE.md,
+and INVARIANTS.md take precedence.
 
 ---
 
-## Design Goals
+## Modal Language Rule (Normative)
 
-The API is designed to be:
+In this document and all normative specifications:
+
+- **must / must not** define obligations
+- **only / exactly once / at most once** define bounds
+- **may** is permitted **only** to describe uncertainty of knowledge,
+  never permission, intent, or authority
+
+Forbidden in normative contexts:
+
+- possibly
+- likely
+- eventually
+- for now
+- TBD
+
+Any normative statement using forbidden modal language is invalid.
+
+---
+
+## 1. Purpose (Normative)
+
+The API exists to:
+
+- Expose canonical system state
+- Accept explicitly permitted external actions
+- Surface knowledge without interpretation
+
+The API does **not**:
+- infer outcomes
+- summarize meaning
+- provide convenience abstractions
+- grant authority
+
+---
+
+## 2. Design Goals (Normative)
+
+The API is:
 
 - Read-only by default
-- Minimal in surface area
+- Minimal and enumerable
 - Deterministic in shape
 - Explicit in failure
 - Versioned from inception
-- Limited to canonical system state
+- Aligned strictly with persisted canonical state
 
-The API reflects what has happened.
-It does not predict, summarize, or explain.
+The API reflects **what is recorded**.
+It does not speculate.
 
 ---
 
-## Knowledge Representation (Normative)
+## 3. Knowledge Representation (Normative)
 
-APIs represent **knowledge only**.
+API responses represent **knowledge only**.
 
-API responses must distinguish explicitly between:
+Every response **must** distinguish explicitly between:
 - what is known
 - what is unknown
 
-APIs must not:
+The API **must not**:
 - infer outcomes
 - express probability
+- collapse ambiguity
 - manufacture certainty
 - fill gaps with assumed values
 
-Absence of data must not be represented as resolution.
+Absence of data **must not** be represented as resolution.
 
-Changes in knowledge do not imply new permission or authority.
-
-Knowledge exposed by the API originates exclusively from deterministic system observation
-(e.g. Bitcoin nodes, indexers, or internal state machines).
-
-Human judgment, operator intent, or manual interpretation
-does not constitute observation,
-is never represented,
-and cannot alter API state or authority.
+Changes in knowledge exposed by the API:
+- **do not** imply new permission
+- **do not** restore authority
+- **do not** enable retries
 
 ---
 
-## Authority Model
+## 4. Authority Model (Normative)
 
-The API is **not authoritative**.
+The API is **non-authoritative**.
 
-- Bitcoin is the final record of inscriptions.
-- The Numbers backend is authoritative for auction resolution and finalization.
-- The API exposes the backend’s recorded state.
+Authority boundaries are fixed:
 
-The API may be unavailable, delayed, or restarted
-without altering system outcomes.
+- Bitcoin is authoritative for transaction existence.
+- The Numbers backend is authoritative for:
+  - auction resolution
+  - auction finalization
+  - inscription intent and ambiguity tracking
+- The API exposes recorded backend state only.
+
+API availability, delay, restart, or failure
+**must not** alter outcomes or authority.
 
 ---
 
-## Public Endpoints (Illustrative)
+## 5. API Shape Rules (Normative)
 
-Endpoints below describe intent and structure.
-Exact paths, parameters, and pagination may vary by version.
+All endpoints **must** obey:
+
+- Strict input validation
+- Deterministic output shapes
+- Missing fields represent unknown knowledge, not null outcomes
+- Field meaning **must not** change within a version
+- Side effects are forbidden unless explicitly stated
+
+---
+
+## 6. Public Endpoints (Normative)
+
+Endpoints listed here define the **entire permitted surface**.
+No undocumented endpoint may exist.
+
+---
 
 ### GET /state
 
-Returns the current system state.
+Returns the current global system state.
 
 Includes:
 - current auction number
-- auction open or closed state
-- time remaining (if applicable)
-- inter-auction pause status
+- auction lifecycle state
+- system control state (`Running` or `Paused`)
+- remaining time **if directly observed**
+- inter-auction gap status **if directly observed**
 
-This endpoint exposes **now**.
-It does not expose predictions.
+This endpoint exposes **present knowledge only**.
+
+It **must not**:
+- predict future transitions
+- compute or project timing
+- infer upcoming state changes
+- interpolate missing time data
 
 ---
 
 ### GET /auction/history
 
-Returns finalized auction outcomes in sequence order.
+Returns finalized auction outcomes in strict sequence order.
 
+Rules:
 - Results are paginated
-- Only canonical outcomes are returned
-- Each entry corresponds to exactly one auction number
+- Each entry corresponds to **exactly one** auction number
+- Only finalized auctions are returned
+- Ordering is canonical and immutable
 
-Includes, per entry:
+Each entry includes only finalized knowledge:
 - auction number
-- final destination (winner address or NullSteward)
-- inscription txid
-- inscription satpoint
-- timestamps
+- final destination address
+- settlement outcome
+- inscription state
+- inscription txid (if known)
+- inscription satpoint (if known)
+- timestamps of resolution and finalization
 
-This endpoint does not:
+This endpoint **must not**:
+- expose non-finalized state
 - infer ownership
-- collapse outcomes
-- hide null or no-bid results
+- collapse null outcomes
+- hide NullSteward results
+- rewrite or reinterpret history
+
+---
+
+### GET /auction/{N}
+
+Returns the full recorded state for auction number `N`.
+
+Includes:
+- auction lifecycle state
+- bid summary (only if permitted by state)
+- resolution record (if present)
+- settlement state
+- inscription state
+- ambiguity indicators
+
+If knowledge is unavailable,
+it **must** be omitted, not guessed.
 
 ---
 
 ### POST /bid
 
-Submits a bid for the currently open auction.
+Submits a bid for the **currently open auction only**.
 
-Requirements:
-- request must prove control of the bidding wallet
-- bid must target the current auction only
+This is the **only write-capable public endpoint**.
 
-Bid submission is permitted **only** during an open auction window.
+#### Preconditions (Normative)
+
+A bid request is valid **only if all are true**:
+
+- System state is `Running`
+- An auction is in `Open` state
+- The bid targets the current auction number
+- The request proves control of the bidding wallet
+- The bid amount satisfies constraints fixed at auction start
+
+If any precondition fails,
+the bid **must** be rejected.
 
 ---
 
-## Bid Validation
+## 7. Bid Validation (Normative)
 
-Bid requests are validated against the auction state as fixed at auction start.
+Bid validation is evaluated against auction state
+**as fixed at auction start**.
 
 A bid is invalid if:
+
 - submitted outside the active auction window
 - malformed or incomplete
 - below the minimum valid bid
-- not provably authorized by the submitting wallet
+- exceeds configured maximum (if set)
+- not provably authorized
 
 The minimum valid bid:
-- is defined at auction start
-- remains fixed for the duration of that auction
+- is computed once at auction start
+- remains fixed for the auction duration
 - does not change in response to other bids
 
 Invalid bids:
 - are rejected explicitly
-- do not affect auction state
-- do not alter timing or resolution
+- do not alter auction state
+- do not affect timing or resolution
+- do not consume authority
+
+Bid acceptance:
+- does **not** imply winning
+- does **not** imply settlement
+- does **not** imply future inscription
 
 ---
 
-## Responses
+## 8. Responses (Normative)
 
-All API responses share a common envelope:
+All responses use a strict envelope:
 
-- `status` — success or failure
-- `data` — present only on success
-- `error` — present only on failure
+- `status`: `"success"` or `"error"`
+- `data`: present only on success
+- `error`: present only on error
 
-Errors are explicit.
 Silent failure is forbidden.
 
-Example error conditions:
-- `400 Bad Request` — malformed or invalid bid
-- `409 Conflict` — bid submitted outside active auction
-- `503 Service Unavailable` — backend temporarily unavailable
+Error responses **must** include:
+- error class (ERROR-TAXONOMY.md)
+- human-readable message
+- machine-stable error code
 
-The API does not retry actions on behalf of clients.
+Error codes:
+- **must not** change meaning within a version
+- **must not** be reused for different failure classes
+
+The API **must not** retry actions on behalf of clients.
 
 ---
 
-## Versioning
+## 9. Versioning Rules (Normative)
 
-- The API is versioned from the first public release
+- API is versioned from first release
 - Breaking changes require a new version
-- Versions do not change behavior retroactively
+- Field meaning **must never** change within a version
+- Older versions **must not** silently change semantics
 
-Old versions may be deprecated but must not silently change semantics.
+Deprecation:
+- must be explicit
+- must not alter historical responses
 
 ---
 
-## Non-Goals
+## 10. Security and Isolation (Normative)
+
+The API **must not**:
+
+- expose private keys
+- expose persistence internals
+- expose operator controls
+- allow clients to influence timing or authority
+
+Clients observe.
+They do not steer.
+
+---
+
+## 11. Non-Goals
 
 The API does not:
 
-- provide analytics or aggregation
+- provide analytics
 - infer ownership or intent
-- expose private or internal state
-- decorate or reframe outcomes
-- optimize for client convenience
-
-Clients adapt to the system.
-The system does not adapt to clients.
+- expose internal logs
+- explain outcomes
+- optimize for convenience
 
 ---
 
-## Guiding Principle
+## 12. Final Rule
 
-The API exposes facts.
+The API exposes **facts**.
 
 Interpretation happens elsewhere.
+Authority lives elsewhere.

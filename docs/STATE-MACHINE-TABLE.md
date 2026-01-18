@@ -1,11 +1,13 @@
 # State Machine — Canonical Table
 
+This document assumes familiarity with CORE-SEQUENCE.md.
+
 This document defines the authoritative state machine for Numbers.
 
 It is normative.
 
 All system behavior must conform to this table.
-If any other document contradicts this table, **this table wins**.
+If there is a conflict, PRD.md and CORE-SEQUENCE.md take precedence.
 
 This table defines:
 - All valid states
@@ -26,6 +28,7 @@ This table defines:
 | AwaitingSettlement | Winning bid exists, settlement pending | No |
 | Finalized | Auction resolved without inscription | Yes |
 | Inscribing | Inscription attempt in progress | No |
+| Ambiguous | Inscription broadcast outcome cannot be determined | No |
 | Inscribed | Canonical inscription observed | Yes |
 | Paused | System pause overlay, not a lifecycle state | N/A |
 
@@ -49,7 +52,7 @@ This table defines:
 
 ## Ambiguity Rule (Non-Transition)
 
-Ambiguity is **not** a state and does **not** produce a transition.
+Ambiguity does not produce a lifecycle transition.
 
 If ambiguity is detected during **Inscribing**:
 
@@ -76,7 +79,7 @@ The following transitions are **never permitted**:
 | Inscribing → AwaitingSettlement | Authority cannot be reclaimed |
 | Any → Inscribing without settlement | Authority violation |
 | Paused → Any non-previous state | Pause does not advance state |
-| Any transition caused by ambiguity | Ambiguity is not a transition |
+| Any transition caused by ambiguity | Ambiguity does not advance lifecycle |
 
 ---
 

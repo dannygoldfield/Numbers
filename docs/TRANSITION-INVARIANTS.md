@@ -1,21 +1,18 @@
 # Transition Invariants — Numbers
 
-This document defines **transition-level invariants** relied upon by the Numbers system.
+This document defines **transition-level invariants** enforced by the Numbers system.
 
-These invariants are **enforced mechanically** by `STATE-MACHINE.json`.
-
-This document is **derived** from the following authoritative sources:
-
-- STATE-MACHINE.md / STATE-MACHINE-TABLE.md
-- INVARIANTS.md
-- ERROR-TAXONOMY.md
+These invariants are **mechanically enforced** by the authoritative state machine
+(`STATE-MACHINE.md` and `STATE-MACHINE-TABLE.md`).
 
 This document introduces **no new authority**.
 It exists solely to make implicit guarantees explicit and mechanically verifiable.
 
-If a transition violates any invariant listed here, execution **must halt immediately**.
+If a transition violates any invariant listed here,
+execution **must halt immediately**.
 
-If there is any conflict, **STATE-MACHINE.md / STATE-MACHINE-TABLE.md take precedence**.
+If there is a conflict,
+`STATE-MACHINE.md` and `STATE-MACHINE-TABLE.md` take precedence.
 
 ---
 
@@ -23,11 +20,11 @@ If there is any conflict, **STATE-MACHINE.md / STATE-MACHINE-TABLE.md take prece
 
 Transition invariants exist to:
 
-- Bind state transitions to authority rules
-- Prevent hidden or inferred transitions
+- Bind state transitions to authority boundaries
+- Prevent inferred, implicit, or speculative transitions
 - Prevent retries from masquerading as progress
 - Ensure ambiguity never advances the lifecycle
-- Provide a mechanical checklist for implementation, auditing, and verification
+- Provide a mechanical checklist for implementation and audit
 
 A transition invariant applies **at the exact moment a transition is evaluated**.
 
@@ -35,32 +32,32 @@ A transition invariant applies **at the exact moment a transition is evaluated**
 
 ## 2. Lifecycle Transition Invariants
 
-### TI-01. Only Listed Transitions May Occur
+### TI-01. Only Listed Transitions Are Permitted
 
-A state transition is permitted **only if** it appears in `allowed_transitions`
-of the authoritative state machine.
+A transition is permitted **only if** it appears in
+`allowed_transitions` of the authoritative state machine.
 
-Any attempted transition not listed is **forbidden and fatal**.
+Any transition not explicitly listed is **forbidden and fatal**.
 
 This prohibition includes:
 - implicit transitions
 - inferred transitions
-- time-based assumptions
-- operator-triggered shortcuts
+- time-derived assumptions
+- operator-initiated shortcuts
 
 ---
 
 ### TI-02. Transitions Are Directional and Irreversible
 
-Once a transition occurs:
+Once a transition is committed:
 
 - The prior state must never be re-entered
 - No reverse transition is permitted
-- No alternate branch may be explored
+- No alternate branch is permitted
 
-This holds even if:
-- later information appears
-- an error is discovered
+This rule applies even if:
+- later information is discovered
+- an error is identified
 - an operator intervenes
 
 ---
@@ -71,23 +68,23 @@ If a state is marked `terminal = true`:
 
 - No outgoing transitions are permitted
 - No overlays may advance the lifecycle
-- No retries or compensating actions are allowed
+- No retries or compensating actions are permitted
 
 Terminal states include:
-- Finalized
-- Inscribed
+- `Finalized`
+- `Inscribed`
 
 ---
 
 ## 3. Authority and Transition Coupling
 
-### TI-04. Authority Is Exercised Only on Specific Transitions
+### TI-04. Authority Is Exercised Only on Explicit Transitions
 
-Authority may be exercised **only** on the following transition:
+Authority is exercised **only** on the following transition:
 
-- AwaitingSettlement → Inscribing
+- `AwaitingSettlement → Inscribing`
 
-No other transition may:
+No other transition is permitted to:
 - spend funds
 - construct transactions
 - broadcast inscriptions
@@ -95,33 +92,34 @@ No other transition may:
 
 ---
 
-### TI-05. Authority Cannot Be Exercised More Than Once
+### TI-05. Authority Is Exercised at Most Once
 
-For any auction:
+For each auction:
 
-- Each authority-exercising transition may occur **at most once**
-- A second attempt is forbidden, regardless of outcome
+- An authority-exercising transition may occur **at most once**
+- Any subsequent attempt is forbidden, regardless of outcome
 
-This includes:
+This prohibition includes:
 - retries
 - rebroadcasts
 - alternate construction paths
+- delayed reattempts
 
 ---
 
-## 4. Ambiguity Transition Invariants
+## 4. Ambiguity Invariants
 
-### TI-06. Ambiguity Is Not a Transition
+### TI-06. Ambiguity Does Not Advance the Lifecycle
 
 Ambiguity:
 
-- Is not a state
+- Is not a lifecycle-advancing transition
 - Does not advance the lifecycle
 - Does not rewind the lifecycle
 
 When ambiguity is detected:
 - The system remains in the current lifecycle state
-- No new transition is permitted
+- No further lifecycle transitions are permitted
 
 ---
 
@@ -129,43 +127,44 @@ When ambiguity is detected:
 
 Once ambiguity exists:
 
-- No authority-exercising transition may occur
-- No retry may be attempted
-- No alternative action may be substituted
+- No authority-exercising transition is permitted
+- No retry is permitted
+- No alternative action is permitted
 
 Observation is the **only** permitted activity.
 
 ---
 
-### TI-08. Observation After Ambiguity Does Not Imply a Transition
+### TI-08. Observation Cannot Justify Transitions
 
 External observation may:
 - update knowledge
-- confirm an outcome
+- confirm visibility
 
-But must **not**:
+Observation must **never**:
 - justify a retry
 - justify a compensating action
 - justify rewriting history
 
-Observation may update **representation**, not **authority**.
+Observation updates **representation only**, never **authority**.
 
 ---
 
 ## 5. Time and Transition Invariants
 
-### TI-09. Time Passing Does Not Cause Transitions Except Where Explicit
+### TI-09. Time Alone Does Not Cause Transitions
 
-Time passing may cause a transition **only** when explicitly listed:
+Time passage causes a transition **only** when explicitly listed:
 
-- Scheduled → Open
-- Open → Closed
-- AwaitingSettlement → Finalized (deadline expired)
+- `Scheduled → Open`
+- `Open → Closed`
+- `AwaitingSettlement → Finalized` (deadline expiration)
 
-Time passing must **not**:
+Time passage must **never**:
 - resolve ambiguity
 - imply success or failure
 - trigger inscription
+- unlock authority
 
 ---
 
@@ -176,10 +175,10 @@ Time passing must **not**:
 Pause:
 
 - Does not change lifecycle state
-- Does not advance time inference
+- Does not infer progress
 - Does not resolve pending actions
 
-Pause may only:
+Pause is permitted only to:
 - block external interaction
 - resume to the **exact prior lifecycle state**
 
@@ -190,15 +189,16 @@ Pause may only:
 Pause must not:
 - interrupt settlement execution
 - interrupt inscription broadcast
-- straddle an authority-exercising transition
+- straddle an authority-exercising boundary
 
-If authority execution has begun, pause is forbidden until a safe boundary is reached.
+If authority execution has begun,
+pause is forbidden until a safe boundary is reached.
 
 ---
 
-## 7. Error Escalation and Transitions
+## 7. Error and Transition Interaction
 
-### TI-12. Errors May Escalate but Never Enable Transitions
+### TI-12. Errors Cannot Enable Transitions
 
 Errors may:
 - halt execution
@@ -207,18 +207,18 @@ Errors may:
 
 Errors must **never**:
 - unlock a transition
-- justify a skipped state
-- permit alternate progression
+- justify skipping a state
+- enable alternate progression
 
 ---
 
-### TI-13. Fatal Errors Abort Transition Processing
+### TI-13. Fatal Errors Abort Transition Evaluation
 
 If a fatal error occurs during transition evaluation:
 
 - The transition must not complete
 - No partial effects may persist
-- The system must halt immediately
+- Execution must halt immediately
 
 Silent recovery is forbidden.
 
@@ -230,7 +230,7 @@ Silent recovery is forbidden.
 
 For every permitted transition:
 
-- State must be persisted before authority execution
+- State must be persisted **before** authority is exercised
 - Persistence failure blocks the transition
 - No transition may be assumed without persistence
 
@@ -250,6 +250,6 @@ History is append-only.
 
 ## 9. Final Rule
 
-If a transition would violate **any** invariant in this document:
+If a proposed transition violates **any** invariant in this document:
 
 **That transition is forbidden.**

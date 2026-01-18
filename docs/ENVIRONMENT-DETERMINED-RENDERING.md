@@ -1,5 +1,7 @@
 # Environment-Determined Rendering — Numbers
 
+This document assumes familiarity with INVARIANTS.md and API-SPEC.md.
+
 This document defines how Numbers are rendered at view time. 
 
 This document is non-normative.

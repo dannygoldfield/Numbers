@@ -19,7 +19,7 @@ Authoritative behavior is defined in:
 - STATE-MACHINE.md
 - PRD.md
 
-If there is a conflict, those documents take precedence.
+If there is a conflict, PRD.md and CORE-SEQUENCE.md take precedence.
 
 ---
 

@@ -1,31 +1,33 @@
 # Architecture — Numbers
 
-This document is descriptive, not normative.
+This document assumes familiarity with SUMMARY.md.
 
-This document describes the system structure that emerges from the Numbers specification.
+This document is **descriptive**, not normative.
 
-It describes structure, sequencing, authority boundaries, and lifecycle.
-It is implementation-oriented and procedural.
+It describes the system structure that emerges from the Numbers specification.
+It documents structure, sequencing, authority boundaries, and lifecycle.
 
-It does not justify the premise.
-See WHAT-IF.md and POETICS.md for conceptual framing.
+It does not justify purpose or meaning.
+See POETICS.md for conceptual framing.
+
+If there is a conflict, PRD.md and CORE-SEQUENCE.md take precedence.
 
 ---
 
 ## System Overview
 
-Numbers runs a sequential series of auctions.
+Numbers executes a sequential series of auctions.
 Each auction resolves exactly once.
 
 The system advances monotonically from one number to the next.
-It does not pause, rewind, or reinterpret past outcomes.
+Past outcomes are never revisited, revised, or reinterpreted.
 
-The system records outcomes.
-It does not enforce meaning.
+Numbers records outcomes.
+It does not assign meaning.
 
 ---
 
-## Core Components
+## Component Decomposition
 
 Numbers consists of four conceptual components:
 
@@ -35,21 +37,26 @@ Numbers consists of four conceptual components:
 4. Catalog
 
 Each component has a narrow responsibility.
-No component interprets the others.
+No component interprets the output of another.
+
+The components together define a pipeline.
+Authority is consumed as the pipeline advances.
 
 ---
 
-## Timing Policy
+## Timing Model
 
 Auction timing parameters are defined in CORE-SEQUENCE.md and configuration.
-This document assumes those guarantees and does not redefine them. 
+This document assumes those guarantees and does not restate them.
 
-The inter-auction gap provides a boundary between auctions.
+The inter-auction gap provides a strict boundary between auctions.
 
-Auction timing is independent of settlement and inscription.
-Settlement and inscription do not block progression.
+Auction progression is independent of:
+- settlement success
+- settlement timing
+- inscription broadcast or confirmation
 
-See CORE-SEQUENCE.md for timing guarantees.
+Downstream activity never blocks the sequence.
 
 ---
 
@@ -59,34 +66,36 @@ For each number **N**, the system opens an auction.
 
 - The auction runs for a fixed duration.
 - Bids may be submitted until the auction closes.
-- Bids are compared strictly by value.
+- Bids are ordered strictly by value.
 - Ties are resolved deterministically as defined in CORE-SEQUENCE.md.
 
 The auction does not:
 - validate bidder intent
-- assess bidder identity beyond transaction validity
-- interpret the significance of the number
+- interpret bidder identity beyond submission validity
+- assess meaning, rarity, or significance of the number
+
+The auction’s only output is a closed bidding state.
 
 ---
 
 ## 2. Resolution and Settlement
 
-At auction close, the auction resolves exactly once.
+At auction close, resolution occurs exactly once.
 
 Resolution produces a provisional outcome:
-- a winning bidder, or
+- a highest valid bid, or
 - no valid bids
 
-Settlement runs asynchronously and has a deadline.
+Settlement executes asynchronously after resolution and has a deadline.
 
 Finalization produces exactly one destination:
-- **Winner settles before deadline → winning address**
-- **Winner fails to settle → NullSteward**
-- **No valid bids → NullSteward**
+- winner settles before deadline → winning address
+- winner fails to settle → NullSteward
+- no valid bids → NullSteward
 
 The **NullSteward** is a provably unspendable address.
 
-Resolution and settlement do not delay subsequent auctions.
+Resolution and settlement do not delay, pause, or reorder subsequent auctions.
 
 ---
 
@@ -98,37 +107,36 @@ After finalization, an inscription transaction is constructed and broadcast.
 - The number is recorded as witness data in a Bitcoin transaction.
 - Multiple inscriptions of the same number may exist on-chain.
 
-An inscription is **recognized by the system** only if:
-- it is produced by the system’s finalized outcome for that number
-- its txid and satpoint are recorded in the NumbersCatalog
+An inscription is **recognized by the system** only when:
+- it results from the finalized outcome of auction **N**
+- its txid and satpoint are recorded by the system
 
 Content alone does not establish provenance.
 Recognition is procedural, not visual.
 
-Finalization to the NullSteward attempts inscription under the same policies as any finalized outcome.
-Absence of a winner does not halt inscription.
+Finalization to the NullSteward follows the same inscription process.
+Absence of a winner does not halt inscription attempts.
 
 ---
 
 ## Canonical Recognition
 
-Numbers distinguishes its own inscriptions
-from arbitrary lookalike inscriptions on-chain.
+Numbers distinguishes its own inscriptions from arbitrary on-chain lookalikes.
 
-Anyone can inscribe the number **N**.
+Anyone may inscribe the number **N**.
 That does not make it part of Numbers.
 
-Recognition answers only:
+Recognition answers one question only:
 
 > “Which inscription resulted from auction **N**?”
 
 It does not answer:
-- whether ownership is real
+- whether ownership is legitimate
 - whether value exists
 - whether meaning should be assigned
 
 Recognition is procedural.
-Interpretation happens elsewhere.
+Interpretation occurs elsewhere.
 
 ---
 
@@ -136,7 +144,7 @@ Interpretation happens elsewhere.
 
 The NumbersCatalog is a derived index.
 
-It records, for each auction number:
+For each auction number, it records:
 - final destination (winning address or NullSteward)
 - inscription txid
 - inscription satpoint
@@ -147,7 +155,7 @@ The catalog exists to support:
 - retrieval
 - inspection
 
-It does not define ownership, meaning, or validity.
+It does not define ownership, validity, or meaning.
 
 See CATALOG.md for schema and access patterns.
 
@@ -157,8 +165,12 @@ See CATALOG.md for schema and access patterns.
 
 The catalog is not authoritative.
 
-Errors or omissions in the catalog do not alter outcomes recorded on-chain.
-The blockchain is the only durable record.
+Errors, omissions, or corruption in the catalog do not alter:
+- auction outcomes
+- settlement destinations
+- on-chain inscriptions
+
+Bitcoin is the only durable authority.
 
 The catalog may be corrected, rebuilt, or discarded
 without changing system history.
@@ -169,13 +181,13 @@ without changing system history.
 
 All catalog entries are derived from Bitcoin data.
 
-No catalog entry may depend on:
+No entry depends on:
 - private state
 - operator memory
 - off-chain metadata
 - discretionary interpretation
 
-Every entry must be reconstructible
+Each entry is reconstructible
 from transactions and inscriptions alone.
 
 ---
@@ -187,21 +199,16 @@ It is a derived view over Bitcoin data.
 
 Given:
 - the Bitcoin blockchain
-- public knowledge of the Numbers auction rules
+- public knowledge of Numbers auction rules
 - the ability to inspect transactions and inscriptions
 
 the catalog can be deleted and rebuilt from scratch.
 
-Rebuilding must converge on the same sequence of recognized outcomes.
-No private data, off-chain state, or discretionary judgment is required.
+Rebuilding converges on the same sequence of recognized outcomes.
+No private data or discretionary judgment is required.
 
-If knowledge of the Numbers system itself is lost,
+If knowledge of Numbers itself is lost,
 only the underlying Bitcoin data remains.
-
----
-
-This document assumes all invariants defined in INVARIANTS.md and TRANSITION-INVARIANTS.md.
-If there is a conflict, those documents take precedence.
 
 ---
 
@@ -215,14 +222,15 @@ The architecture explicitly does not:
 - privilege interpretation
 - provide dispute resolution
 
-Those concerns exist outside the system.
+These concerns exist outside the system.
 
 ---
 
 ## Summary
 
-Numbers is a system that records outcomes
-and refuses to explain them.
+Numbers advances a sequence.
+It records what occurs.
+It refuses to explain.
 
 It advances.
 It records.

@@ -1,174 +1,231 @@
-# User Interface Specification
+# User Interface Specification — Numbers
 
-This document defines the user interface behavior for Numbers.
+This document defines user interface behavior for Numbers.
 
-It constrains design decisions.  
-It does not describe visual style.
+It is **normative** where it constrains interaction, visibility,
+and representation of system state.
 
-If there is a conflict between this document and any other specification,  
-`ARCHITECTURE.md` and `CORE-SEQUENCE.md` take precedence.
+It does not define visual style, branding, or aesthetics.
+
+If there is a conflict,
+PRD.md, CORE-SEQUENCE.md, STATE-MACHINE.md,
+and API-STATE-SHAPES.md take precedence.
 
 ---
 
-## 1. Purpose of the Interface
+## Modal Language Rule (Normative)
+
+In this document and all normative specifications:
+
+- **must / must not** define obligations
+- **only / exactly once / at most once** define bounds
+- **may** is permitted **only** to describe uncertainty of knowledge,
+  never permission, intent, or policy choice
+
+The following terms are forbidden in normative contexts:
+
+- possibly
+- likely
+- eventually
+- for now
+- TBD
+
+Any normative statement using forbidden modal language is invalid.
+
+---
+
+## 1. Purpose of the Interface (Normative)
 
 The Numbers interface exists to:
 
-- Expose system state accurately
-- Allow participation only where the system allows it
-- Avoid interpretation, ranking, or narrative framing
+- Expose canonical system state accurately
+- Allow user interaction **only** where the backend permits it
+- Prevent narrative framing, interpretation, or implication
 
-The interface reflects outcomes.  
-It does not explain or justify them.
+The interface reflects recorded knowledge.  
+It does not explain, justify, predict, or reassure.
 
----
-
-## 2. Page Model
-
-- The site consists of **one continuous primary page**
-- There are no routes or modes
-- Navigation changes **scroll position**, not context
-
-Content sections (e.g. About, Docs) do not constitute modes  
-and do not alter system state.
-
-The page always initializes at **the current auction**.
-
-There is no deep-linking to past or future numbers.
+The interface is not authoritative.
 
 ---
 
-## 3. Initialization and Refresh Behavior
+## 2. Page Model (Normative)
 
-- On page load, the interface shows the **current auction**
-- On page refresh, the interface resets to the current auction
-- Scroll position is not preserved
-- Tapping the “Numbers” logo behaves identically to refresh
+The interface **must consist of exactly one primary page**.
 
-Numbers always reasserts “now.”
+Rules:
 
----
+- There are no routes, modes, or application states
+- Navigation alters **scroll position only**
+- No navigation action may alter system interaction eligibility
 
-## 4. System States → UI States
+Content sections (About, Docs) are informational only.
+They **must not** introduce modes or conditional behavior.
 
-The interface must represent all system states explicitly.
+The page **must always initialize** at the current auction.
 
-### States
-
-- Open Auction
-- Closing / Resolving
-- Awaiting Settlement
-- Finalized
-- Inscribing
-- Inscribed
-- Degraded
-
-The Inscribed state refers only to canonical inscriptions  
-produced by the Numbers system.
-
-No UI-only states may be introduced.
+Deep-linking to past or future auctions is forbidden.
 
 ---
 
-## 5. Inter-Auction Pause
+## 3. Initialization and Refresh Behavior (Normative)
+
+On page load or refresh:
+
+- The interface **must** display the current auction
+- Scroll position **must** reset to the current auction
+- No UI state **may** persist across refresh
+
+Clicking the “Numbers” logo **must** behave identically to refresh.
+
+The interface always reasserts *now*.
+
+---
+
+## 4. System State Representation (Normative)
+
+The interface **must represent backend system state explicitly**.
+
+### Representable States
+
+- `Open`
+- `Closing`
+- `AwaitingSettlement`
+- `Finalized`
+- `Inscribing`
+- `Inscribed`
+- `Degraded`
+
+Rules:
+
+- These states **must map directly** to backend state
+- No UI-only states **may** be introduced
+- UI state **must not** anticipate transitions
+
+The `Inscribed` state refers **only** to inscriptions
+recognized by the Numbers system.
+
+---
+
+## 5. Inter-Auction Pause (Normative)
 
 Between auctions:
 
-- The **next auction number** is visible but inactive
-- Bid input, bid button, and keyboard are visible but inactive
-- Keyboard reads `1234567890`
-- Auction timer displays `12:34:56` in an inactive state
-- Touching bidding elements has no effect
-- Menu remains active
+- The next auction number **must** be visible and inactive
+- Bid input and controls **must** be visible but inert
+- Keyboard **must** display `1234567890` in inactive form
+- Timer **must** display `12:34:56` as a presentation placeholder
 
-Timing values shown during the inter-auction pause are presentation defaults  
-and do not define protocol semantics.
+Interaction rules:
 
-Liveness is communicated only through:
+- Touching inactive elements **must have no effect**
+- No wallet connection **may** be initiated
+- Menu remains accessible
+
+Displayed timing values during pause are **non-semantic**.
+They do not define protocol behavior.
+
+Liveness communication is limited to:
+
 - Countdown
-- Letline (system voice)
+- Letline
 
 ---
 
-## 6. Letline (System Voice)
+## 6. Letline (System Voice) (Normative)
 
-- The Letline is a single-line textual element
-- It represents the system voice of “123456789 and 0”
-- It is ambient and impersonal
+The Letline is a single, ambient textual element.
 
 Rules:
-- Letline never provides individual user feedback
-- Letline messaging may change over time
-- Typing behavior (speed, pauses, reversal) is presentation-only
 
-Example messages:
-- “stand by for the next auction”
-- “What if you could own a number?”
+- It represents the system voice of “123456789 and 0”
+- It **must not** respond to individual user actions
+- It **must not** convey errors, confirmations, or diagnostics
+- Message content **may** change without semantic implication
+
+Typing behavior is presentation-only and non-authoritative.
 
 ---
 
-## 7. Wallet Connection
+## 7. Wallet Connection (Normative)
 
-- Viewing the site never requires a wallet
-- Wallet connection is required **only** to submit a bid
-- Wallet connection is triggered only by attempting to place a bid
+Rules:
 
-During inter-auction pauses:
-- Wallet connection is unavailable
+- Viewing the site **must not** require a wallet
+- Wallet connection **must** be requested only when attempting to bid
+- Wallet connection **must not** occur during inter-auction pause
 
-Wallet connections:
-- Persist across auctions
-- Persist until explicitly disconnected by the user
+Connection behavior:
+
+- Connection persists across auctions
+- Connection persists until explicit user disconnect
 
 Disconnect:
-- Available only via the menu
-- No ceremony or emphasis
+
+- Available only via menu
+- No emphasis, confirmation, or narrative framing
+
+Wallet connection does not imply bid acceptance.
 
 ---
 
-## 8. Bid Interaction
+## 8. Bid Interaction (Normative)
 
-### Successful Bid
+Bid interaction represents an **attempt**, not an outcome.
+
+### Successful Submission
+
 - No confirmation message
 - No animation
-- No toast
-- Confirmation occurs only through reflected state
+- No toast or banner
+- Confirmation occurs only through reflected auction state
 
-### Failed Bid
-- Failure is indicated inline at the bid input
-- Message is brief, neutral, and self-clearing
-- Letline is not used for error messaging
+### Rejected Submission
+
+- Error displayed inline at bid input
+- Message is neutral, factual, and self-clearing
+- Letline **must not** be used for errors
+
+Bid UI **must not** imply:
+- likelihood of winning
+- priority
+- acceptance beyond protocol rules
 
 ---
 
-## 9. Auction Transitions
+## 9. Auction Transitions (Normative)
 
-- Auction start and end transitions are immediate
-- No animation
-- No acknowledgement layer
-- No auto-scroll
-- No notifications
+Auction transitions:
+
+- **must** be immediate
+- **must not** animate
+- **must not** acknowledge the user
+- **must not** scroll automatically
+- **must not** notify
 
 State changes are presented as facts, not events.
 
 ---
 
-## 10. History and Scrolling
+## 10. History and Scrolling (Normative)
 
-- The current auction is always at the top
-- Scrolling downward reveals prior auctions
-- Prior auctions are non-interactive
-- Prior auctions are visually quieter than the live auction
+Layout rules:
 
-The home page is a vertical sequence:
+- The current auction **must** appear at the top
+- Past auctions **must** appear below in sequence order
+- Past auctions **must** be non-interactive
+- Past auctions **must** be visually quieter
+
+The page represents time vertically:
+
 - Present at the top
 - Past below
 
 ---
 
-## 11. Menu
+## 11. Menu (Normative)
 
-The menu contains exactly five items:
+The menu **must contain exactly five items**:
 
 1. Jump to live auction
 2. Jump to recent results
@@ -176,97 +233,100 @@ The menu contains exactly five items:
 4. Docs / How it works
 5. Connect / Disconnect wallet
 
-The menu:
-- Does not change context
-- Does not introduce modes
-- Is always accessible
+Menu behavior:
 
-Menu interaction never alters auction state  
-or temporal position.
+- Must not change application context
+- Must not introduce modes
+- Must not affect system state
 
----
-
-## 12. About and Docs Sections
-
-- About and Docs exist **within the same page**
-- Menu items scroll to these sections
-- Content expands inline
-- No overlays, modals, or windows
-
-Disclosure uses simple expansion.  
-Scroll continuity is preserved.
+Menu interaction is navigational only.
 
 ---
 
-## 13. Metadata Display Policy
+## 12. About and Docs Sections (Normative)
 
-The interface displays only canonical inscriptions  
-as defined by the system.
+Rules:
+
+- Content exists within the same page
+- Menu scrolls to content position
+- Disclosure expands inline
+- No overlays, modals, or new windows
+
+Scroll continuity **must** be preserved.
+
+---
+
+## 13. Metadata Display Policy (Normative)
+
+The interface **must display only canonical system data**.
 
 ### Live Auction and Recent Results
-- No addresses displayed
-- No ownership implied
 
-### Detailed History Views
-- Addresses may be displayed in truncated form
-- Addresses are presented as data, not identity
+- Addresses **must not** be displayed
+- Ownership **must not** be implied
+
+### Historical Views
+
+- Addresses **may** be displayed in truncated form
+- Addresses **must** be presented as data, not identity
 
 ---
 
-## 14. Destination Semantics
+## 14. Destination Semantics (Normative)
 
-Every auction resolves to a destination.
+Every auction resolves to exactly one destination.
 
 - Successful auction:
-  - Destination = winner’s address
+  - Destination = winning address
 
-- No-bid or failed-settlement auction:
-  - Destination = NullSteward
+- No-bid or failed settlement:
+  - Destination = `NullSteward`
 
-NullSteward:
-- Is a system-controlled destination
-- Uses a new address per occurrence
-- Is intentionally unspendable
-- Is not controlled by any participant
+Rules:
 
-Bid amount for no-bid outcomes is recorded as `0`.
+- `NullSteward` is unspendable
+- A new address **must** be used per occurrence
+- No participant controls the destination
+
+Bid amount for no-bid outcomes **must** be recorded as `0`.
 
 ---
 
-## 15. Transaction References
+## 15. Transaction References (Normative)
 
-- Transaction ID and satpoint are treated as **separate affordances**
-- They are grouped visually but not merged conceptually
+Rules:
+
+- `txid` and `satpoint` are distinct affordances
+- They **must not** be merged conceptually
 - Each links to its canonical external viewer
-- They are never embedded or interpreted by Numbers
+- They **must not** be embedded or interpreted
 
-Transaction references are shown only  
-for canonical system outcomes.
+Transaction references are shown **only** for canonical outcomes.
 
 ---
 
-## 16. Non-Goals
+## 16. Non-Goals (Normative)
 
-The interface does not provide:
+The interface **does not** provide:
 
 - User accounts
 - Personalization
 - Notifications
-- Market data
 - Rankings
-- Rarity signals
+- Market data
+- Rarity indicators
 - Social features
-- Analytics dashboards
+- Analytics
 
-Any feature not explicitly described here is out of scope.
+Any feature not specified here is forbidden.
 
 ---
 
-## 17. Guiding Principle
+## 17. Final Principle
 
-The interface must never imply meaning  
+The interface **must never** imply meaning
 beyond recorded outcomes.
 
 Numbers records.  
 The interface reflects.  
-Viewers interpret.
+Interpretation happens elsewhere.

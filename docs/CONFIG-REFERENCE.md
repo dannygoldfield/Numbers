@@ -1,14 +1,20 @@
 # Configuration Reference — Numbers
 
-This document defines all supported configuration parameters for Numbers.
+This document defines the **entire configuration surface area** for Numbers.
 
-It is normative.
+It is **normative**.
 
-Any configuration not documented here must be ignored.
-Any documented configuration must be validated strictly.
+Any configuration key not documented here **is forbidden**.  
+Any documented configuration **must be validated strictly**.
 
-If configuration conflicts with STATE-MACHINE.md or INVARIANTS.md,
-the configuration is invalid.
+If any configuration conflicts with:
+- STATE-MACHINE.md
+- INVARIANTS.md
+- TRANSITION-INVARIANTS.md
+- PERSISTENCE.md
+- RESTART-RULES.md
+
+the configuration is invalid and execution **must halt**.
 
 ---
 
@@ -16,23 +22,30 @@ the configuration is invalid.
 
 This document exists to:
 
-- Lock configuration surface area
+- Lock the configuration surface area
 - Prevent hidden behavior toggles
 - Ensure reproducible deployments
-- Enable safe validation by humans and LLMs
+- Enable deterministic validation by humans and LLMs
 
-Configuration controls parameters, not semantics.
+Configuration **tunes parameters only**.  
+Configuration **must not alter semantics, authority, or truth**.
+
+Configuration is not a repair mechanism.
 
 ---
 
-## 2. Configuration Principles
+## 2. Configuration Principles (Normative)
+
+All configuration handling **must** obey the following rules:
 
 - Configuration must not alter invariants
-- Configuration must not create new states
+- Configuration must not create, remove, merge, or reinterpret states
 - Configuration must not bypass safety rules
-- Invalid configuration must fail fast
+- Configuration must not enable retries forbidden by the specification
+- Configuration must not restore or recreate consumed authority
+- Invalid configuration **must fail fast and halt execution**
 
-Defaults are explicit.
+Defaults are explicit.  
 Silence is forbidden.
 
 ---
@@ -44,10 +57,12 @@ Silence is forbidden.
 - Type: integer
 - Required: yes
 - Minimum: 1
-- Maximum: implementation-defined
+- Maximum: implementation-defined hard upper bound
 - Default: none
 
-Defines the duration of a single auction.
+Defines the duration of a single auction in seconds.
+
+This value applies uniformly to all auctions.
 
 ---
 
@@ -56,11 +71,16 @@ Defines the duration of a single auction.
 - Type: integer
 - Required: yes
 - Minimum: 0
+- Maximum: implementation-defined hard upper bound
 - Default: none
 
-Defines the delay between auctions.
+Defines the delay between finalization of auction `N`
+and opening of auction `N+1`.
 
-This does not depend on settlement or inscription.
+This value:
+- does not depend on settlement
+- does not depend on inscription
+- does not alter auction truth
 
 ---
 
@@ -73,7 +93,9 @@ This does not depend on settlement or inscription.
 - Minimum: 1
 - Default: none
 
-Minimum allowed increase over the current high bid.
+Defines the minimum allowed increase over the current highest bid.
+
+This constraint is fixed at auction start.
 
 ---
 
@@ -83,7 +105,11 @@ Minimum allowed increase over the current high bid.
 - Required: no
 - Default: null
 
-Upper bound on bid amount, if set.
+Defines an absolute upper bound on bid amount.
+
+If unset (`null`), no upper bound is enforced.
+
+This cap exists to bound exposure, not to influence valuation.
 
 ---
 
@@ -94,9 +120,16 @@ Upper bound on bid amount, if set.
 - Type: integer
 - Required: yes
 - Minimum: 1
+- Maximum: implementation-defined hard upper bound
 - Default: none
 
-Time allowed for settlement after resolution.
+Defines the time window during which settlement must complete
+after auction resolution.
+
+Deadlines:
+- must not be extended
+- must not be reset
+- must not be inferred
 
 ---
 
@@ -104,10 +137,15 @@ Time allowed for settlement after resolution.
 
 - Type: string
 - Required: yes
-- Allowed values: implementation-defined address formats
+- Allowed values: valid address formats for the configured chain
 - Default: none
 
-Destination used when settlement is not completed.
+Defines the destination address used when settlement does not complete.
+
+Routing to this address is:
+- valid
+- final
+- non-exceptional
 
 ---
 
@@ -119,9 +157,13 @@ Destination used when settlement is not completed.
 - Required: yes
 - Default: true
 
-Controls whether inscription attempts are permitted.
+Controls whether inscription attempts are permitted at all.
 
-Disabling does not retroactively change outcomes.
+Disabling inscription:
+- does not retroactively change outcomes
+- does not restore authority
+- does not alter auction truth
+- does not alter settlement truth
 
 ---
 
@@ -129,10 +171,13 @@ Disabling does not retroactively change outcomes.
 
 - Type: integer
 - Required: yes
-- Allowed values: 1 only
+- Allowed values: exactly `1`
 - Default: 1
 
-Multiple attempts are forbidden by invariant.
+Defines the maximum number of inscription attempts.
+
+This value is fixed by invariant.  
+Any value other than `1` is invalid and fatal.
 
 ---
 
@@ -145,7 +190,9 @@ Multiple attempts are forbidden by invariant.
 - Minimum: 1
 - Default: 1
 
-Limits concurrent authority-bearing actions.
+Defines the maximum number of concurrent authority-bearing actions.
+
+This limit **must not** permit overlapping authority execution.
 
 ---
 
@@ -155,7 +202,13 @@ Limits concurrent authority-bearing actions.
 - Required: yes
 - Default: true
 
-Controls whether the system pauses automatically on ambiguity.
+Defines whether the system automatically enters `Paused`
+when an Ambiguous Error is detected.
+
+Disabling this setting:
+- must not permit authority reuse
+- must not permit retries
+- must not permit progression past ambiguity
 
 ---
 
@@ -165,8 +218,14 @@ Controls whether the system pauses automatically on ambiguity.
 
 - Type: string
 - Required: yes
-- Allowed values: debug | info | warn | error
-- Default: info
+- Allowed values: `debug` | `info` | `warn` | `error`
+- Default: `info`
+
+Defines the minimum log severity emitted.
+
+Logging configuration:
+- must not suppress Ambiguous errors
+- must not suppress Fatal errors
 
 ---
 
@@ -176,20 +235,74 @@ Controls whether the system pauses automatically on ambiguity.
 - Required: yes
 - Default: true
 
+Controls emission of operational metrics.
+
+Metrics are observational only.
+They must not affect behavior, timing, or authority.
+
 ---
 
-## 9. Validation Rules
+## 9. Chain and Network
 
-- Unknown keys are forbidden
+### chain.network
+
+- Type: string
+- Required: yes
+- Allowed values: `mainnet` | `testnet` | `regtest`
+- Default: none
+
+Defines the Bitcoin network the system operates on.
+
+This value **must be immutable** for the lifetime of persisted data.
+
+Changing this value with existing persisted state is forbidden.
+
+---
+
+### chain.confirmation_depth
+
+- Type: integer
+- Required: yes
+- Minimum: 1
+- Default: none
+
+Defines the number of confirmations required
+before a Bitcoin transaction is considered final
+for settlement and inscription observation.
+
+This value affects **when knowledge is accepted**,  
+not **what outcomes are permitted**.
+
+It must be consistent with:
+- STATE-MACHINE.md
+- settlement semantics
+- ERROR-TAXONOMY.md
+
+---
+
+## 10. Validation Rules (Normative)
+
+Configuration validation **must** enforce all of the following:
+
+- Unknown keys are forbidden and fatal
 - Missing required keys are fatal
 - Invalid values are fatal
-- Defaults must be applied explicitly
+- Defaults must be applied explicitly and recorded
+- Validation must occur before startup
+- Validation must occur again on restart
 
-Configuration must be validated before startup.
+Execution **must not begin** if validation fails.
 
 ---
 
-## 10. Final Rule
+## 11. Final Rule
 
-Configuration may tune behavior,
-but it may never change truth.
+Configuration may tune **behavioral parameters**.
+
+Configuration must never change:
+- truth
+- authority
+- history
+
+If configuration would be required to “fix” an outcome,  
+the system must halt instead.

@@ -5,7 +5,7 @@ This document defines the operational policy for reimbursement within the Number
 This policy is **non-normative**.
 It does not grant authority, alter outcomes, or modify system truth.
 
-If there is a conflict, INVARIANTS.md, STATE-MACHINE.md, and CORE-SEQUENCE.md take precedence.
+If there is a conflict, PRD.md, CORE-SEQUENCE.md, STATE-MACHINE-TABLE.md, STATE-MACHINE.md, and INVARIANTS.md take precedence.
 
 ---
 

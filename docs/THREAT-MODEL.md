@@ -1,167 +1,303 @@
-# Threat Model
+# Threat Model — Numbers
 
-This document defines the security boundaries, assumptions, and accepted risks of Numbers.
+This document defines the security boundaries,
+assumptions, and accepted risks of the Numbers system.
 
-Numbers prioritizes correctness and containment over availability.
-If a choice must be made, the system fails safe.
+It is **normative** where it constrains system behavior.
 
-This document defines what Numbers guarantees
-and what it explicitly does not.
+Numbers prioritizes correctness, containment, and history integrity
+over availability, throughput, or convenience.
 
----
+If a choice must be made,
+the system **must fail safe**.
 
-## Scope
-
-Numbers separates responsibility into two layers:
-
-1. **Process layer**  
-   Auction timing, bid submission, settlement coordination, and inscription initiation.
-
-2. **Outcome layer**  
-   The final inscription recorded on the Bitcoin blockchain.
-
-These layers have distinct trust assumptions
-and distinct failure modes.
+If there is a conflict,
+INVARIANTS.md, ERROR-TAXONOMY.md, FAILURE-MODES.md,
+LIMITS-AND-CIRCUIT-BREAKERS.md, PERSISTENCE.md,
+and RESTART-RULES.md take precedence.
 
 ---
 
-## Assets
+## Modal Language Rule (Normative)
 
-The system protects:
+In this document and all normative specifications:
+
+- **must / must not** define obligations
+- **only / exactly once / at most once** define bounds
+- **may** is permitted **only** to describe uncertainty of knowledge,
+  never permission, intent, or mitigation choice
+
+The following terms are forbidden in normative contexts:
+
+- possibly
+- likely
+- eventually
+- for now
+- TBD
+
+Any normative statement using forbidden modal language is invalid.
+
+---
+
+## 1. Scope and Trust Boundaries (Normative)
+
+Numbers separates responsibility into two non-overlapping layers:
+
+1. **Process Layer (Off-chain)**
+2. **Outcome Layer (On-chain, Bitcoin)**
+
+These layers have distinct trust assumptions,
+distinct authority boundaries,
+and distinct failure semantics.
+
+No mitigation, response, or operational action
+**may** blur this boundary.
+
+---
+
+## 2. Protected Assets (Normative)
+
+Numbers protects the following assets:
 
 - User funds submitted as bids
-- System-controlled funds used for fees
-- Private keys for operational wallets
-- Auction ordering and resolution integrity
-- Correct association between numbers and inscriptions
-- Public confidence in recorded outcomes
+- System-controlled funds used for transaction fees
+- Authority-bearing private keys
+- Auction order, timing, and resolution integrity
+- One-to-one association between auction numbers and recognized inscriptions
+- Public verifiability of recorded outcomes
+
+Loss of availability is acceptable.  
+Loss of history integrity is not.
 
 ---
 
-## Outcome Layer (Bitcoin)
+## 3. Outcome Layer Threat Model (Bitcoin)
 
 Once an inscription transaction is confirmed on Bitcoin:
 
-- Output control is enforced by Bitcoin consensus
-- Records are public, verifiable, and append-only
-- Inscription content cannot be altered or reassigned
-- No operator or bidder can retroactively change a confirmed outcome
+- Transaction existence is enforced by Bitcoin consensus
+- Inscription data is immutable
+- Outputs cannot be reassigned or rewritten
+- No operator, bidder, or system action can alter the outcome
 
-This layer inherits Bitcoin’s security properties
-and Bitcoin’s failure modes.
+This layer inherits:
+
+- Bitcoin’s consensus security
+- Bitcoin’s fee market behavior
+- Bitcoin’s confirmation uncertainty
+- Bitcoin’s irreversibility
 
 Subsequent transfers of an inscription
-do not affect the recorded outcome.
+do not affect Numbers’ recorded outcome.
+
+Numbers **must not** attempt to correct,
+override, or reinterpret Bitcoin outcomes.
 
 ---
 
-## Process Layer (Off-chain)
+## 4. Process Layer Threat Model (Off-chain)
 
-Auction execution relies on off-chain coordination.
+The process layer coordinates:
 
-At this layer:
+- auction timing
+- bid intake
+- resolution determination
+- settlement coordination
+- inscription initiation
 
-- The operator enforces published auction rules
-- Timing and resolution are enforced procedurally
-- Bid submission and settlement are subject to standard Web risks
-- Temporary outages may affect participation
+Properties:
 
-This layer does **not** provide trustless execution guarantees.
+- execution is procedural, not trustless
+- operator participation is required
+- outages and delays are expected
+- safety is enforced by refusal, not recovery
 
-Failure at this layer may prevent participation,
-but cannot alter confirmed outcomes.
+Failure in the process layer:
 
----
-
-## Threat Considerations
-
-The following risks operate within the trust boundaries defined above.
-
-### High Fee Environment
-- **Risk:** Inscription transactions become uneconomical or delayed
-- **Mitigation:**
-  - Fee ceilings enforced
-  - Automatic auction pause when thresholds are exceeded
-  - Manual intervention required to resume
-
-### Settlement Failure
-- **Risk:** Winning bidder does not settle
-- **Mitigation:**
-  - Settlement window enforced
-  - On failure, destination defaults to NullSteward
-  - Sequence advances without rollback
-
-### Wallet Compromise
-- **Risk:** Loss of system-controlled funds
-- **Mitigation:**
-  - Minimal hot wallet balances
-  - No long-term custody of user funds
-  - NullSteward outputs intentionally unspendable
-
-### Double Spend or RBF Abuse
-- **Risk:** Bid payment invalidated
-- **Mitigation:**
-  - Confirmation threshold required
-  - Conservative mempool policy
-  - No optimistic settlement
-
-### Denial of Service
-- **Risk:** Flooding bids or requests
-- **Mitigation:**
-  - Rate limiting
-  - Auction caps
-  - Automatic pause on error thresholds
-
-### Data Corruption
-- **Risk:** Incorrect auction state or history
-- **Mitigation:**
-  - Append-only records
-  - Immutable sequence guarantees
-  - External verification via txid and satpoint
+- **may** prevent participation
+- **must not** alter confirmed outcomes
+- **must not** recreate authority
+- **must not** rewrite history
 
 ---
 
-## Explicit Non-Guarantees
+## 5. Threat Classes and Bounded Responses (Normative)
+
+For each threat class, only the responses listed as **Allowed**
+are permitted.
+
+No response may violate invariants,
+retry consumed authority,
+or invent certainty.
+
+---
+
+### 5.1 Fee Market Pressure
+
+**Threat**  
+Inscription fees exceed configured tolerance.
+
+**Allowed Responses**
+- enforce fee ceilings
+- defer inscription broadcast
+- activate circuit breakers
+- pause auctions at auction boundaries
+
+**Forbidden Responses**
+- retry broadcast after ambiguity
+- lower confirmation requirements
+- reinterpret finalized outcomes
+
+---
+
+### 5.2 Settlement Failure
+
+**Threat**  
+Winning bidder does not complete settlement.
+
+**Allowed Responses**
+- enforce the settlement deadline
+- finalize destination to `NullSteward`
+- advance the sequence
+
+**Forbidden Responses**
+- extend deadlines
+- reopen auctions
+- retry settlement after failure
+
+---
+
+### 5.3 Wallet Compromise
+
+**Threat**  
+Authority-bearing keys are exposed or stolen.
+
+**Allowed Responses**
+- pause at the next auction boundary
+- sweep remaining funds
+- rotate keys
+- record the incident durably
+
+**Forbidden Responses**
+- retry past actions
+- reclaim spent outputs
+- reinterpret ambiguous outcomes
+
+---
+
+### 5.4 Double-Spend or RBF Abuse
+
+**Threat**  
+Bid payment is invalidated or replaced.
+
+**Allowed Responses**
+- require confirmation thresholds
+- refuse optimistic settlement
+- classify ambiguity when outcome cannot be proven
+
+**Forbidden Responses**
+- assume confirmation
+- infer bidder intent
+- retry settlement based on belief
+
+---
+
+### 5.5 Denial of Service
+
+**Threat**  
+Flooding bids, requests, or malformed inputs.
+
+**Allowed Responses**
+- rate limiting
+- bid rejection
+- circuit breaker activation
+- boundary-level pause
+
+**Forbidden Responses**
+- dropping persisted state
+- skipping auctions
+- altering timing guarantees
+
+---
+
+### 5.6 Data Corruption or Partial Persistence
+
+**Threat**  
+Incomplete, missing, or contradictory persisted records.
+
+**Allowed Responses**
+- halt execution
+- classify as Fatal or Ambiguous
+- require operator inspection
+
+**Forbidden Responses**
+- recomputation
+- inference from absence
+- repair by assumption
+
+---
+
+## 6. Explicitly Accepted Risks (Normative)
+
+Numbers explicitly accepts the following risks:
+
+- temporary unavailability
+- operator error causing pauses
+- missed participation due to outages
+- fee volatility delaying inscription
+- permanent loss of funds routed to `NullSteward`
+- permanent ambiguity where proof cannot be established
+
+These risks are **intentional, visible, and non-recoverable**.
+
+---
+
+## 7. Explicit Non-Guarantees (Normative)
 
 Numbers does not guarantee:
 
-- Trustless auction execution
-- On-chain enforcement of bidding rules
-- Automatic remediation for operator error
-- Immunity from all forms of operator failure
-- Continuous availability
+- trustless auction execution
+- uninterrupted availability
+- on-chain enforcement of auction rules
+- remediation of operator mistakes
+- economic value, fairness, or liquidity
 
-These limits are intentional and disclosed.
-
----
-
-## Irreversibility
-
-The system enforces the following:
-
-- Each auction resolves exactly once
-- The sequence never rewinds, retries, or re-auctions
-- Confirmed on-chain outcomes are final
-
-Irreversibility applies to outcomes,
-not to the off-chain auction process.
+Any claim to the contrary is invalid.
 
 ---
 
-## Risk Acceptance
+## 8. Irreversibility Rules (Normative)
+
+The system enforces:
+
+- each auction resolves exactly once
+- authority is consumed exactly once
+- ambiguity permanently reduces authority
+- confirmed on-chain outcomes are final
+
+No threat permits rewind, retry, or reinterpretation.
+
+---
+
+## 9. Participant Risk Acceptance
 
 By participating, bidders accept that:
 
-- The auction process is not fully autonomous
-- Operator execution is required
-- Confirmed inscriptions are permanent
-- There is no appeals process for completed outcomes
+- the process layer is not trustless
+- execution requires an operator
+- confirmed inscriptions are permanent
+- ambiguity may result in loss
+- no appeal or reversal mechanism exists
+
+Participation implies acceptance of these constraints.
 
 ---
 
-## Design Intent
+## 10. Design Intent
 
-Numbers makes its trust boundaries explicit.
+Numbers makes its trust boundaries explicit,
+records outcomes procedurally,
+and refuses to invent certainty where none exists.
 
-It records outcomes.
-It does not attempt to automate trust away.
+Security is achieved through containment,
+not through denial of risk.

@@ -2,6 +2,12 @@
 
 This document defines the executable state machines for Numbers.
 
+It is **normative**.
+
+This document assumes familiarity with:
+- STATE-MACHINE-TABLE.md
+- CORE-SEQUENCE.md
+
 It specifies:
 1. All valid states
 2. All allowed transitions
@@ -12,10 +18,10 @@ It specifies:
 7. Illegal transitions
 8. Authority loss rules
 
-If behavior is not permitted here, it is forbidden.
+If behavior is not explicitly permitted here, it is forbidden.
 
-This document is normative.  
-If there is a conflict, CORE-SEQUENCE.md and PRD.md take precedence.
+If there is a conflict,
+PRD.md, CORE-SEQUENCE.md, and STATE-MACHINE-TABLE.md take precedence.
 
 ---
 
@@ -23,11 +29,12 @@ If there is a conflict, CORE-SEQUENCE.md and PRD.md take precedence.
 
 This document governs:
 
-- The auction lifecycle for a single number N
+- The auction lifecycle for a single number `N`
 - The inscription lifecycle that follows auction finalization
 - System-level pause behavior at auction boundaries
 
-It does not govern:
+This document does **not** govern:
+
 - UI presentation
 - Wallet internals
 - Bitcoin confirmation mechanics beyond required thresholds
@@ -36,21 +43,23 @@ It does not govern:
 
 ## 2. State Model
 
-The system operates three distinct state machines:
+The system consists of three distinct state machines:
 
 1. Auction State Machine (per number)
 2. Inscription State Machine (per number, post-auction)
 3. System Control State Machine (global)
 
-They interact only at explicitly defined boundaries.
+These state machines interact only at explicitly defined boundaries.
 
-This document defines state legality and authority boundaries, not timing guarantees, which are defined in CORE-SEQUENCE.md.
+This document defines **state legality and authority boundaries**.
+Timing guarantees are defined exclusively in CORE-SEQUENCE.md.
 
 ---
 
 ## 3. Auction State Machine
 
-Each auction number N progresses through the following states exactly once and in order.
+Each auction number `N` progresses through the following states
+**exactly once and strictly in order**.
 
 ### 3.1 Auction States
 
@@ -60,7 +69,7 @@ Each auction number N progresses through the following states exactly once and i
 4. `AwaitingSettlement`
 5. `Finalized`
 
-There are no other valid auction states.
+No other auction states are valid.
 
 Once an auction reaches `Finalized`, its lifecycle is complete.
 
@@ -71,15 +80,15 @@ Once an auction reaches `Finalized`, its lifecycle is complete.
 ### Scheduled
 
 **Meaning**  
-Auction N exists but is not yet accepting bids.
+Auction `N` exists but is not accepting bids.
 
 **Entry conditions**
-- Auction N−1 has advanced
+- Auction `N−1` has advanced
 - Inter-auction gap timer is active
 
 **Allowed actions**
 - No bids accepted
-- Auction timer visible but inactive
+- Auction timing visible but inactive
 
 **Persistence**
 - Auction record exists
@@ -89,14 +98,14 @@ Auction N exists but is not yet accepting bids.
 - Inter-auction gap expires
 
 **Guard**
-- System is not paused
+- System state is `Running`
 
 ---
 
 ### Open
 
 **Meaning**  
-Auction N is actively accepting bids.
+Auction `N` is actively accepting bids.
 
 **Entry conditions**
 - Inter-auction gap has expired
@@ -120,13 +129,13 @@ Exactly one of:
 ### Closed
 
 **Meaning**  
-Auction N is closed to new bids and resolving.
+Auction `N` is closed to new bids and resolving.
 
 **Entry conditions**
-- Open auction exit trigger fires
+- An `Open` exit trigger fires
 
 **Allowed actions**
-- Determine winning bid if any
+- Determine winning bid, if any
 - Record resolution outcome
 
 **Persistence**
@@ -135,21 +144,21 @@ Auction N is closed to new bids and resolving.
 **Exit trigger**
 - Resolution computation completes
 
-**Idempotence rule**  
-If re-entered after restart, resolution must not be recomputed.
+**Idempotence**
+- Resolution must never be recomputed
 
 ---
 
 ### AwaitingSettlement
 
 **Meaning**  
-Auction N has resolved, but settlement has not yet finalized.
+Auction `N` has resolved but settlement is incomplete.
 
 **Entry conditions**
 - Resolution record exists
 
 **Allowed actions**
-- Await settlement confirmation
+- Observe settlement completion
 - Track settlement deadline
 
 **Persistence**
@@ -167,14 +176,14 @@ Exactly one of:
 ### Finalized
 
 **Meaning**  
-Auction N has a final destination.
+Auction `N` has a final destination.
 
 **Entry conditions**
 - Settlement success or failure determined
 
 **Final destinations**
 - Winning bidder address
-- Null steward address
+- NullSteward address
 
 **Persistence**
 - Finalization record written
@@ -182,7 +191,7 @@ Auction N has a final destination.
 
 Finalization is irreversible.
 
-Auction state does not progress beyond this point.
+No auction action is permitted beyond this state.
 
 ---
 
@@ -202,15 +211,15 @@ No other auction transitions are valid.
 
 ## 3.4 Illegal Auction Transitions
 
-The following transitions are explicitly forbidden:
+The following transitions are forbidden:
 
-- Open → Scheduled
-- Closed → Open
-- AwaitingSettlement → Open
-- Finalized → AwaitingSettlement
+- `Open → Scheduled`
+- `Closed → Open`
+- `AwaitingSettlement → Open`
+- `Finalized → AwaitingSettlement`
 - Any transition that reopens bidding
 
-Illegal transitions must trigger a fatal error and require operator intervention.
+Illegal transitions are fatal and require operator inspection.
 
 ---
 
@@ -222,19 +231,19 @@ On process restart:
   Resume inter-auction timer
 
 - **Open**  
-  Resume bidding if end time not passed  
+  Resume bidding if end time has not passed  
   Otherwise transition to `Closed`
 
 - **Closed**  
-  Do not recompute resolution  
-  Proceed to `AwaitingSettlement`
+  Resolution must already exist  
+  Transition to `AwaitingSettlement`
 
 - **AwaitingSettlement**  
-  Resume settlement monitoring
+  Resume settlement observation only
 
 - **Finalized**  
-  No auction action  
-  Inscription may proceed independently
+  No auction action permitted  
+  Inscription lifecycle proceeds independently
 
 ---
 
@@ -244,12 +253,16 @@ The inscription state machine begins only after auction finalization.
 
 Inscription state does not affect auction truth.
 
+---
+
 ### 4.1 Inscription States
 
 1. `NotStarted`
 2. `Inscribing`
 3. `Ambiguous`
 4. `Inscribed`
+
+No other inscription states are valid.
 
 ---
 
@@ -261,7 +274,7 @@ Inscription state does not affect auction truth.
 No inscription attempt has begun.
 
 **Entry conditions**
-- Auction N is finalized
+- Auction `N` is finalized
 
 **Allowed actions**
 - Reserve wallet resources
@@ -278,7 +291,7 @@ The inscription transaction is being constructed or broadcast.
 - Inscription process initiated
 
 **Allowed actions**
-- Construct inscription payload
+- Construct payload
 - Select UTXO
 - Sign transaction
 - Attempt broadcast
@@ -292,23 +305,28 @@ The inscription transaction is being constructed or broadcast.
 #### Ambiguous
 
 **Meaning**  
-An inscription transaction may exist, but its fate cannot be determined with certainty.
+An inscription transaction exists or cannot be ruled out,
+and its outcome cannot be determined with certainty.
 
 **Entry conditions**
-- Broadcast may have occurred
+- Broadcast occurred or cannot be excluded
 - Observation is inconclusive
 - Competing inscription cannot be ruled out
 
 **Allowed actions**
 - Observe chain state only
 
-**Observation definition (normative)**  
-Observation is performed exclusively by deterministic system processes querying external sources of record (e.g. Bitcoin node or indexer).  
-Human judgment does not constitute observation and cannot change state.
+**Observation (Normative)**  
+Observation is performed exclusively by deterministic system processes
+querying external sources of record.
 
-Observation does not permit new state transitions and does not restore authority.
+Human judgment does not constitute observation
+and must not change system state.
 
-This state may persist indefinitely.
+Observation updates knowledge only.
+Observation must not restore authority or permit transitions.
+
+This state is non-terminal and may persist indefinitely.
 
 ---
 
@@ -329,42 +347,41 @@ This is a terminal state.
 
 ---
 
-### 4.3 Authority Loss Rules (Normative)
+## 4.3 Authority Loss Rules (Normative)
 
 Authority rules apply only to inscription.
 
-**Pre-broadcast failure (safe)**
+**Pre-broadcast failure**
 - Transaction construction or signing fails
 - No transaction submitted
 - Retry is permitted
 
-**Post-broadcast ambiguity (unsafe)**
-- A transaction may have been broadcast
-- Its fate cannot be determined
+**Post-broadcast ambiguity**
+- A transaction was submitted or submission cannot be excluded
 
 Once ambiguity exists:
 
-- Authority to create a competing inscription is permanently lost
-- No retry, replacement, or override is permitted
+- Inscription authority is permanently consumed
+- Retry, replacement, or override is forbidden
 - Time passing does not restore permission
-- Observation is the only allowed action
+- Observation is the only permitted activity
 
 ---
 
-### 4.4 Inscription Transition Table
+## 4.4 Inscription Transition Table
 
 | From | To | Trigger |
 |----|----|--------|
 | NotStarted | Inscribing | Inscription initiated |
 | Inscribing | Inscribed | Inscription observed |
 | Inscribing | Ambiguous | Broadcast uncertainty detected |
-| Ambiguous | Inscribed | Inscription later observed |
+| Ambiguous | Inscribed | Inscription observed |
 
 No other inscription transitions are valid.
 
 ---
 
-### 4.5 Inscription Restart Semantics
+## 4.5 Inscription Restart Semantics
 
 On restart:
 
@@ -372,14 +389,14 @@ On restart:
   Initiation permitted
 
 - **Inscribing**  
-  Retry permitted only if pre-broadcast failure is known
+  Retry permitted only if a pre-broadcast failure is explicitly recorded
 
 - **Ambiguous**  
-  No retry permitted  
-  Observe only
+  Retry forbidden  
+  Observation only
 
 - **Inscribed**  
-  No action
+  No action permitted
 
 ---
 
@@ -394,9 +411,9 @@ On restart:
 
 ### 5.2 Pause Rules
 
-- The system may enter `Paused` only at auction boundaries
+- The system enters `Paused` only at auction boundaries
 - An open auction must never be interrupted
-- Pausing prevents transition from `Scheduled` → `Open`
+- Pausing prevents `Scheduled → Open`
 - Pausing does not affect settlement or inscription
 
 Pause events are durably recorded with timestamp and reason.
@@ -406,25 +423,27 @@ Pause events are durably recorded with timestamp and reason.
 ### 5.3 Resume Rules
 
 - Resume requires explicit operator action
-- Resume is allowed only when system state is internally consistent
-- Resume transitions system to `Running`
+- Resume is permitted only when system state is internally consistent
+- Resume transitions the system to `Running`
 
 ---
 
-## 6. Safety Properties Enforced Here
+## 6. Safety Properties Enforced
 
 This state machine enforces invariants defined in:
+
 - INVARIANTS.md
 - TRANSITION-INVARIANTS.md
 
-Including but not limited to:
+Including:
+
 - Auctions resolve exactly once
 - Auctions finalize exactly once
-- At most one canonical inscription exists per auction
+- At most one canonical inscription exists
 - Bidding never reopens
-- Ambiguity does not grant authority
+- Ambiguity never grants authority
 
-Violation of these properties is a fatal system error.
+Violation of these properties is fatal.
 
 ---
 
@@ -438,12 +457,12 @@ Violation of these properties is a fatal system error.
 
 ---
 
-## 8. Open Assumptions
+## 8. External Assumptions
 
-The following assumptions are external and must be defined elsewhere:
+The following are defined elsewhere and must be stable at implementation time:
 
-1. Confirmation depth required for settlement
-2. Fee selection and retry policy prior to broadcast
-3. External mechanisms for observing inscriptions
+1. Settlement confirmation depth
+2. Fee selection policy prior to broadcast
+3. External observation mechanisms
 
-If any assumption changes, this document must be revised before implementation.
+If any assumption changes, this document must be revised before execution.
