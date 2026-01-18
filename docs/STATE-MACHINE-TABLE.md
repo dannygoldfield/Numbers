@@ -4,13 +4,15 @@ This document assumes familiarity with CORE-SEQUENCE.md.
 
 This document defines the authoritative state machine for Numbers.
 
-It is normative.
+It is **normative**.
 
 All system behavior must conform to this table.
-If there is a conflict, PRD.md and CORE-SEQUENCE.md take precedence.
+If there is a conflict,
+PRD.md, CORE-SEQUENCE.md, INVARIANTS.md,
+and AUTHORITY-CONSUMPTION.md take precedence.
 
 This table defines:
-- All valid states
+- All valid lifecycle states
 - All permitted transitions
 - All forbidden transitions
 - Terminal states
@@ -25,12 +27,15 @@ This table defines:
 | Scheduled | Auction is known but not yet open | No |
 | Open | Auction is accepting bids | No |
 | Closed | Auction has closed to bids | No |
-| AwaitingSettlement | Winning bid exists, settlement pending | No |
-| Finalized | Auction resolved without inscription | Yes |
+| AwaitingSettlement | Winning bid recorded, settlement window open | No |
+| Finalized | Auction outcome fixed with no further authority | Yes |
 | Inscribing | Inscription attempt in progress | No |
-| Ambiguous | Inscription broadcast outcome cannot be determined | No |
 | Inscribed | Canonical inscription observed | Yes |
 | Paused | System pause overlay, not a lifecycle state | N/A |
+
+Notes:
+- `Finalized` includes both clean no-bid outcomes and failed settlement outcomes.
+- `Paused` is an overlay and does not represent lifecycle progression.
 
 ---
 
@@ -42,26 +47,27 @@ This table defines:
 | Open | end_time reached | Closed | Automatic |
 | Open | operator pause | Paused | Overlay only |
 | Paused | operator resume | Open | No inference |
-| Closed | resolution with winning bid | AwaitingSettlement | Deterministic |
-| Closed | resolution with no bids | Finalized | No settlement |
-| AwaitingSettlement | settlement completed | Inscribing | Authority exercised |
-| AwaitingSettlement | settlement deadline expired | Finalized | Destination = NullSteward |
+| Closed | resolution with winning bid | AwaitingSettlement | Settlement authority is exercised |
+| Closed | resolution with no bids | Finalized | No settlement, no inscription |
+| AwaitingSettlement | settlement deadline reached (unpaid) | Finalized | Destination = NullSteward |
+| AwaitingSettlement | settlement confirmed | Inscribing | Observational, authority already consumed |
 | Inscribing | inscription confirmed | Inscribed | Terminal |
 
 ---
 
-## Ambiguity Rule (Non-Transition)
+## Ambiguity Rule (Non-State)
 
-Ambiguity does not produce a lifecycle transition.
+Ambiguity is **not a lifecycle state**.
 
 If ambiguity is detected during **Inscribing**:
 
-- The system remains in the **current state**
-- All execution authority is permanently frozen
+- The system **remains in Inscribing**
+- All remaining execution authority is permanently frozen
 - No retries, rebroadcasts, or alternate actions are permitted
 - Observation is the only allowed activity
 
-Ambiguity permanently constrains future behavior but does not advance or rewind the lifecycle.
+Ambiguity constrains authority.
+It does not advance, rewind, or terminate the lifecycle.
 
 ---
 
@@ -77,17 +83,18 @@ The following transitions are **never permitted**:
 | Inscribed → Any | Terminal state |
 | AwaitingSettlement → Open | Settlement does not reopen bidding |
 | Inscribing → AwaitingSettlement | Authority cannot be reclaimed |
-| Any → Inscribing without settlement | Authority violation |
-| Paused → Any non-previous state | Pause does not advance state |
+| Any → Inscribing without settlement resolution | Authority violation |
+| Paused → Any non-previous state | Pause does not advance lifecycle |
 | Any transition caused by ambiguity | Ambiguity does not advance lifecycle |
 
 ---
 
 ## Authority Rules
 
-- Authority is first exercised at **settlement**
-- Authority may be further exercised during **inscription**
-- Authority is permanently reduced upon **ambiguity**
+- Authority is **first consumed** when entering `AwaitingSettlement`
+- Authority is **never created** by payment confirmation
+- Inscription consumes remaining authority exactly once
+- Ambiguity permanently reduces remaining authority
 - Authority is never restored by:
   - time passing
   - operator action
@@ -98,11 +105,12 @@ The following transitions are **never permitted**:
 
 ## Persistence Requirements
 
-State **must** be persisted at:
+State **must** be durably persisted at:
 
-- Entry to Open
-- Entry to Closed
-- Entry to AwaitingSettlement
+- Entry to `Open`
+- Entry to `Closed`
+- Entry to `AwaitingSettlement`
+- Settlement confirmation or settlement deadline expiry
 - Before any inscription attempt
 - Upon detection of ambiguity
 - Upon reaching any terminal state

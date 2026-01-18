@@ -3,10 +3,11 @@
     "name": "Numbers State Machine",
     "authoritative_source": "STATE-MACHINE-TABLE.md",
     "normative": true,
-    "version": "1.0",
+    "version": "1.1",
     "notes": [
       "Ambiguity is not a state",
       "Pause is an overlay, not a lifecycle state",
+      "Authority is consumed when entering AwaitingSettlement",
       "Any transition not listed is forbidden"
     ]
   },
@@ -26,11 +27,11 @@
     },
     "AwaitingSettlement": {
       "terminal": false,
-      "description": "Winning bid exists, settlement pending"
+      "description": "Winning bid recorded, settlement window open"
     },
     "Finalized": {
-      "terminal": false,
-      "description": "Auction destination finalized; inscription must follow"
+      "terminal": true,
+      "description": "Auction outcome fixed with no further authority"
     },
     "Inscribing": {
       "terminal": false,
@@ -70,7 +71,8 @@
     {
       "from": "Closed",
       "trigger": "resolution_with_winning_bid",
-      "to": "AwaitingSettlement"
+      "to": "AwaitingSettlement",
+      "authority_consumed": true
     },
     {
       "from": "Closed",
@@ -80,9 +82,8 @@
     },
     {
       "from": "AwaitingSettlement",
-      "trigger": "settlement_completed",
-      "to": "Finalized",
-      "authority_exercised": true
+      "trigger": "settlement_confirmed",
+      "to": "Inscribing"
     },
     {
       "from": "AwaitingSettlement",
@@ -91,29 +92,24 @@
       "destination": "NullSteward"
     },
     {
-      "from": "Finalized",
-      "trigger": "inscription_initiated",
-      "to": "Inscribing",
-      "authority_exercised": true
-    },
-    {
       "from": "Inscribing",
       "trigger": "inscription_confirmed",
-      "to": "Inscribed",
-      "terminal": true
+      "to": "Inscribed"
     }
   ],
 
   "forbidden_transitions": [
     { "from": "Open", "to": "Scheduled" },
     { "from": "Closed", "to": "Open" },
-    { "from": "Finalized", "to": "AwaitingSettlement" },
-    { "from": "Finalized", "to": "Open" },
-    { "from": "Finalized", "to": "Closed" },
+    { "from": "Finalized", "to": "*" },
     { "from": "Inscribed", "to": "*" },
     { "from": "AwaitingSettlement", "to": "Open" },
     { "from": "Inscribing", "to": "AwaitingSettlement" },
-    { "from": "*", "to": "Inscribing", "condition": "no_finalization" },
+    {
+      "from": "*",
+      "to": "Inscribing",
+      "condition": "no_settlement_confirmation"
+    },
     { "from": "Paused", "to": "any_non_previous_state" }
   ],
 
@@ -121,7 +117,7 @@
     "is_state": false,
     "causes_transition": false,
     "effects": [
-      "freeze_authority",
+      "freeze_remaining_authority",
       "forbid_retries",
       "forbid_rebroadcast",
       "allow_observation_only"
@@ -132,7 +128,7 @@
     "enter_Open",
     "enter_Closed",
     "enter_AwaitingSettlement",
-    "enter_Finalized",
+    "settlement_confirmed_or_expired",
     "before_inscription_attempt",
     "on_ambiguity_detected",
     "on_terminal_state"
