@@ -73,9 +73,9 @@ If an item is marked 🟡 PARTIAL, it is **not complete**.
   - when it is irreversibly consumed
   - how multiple records represent a single burn
 
-- 🟡 INVARIANT-INDEX.md  
-  Navigation aid mapping invariants and authority rules across documents.  
-  Non-normative but strongly recommended for implementation clarity.
+- ✅ INVARIANT-INDEX.md  
+  Canonical index of all invariants and authority rules.  
+  Normative. Required to prevent invariant loss across documents.
 
 - ✅ ENVIRONMENT-DETERMINED-RENDERING.md  
   Complete and correct. Explicitly non-normative.

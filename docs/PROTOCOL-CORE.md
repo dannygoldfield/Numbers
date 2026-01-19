@@ -102,8 +102,7 @@ Numbers does not attempt to automate trust away.
 
 ## Why the System Stops Instead of Guessing
 
-If the system cannot determine whether an authority-bearing action
-has already occurred, it assumes it has and refuses to proceed.
+If the system cannot determine whether an authority-bearing action has already occurred, it assumes it has and refuses to proceed. This refusal applies to the affected authority, not to the overall sequence of future auctions.
 
 Stopping is not failure.
 Guessing is failure.
