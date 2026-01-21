@@ -1,4 +1,3 @@
-# Target Audience
 # Target Audience — Numbers
 
 This document describes who Numbers is for.
@@ -14,104 +13,138 @@ If there is any conflict, all other specification documents take precedence.
 
 The purpose of this document is to:
 
-- Clarify intended readership and users
-- Prevent accidental optimization for unintended audiences
-- Provide context for design decisions without justifying them
+- Clarify intended audiences
+- Prevent accidental optimization for unintended readers
+- Provide context for design choices without justifying them
 
-This document does not influence system behavior.
-
----
-
-## 2. Primary Audience
-
-### Bitcoin-Native Participants
-
-Numbers is designed for people who:
-
-- Understand Bitcoin at a conceptual level
-- Accept probabilistic finality and uncertainty
-- Are comfortable interacting with public, append-only systems
-- Do not expect customer support, reversibility, or guarantees
-
-This includes, but is not limited to:
-- Bitcoin developers
-- Ordinals-aware users
-- Technically literate collectors
-- Protocol-adjacent experimenters
+This document does **not** influence system behavior.
 
 ---
 
-## 3. Secondary Audience
+## 2. Primary Audience (Implementation Agents)
 
-### Observers and Readers
+### Automated Implementation Agents
+
+The primary audience for the Numbers specification is:
+
+- automated implementation agents
+- LLM-based code generation systems
+
+These agents are expected to:
+
+- ingest the specification mechanically
+- obey explicit authority ordering
+- refuse to proceed on ambiguity or contradiction
+- prefer halting over inference
+
+Authority, ingestion order, and refusal conditions are defined in:
+
+- `SPECIFICATION-ENTRY.md`
+
+---
+
+## 3. Secondary Audience (Human Implementers and Reviewers)
+
+### Human Developers and Reviewers
+
+Human developers interacting with Numbers are expected to act as:
+
+- implementers following the same constraints as machines, or
+- reviewers verifying conformance
+
+They are expected to:
+
+- read the specification in full
+- respect invariants and non-requirements
+- avoid “improving” semantics
+- prefer refusal over interpretation
+
+Human developers are **not** granted discretionary authority.
+They are bound by the same rules as automated agents.
+
+---
+
+## 4. Tertiary Audience (Observers and Readers)
+
+### Observers, Readers, and Analysts
 
 Numbers is also readable by people who:
 
-- Are curious about auctions as a system
-- Are interested in minimal protocols
-- Treat Numbers as a conceptual or cultural artifact
+- are curious about auctions as systems
+- are interested in minimal protocols
+- treat Numbers as a conceptual or cultural artifact
 
 This audience may never interact directly with the system.
 
 Read-only access is sufficient.
+No operational understanding is required.
 
 ---
 
-## 4. Explicitly Not the Audience
+## 5. Bitcoin-Native Participants
 
-Numbers is not designed for:
+Numbers is designed for participants who:
 
-- Retail users expecting consumer UX
-- Users requiring identity recovery
-- Users expecting refunds or reversibility
-- Users unfamiliar with public ledgers
-- Users expecting interpretation, guidance, or education
+- understand Bitcoin at a conceptual level
+- accept probabilistic finality and uncertainty
+- are comfortable with public, append-only systems
+- do not expect customer support, reversibility, or guarantees
+
+This includes, but is not limited to:
+
+- Bitcoin developers
+- Ordinals-aware users
+- technically literate collectors
+- protocol-adjacent experimenters
+
+---
+
+## 6. Explicitly Not the Audience
+
+Numbers is **not** designed for:
+
+- retail users expecting consumer UX
+- users requiring identity recovery
+- users expecting refunds or reversibility
+- users unfamiliar with public ledgers
+- users expecting interpretation, guidance, or education
 
 If a user requires these things, Numbers is not appropriate.
 
 ---
 
-## 5. Developer Audience
-
-Developers interacting with Numbers are expected to:
-
-- Read the specification in full
-- Respect invariants and non-requirements
-- Avoid “improving” semantics
-- Prefer refusal over interpretation
-
-This includes human developers and LLM-based implementers.
-
----
-
-## 6. Institutional and Commercial Use
+## 7. Institutional and Commercial Use
 
 Numbers does not target:
 
-- Enterprises
-- Institutions
-- Regulated financial actors
-- Custodial services
+- enterprises
+- institutions
+- regulated financial actors
+- custodial services
 
-Any such use is external and unsupported.
+Any such use is external, unsupported, and non-authoritative.
 
 ---
 
-## 7. Misuse Expectations
+## 8. Misuse Expectations
 
 Numbers assumes:
 
-- Users may misunderstand outcomes
-- Users may attribute meaning incorrectly
-- External narratives may form
+- users may misunderstand outcomes
+- users may attribute meaning incorrectly
+- external narratives may form
 
 The system does not adapt to these interpretations.
 
 ---
 
-## 8. Final Rule
+## 9. Final Rule
 
-If an audience expectation requires the system to explain itself,
-protect the user, or reinterpret outcomes:
+If an audience expectation requires the system to:
+
+- explain itself
+- protect the user
+- reinterpret outcomes
+- soften loss
 
 That audience is out of scope.
