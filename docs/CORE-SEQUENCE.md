@@ -18,9 +18,15 @@ If there is a conflict, PRD.md takes precedence.
 
 Numbers advances through a monotonically increasing sequence of numbers.
 
-For each number **N**, the system executes the following sequence exactly once.
+For each number **N**, the system executes the following sequence
+**at most once and strictly in order**.
 
-The sequence never pauses, retries, or rewinds.
+The sequence never rewinds.
+Previously completed steps are never repeated.
+
+Temporary blocking of progression
+due to pause, settlement, or observation
+does not alter sequence order.
 
 ---
 
@@ -29,11 +35,14 @@ The sequence never pauses, retries, or rewinds.
 For number **N**:
 
 - An auction opens.
-- The auction has a predefined end condition (time expiry or bid cap).
+- The auction has a predefined end condition
+  (time expiry or bid cap).
 - Only bids that are valid at auction start are accepted.
 - Bid validity remains fixed for the duration of the auction.
 
 At auction close, bidding ends permanently.
+
+No subsequent action may reopen bidding.
 
 ---
 
@@ -42,8 +51,16 @@ At auction close, bidding ends permanently.
 At auction close, the auction resolves exactly once.
 
 Resolution produces a provisional outcome:
-- a winning bidder, or
+
+- a highest valid bid, or
 - no valid bids
+
+Resolution:
+
+- is deterministic
+- is independent of settlement success
+- must not be recomputed
+- must be durably persisted
 
 No further bids are accepted after resolution.
 
@@ -53,29 +70,66 @@ No further bids are accepted after resolution.
 
 If a winning bidder exists, settlement begins.
 
-- Settlement runs asynchronously.
-- Settlement has a fixed deadline.
-- Settlement success or failure does not affect subsequent auctions.
+Settlement:
+
+- executes asynchronously
+- has a fixed deadline
+- does not block subsequent auctions
 
 Finalization produces exactly one destination:
+
 - settlement succeeds → winning address
 - settlement fails → NullSteward
 - no valid bids → NullSteward
+
+Finalization is irreversible
+and consumes all remaining auction authority.
 
 ---
 
 ## Inscription
 
-After finalization, exactly one inscription is produced for number **N**.
+After finalization, the system performs **exactly one inscription attempt**
+for number **N**.
 
-- The inscription content is the number only.
-- The inscription is recorded in a Bitcoin transaction.
-- The destination is determined by finalization.
+The inscription attempt:
 
-The inscription is constructed and broadcast.
-Broadcast uncertainty corresponds to the **Ambiguous** inscription state defined in STATE-MACHINE.md and permanently revokes inscription authority.
+- has content equal to the number only
+- targets the destination determined by finalization
+- is constructed and broadcast as a Bitcoin transaction
 
-The sequence then advances to **N + 1**.
+Inscription authority is exercised **once**.
+
+Possible outcomes include:
+
+- confirmed inscription (`Inscribed`)
+- unresolved broadcast or observation uncertainty (`Ambiguous`)
+
+Ambiguity:
+
+- permanently exhausts inscription authority
+- forbids retries, replacement, or override
+- permits observation only
+
+The system **does not guarantee**
+that an inscription will ever be confirmed.
+
+---
+
+## Sequence Advancement
+
+After inscription authority is exercised
+or permanently exhausted:
+
+- the system advances to **N + 1**
+- no further action is permitted for **N**
+
+The sequence advances regardless of:
+
+- bidder behavior
+- settlement success
+- inscription confirmation
+- ambiguity persistence
 
 ---
 
@@ -83,12 +137,13 @@ The sequence then advances to **N + 1**.
 
 For every number **N**:
 
-- The auction resolves exactly once.
-- Finalization produces exactly one destination.
-- An inscription is produced.
-- The sequence advances.
+- the auction opens at most once
+- the auction resolves exactly once
+- finalization produces exactly one destination
+- inscription authority is exercised at most once
+- the sequence advances monotonically
 
-These guarantees hold regardless of:
-- bidder behavior
-- settlement success
-- inscription interpretation
+Loss, ambiguity, and uncertainty
+are valid terminal outcomes.
+
+They do not block progression.

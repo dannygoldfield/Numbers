@@ -4,7 +4,7 @@ This document defines the Catalog subsystem of Numbers.
 
 It is **normative**.
 
-The Catalog is a system-maintained index of auction outcomes
+The Catalog is a system-maintained, derived index of auction outcomes
 and their corresponding on-chain inscription references.
 
 It records **what was observed and recorded by procedure**.
@@ -74,7 +74,29 @@ for transaction existence and confirmation.
 
 ---
 
-## 3. Derivation Rules (Normative)
+## 3. Dependency Rule (Normative)
+
+The Catalog is a **derived view**.
+
+It is computed from:
+- canonical persisted records defined in DATA-MODEL.md
+- observable Bitcoin transactions and inscriptions
+
+The Catalog **must never** be used as an input to:
+- state transitions
+- authority decisions
+- persistence logic
+- restart reconstruction
+- legality checks
+
+If the Catalog is unavailable, incorrect, empty, or stale,
+the system **must** continue operating solely from:
+- canonical persisted records
+- direct blockchain observation
+
+---
+
+## 4. Derivation Rules (Normative)
 
 Every Catalog entry **must** be derivable from:
 
@@ -94,7 +116,7 @@ Catalog entries describe **procedure-linked observations only**.
 
 ---
 
-## 4. Catalog Contents (Normative)
+## 5. Catalog Contents (Normative)
 
 For each auction number **N**, the Catalog **must represent only known facts**.
 
@@ -117,7 +139,7 @@ The Catalog **must not**:
 
 ---
 
-## 5. Append-Only Behavior (Normative)
+## 6. Append-Only Behavior (Normative)
 
 During normal operation:
 
@@ -130,14 +152,14 @@ They do not revise prior records.
 
 ---
 
-## 6. Rebuild Semantics (Normative)
+## 7. Rebuild Semantics (Normative)
 
 The Catalog **may** be deleted and rebuilt **only as a whole**.
 
 Rebuilding:
 
 - replaces the Catalog in its entirety
-- **must not** modify individual historical meaning
+- **must not** modify historical meaning
 - **must not** exercise authority
 - **must not** change outcomes
 
@@ -151,7 +173,7 @@ or discretionary repair is permitted during rebuild.
 
 ---
 
-## 7. Failure and Availability (Normative)
+## 8. Failure and Availability (Normative)
 
 Catalog failure is **non-fatal**.
 
@@ -168,7 +190,7 @@ Catalog recovery **must not**:
 
 ---
 
-## 8. Scope Limits (Normative)
+## 9. Scope Limits (Normative)
 
 The Catalog does **not**:
 
@@ -183,7 +205,7 @@ All interpretation occurs outside the system.
 
 ---
 
-## 9. Final Rule
+## 10. Final Rule
 
 The Catalog is a lens, not a judge.
 
