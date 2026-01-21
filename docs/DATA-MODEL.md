@@ -39,7 +39,7 @@ Any normative statement using forbidden modal language is invalid.
 
 ---
 
-## 1. Design Principles
+## 1. Design Principles (Normative)
 
 All persisted data **must** obey the following principles:
 
@@ -110,20 +110,11 @@ Represents a bid submission attempt.
 
 ### Fields
 
-- `bid_id`  
-  Unique identifier.
-
-- `auction_id`  
-  References the auction in which the bid was submitted.
-
-- `amount`  
-  Bid amount as submitted.
-
-- `timestamp`  
-  Submission time.
-
-- `status`  
-  One of: `valid`, `invalid`, `superseded`
+- `bid_id`
+- `auction_id`
+- `amount`
+- `timestamp`
+- `status` (`valid`, `invalid`, `superseded`)
 
 ### Rules
 
@@ -142,17 +133,10 @@ Represents the deterministic outcome at auction close.
 
 ### Fields
 
-- `auction_id`  
-  References the resolved auction.
-
-- `winning_bid_id`  
-  Absent when no valid bids exist.
-
-- `winning_amount`  
-  Zero when no valid bids exist.
-
-- `resolution_time`  
-  Timestamp of resolution.
+- `auction_id`
+- `winning_bid_id` (absent if no valid bids)
+- `winning_amount` (zero if no valid bids)
+- `resolution_time`
 
 ### Rules
 
@@ -171,17 +155,10 @@ Represents the settlement outcome derived from resolution.
 
 ### Fields
 
-- `auction_id`  
-  References the resolved auction.
-
-- `destination`  
-  Winner address or `NullSteward`.
-
-- `status`  
-  One of: `settled`, `failed`, `no-bid`
-
-- `finalization_time`  
-  Timestamp of settlement finalization.
+- `auction_id`
+- `destination`
+- `status` (`settled`, `failed`, `no-bid`)
+- `finalization_time`
 
 ### Rules
 
@@ -201,100 +178,7 @@ Represents inscription intent and observed chain outcome.
 
 ### Fields
 
-- `auction_id`  
-  References the finalized auction.
-
-- `txid`  
-  Transaction identifier, if known.
-
-- `satpoint`  
-  Satpoint, if known.
-
-- `status`  
-  One of: `pending`, `broadcast`, `confirmed`, `ambiguous`
-
-- `recognized`  
-  Boolean indicating whether this record represents
-  the system’s procedurally-derived inscription for the auction.
-
-### Rules
-
-- at most one Inscription record **may** have `recognized = true` per auction
-- multiple on-chain inscriptions **may** exist
-- recognition **must** be explicit and immutable
-- ambiguity **must** be recorded and must not be resolved by inference
-- absence of confirmation **must not** be treated as failure
-
-Inscription records reflect **attempt and observation**, not ownership or truth.
-
----
-
-## 8. PauseEvent Record
-
-Represents an inter-auction or system pause.
-
-### Fields
-
-- `from_auction_id`
-- `to_auction_id`
-- `start_time`
-- `end_time`
-- `reason`
-
-### Rules
-
-- PauseEvents **must** occur only at auction boundaries
-- PauseEvents **must not** alter auction outcomes
-- PauseEvents **must** be durably recorded
-
-PauseEvents carry **no semantic meaning** beyond sequencing and control.
-
----
-
-## 9. Authority and Truth (Normative)
-
-- Bitcoin is authoritative for transaction existence and confirmation
-- Numbers is authoritative only for:
-  - auction sequencing
-  - resolution determination
-  - inscription intent and ambiguity tracking
-
-Database records:
-
-- **must not** override the blockchain
-- **must not** assert ownership
-- **must not** infer finality beyond observation
-
-If a persisted record conflicts with on-chain data,
-the blockchain **wins**.
-
----
-
-## 10. Rebuildability (Normative)
-
-The full system state **must** be reconstructible from:
-
-- the Bitcoin blockchain
-- public Numbers rules
-- inspection of transactions and inscriptions
-
-No canonical record **may** depend on:
-
-- private memory
-- operator discretion
-- mutable off-chain metadata
-
-The database **may** be deleted and rebuilt.
-Reconstruction **must** converge on the same recorded outcomes
-given the same observable data.
-
----
-
-## 11. Final Principle
-
-Derived views may change.  
-Canonical records do not.
-
-Numbers persists facts about procedure,
-records loss and ambiguity without repair,
-and then steps aside.
+- `auction_id`
+- `txid` (if known)
+- `satpoint` (if known)
+- `status` (`pending`, `broadcast`, `confirmed`, `ambiguous`)

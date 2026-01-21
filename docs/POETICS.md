@@ -313,3 +313,13 @@ Influence:
 - LIMITS-AND-CIRCUIT-BREAKERS.md (cap philosophy)
 - PRD.md (non-goals, invariants)
 - UI-SPEC.md (no celebration of speed)
+
+### Poem 13: Closing Note
+
+Numbers prefers loss to lies.
+
+If certainty cannot be proven,
+the system must refuse to act.
+
+This is not a limitation.
+It is the design.

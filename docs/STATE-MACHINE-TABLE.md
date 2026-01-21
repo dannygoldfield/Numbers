@@ -1,15 +1,19 @@
 # State Machine — Canonical Table
 
-This document assumes familiarity with CORE-SEQUENCE.md.
+This document assumes familiarity with:
+- CORE-SEQUENCE.md
+- STATE-MACHINE.md
+- AUTHORITY-CONSUMPTION.md
 
-This document defines the authoritative state machine for Numbers.
+This document defines the authoritative lifecycle table for Numbers.
 
 It is **normative**.
 
-All system behavior must conform to this table.
+All system behavior **must** conform to this table.
+
 If there is a conflict,
-PRD.md, CORE-SEQUENCE.md, INVARIANTS.md,
-and AUTHORITY-CONSUMPTION.md take precedence.
+PRD.md, CORE-SEQUENCE.md, STATE-MACHINE.md,
+INVARIANTS.md, and AUTHORITY-CONSUMPTION.md take precedence.
 
 This table defines:
 - All valid lifecycle states
@@ -26,16 +30,20 @@ This table defines:
 |------|-------------|----------|
 | Scheduled | Auction is known but not yet open | No |
 | Open | Auction is accepting bids | No |
-| Closed | Auction has closed to bids | No |
-| AwaitingSettlement | Winning bid recorded, settlement window open | No |
-| Finalized | Auction outcome fixed with no further authority | Yes |
-| Inscribing | Inscription attempt in progress | No |
+| Closed | Auction has closed to bids and is resolving | No |
+| AwaitingSettlement | Resolution recorded, settlement window open | No |
+| Finalized | Auction destination fixed | Yes |
+| NotStarted | Inscription has not been initiated | No |
+| Inscribing | Inscription initiation persisted, attempt in progress | No |
+| Ambiguous | Inscription outcome cannot be determined with certainty | No |
 | Inscribed | Canonical inscription observed | Yes |
 | Paused | System pause overlay, not a lifecycle state | N/A |
 
 Notes:
-- `Finalized` includes both clean no-bid outcomes and failed settlement outcomes.
-- `Paused` is an overlay and does not represent lifecycle progression.
+- `Finalized` includes no-bid and failed-settlement outcomes.
+- `Paused` is an overlay and does not advance lifecycle.
+- `Ambiguous` is a real state and **must be persisted**.
+- Terminal states are irreversible.
 
 ---
 
@@ -44,30 +52,37 @@ Notes:
 | From State | Trigger | To State | Notes |
 |-----------|--------|----------|------|
 | Scheduled | start_time reached | Open | Automatic |
-| Open | end_time reached | Closed | Automatic |
+| Open | end_time reached or cap reached | Closed | Automatic |
 | Open | operator pause | Paused | Overlay only |
-| Paused | operator resume | Open | No inference |
-| Closed | resolution with winning bid | AwaitingSettlement | Settlement authority is exercised |
-| Closed | resolution with no bids | Finalized | No settlement, no inscription |
-| AwaitingSettlement | settlement deadline reached (unpaid) | Finalized | Destination = NullSteward |
-| AwaitingSettlement | settlement confirmed | Inscribing | Observational, authority already consumed |
-| Inscribing | inscription confirmed | Inscribed | Terminal |
+| Paused | operator resume | Open | Resume only |
+| Closed | resolution written | AwaitingSettlement | Resolution persisted |
+| Closed | resolution with no bids | Finalized | Destination = NullSteward |
+| AwaitingSettlement | settlement confirmed | Finalized | Destination fixed |
+| AwaitingSettlement | settlement deadline expired | Finalized | Destination = NullSteward |
+| Finalized | inscription initiation persisted | Inscribing | Authority already fixed |
+| Inscribing | inscription observed | Inscribed | Terminal |
+| Inscribing | ambiguity detected | Ambiguous | Authority frozen |
+| Ambiguous | inscription observed | Inscribed | Terminal |
+
+No other transitions are permitted.
 
 ---
 
-## Ambiguity Rule (Non-State)
+## Ambiguity Rules (Normative)
 
-Ambiguity is **not a lifecycle state**.
+Ambiguity **is a lifecycle state**.
 
-If ambiguity is detected during **Inscribing**:
+When the system enters `Ambiguous`:
 
-- The system **remains in Inscribing**
-- All remaining execution authority is permanently frozen
+- Inscription authority is permanently consumed
 - No retries, rebroadcasts, or alternate actions are permitted
 - Observation is the only allowed activity
+- The ambiguity record **must** be persisted immediately
 
-Ambiguity constrains authority.
-It does not advance, rewind, or terminate the lifecycle.
+Ambiguity:
+- does not advance auction state
+- does not restore authority
+- does not terminate the lifecycle
 
 ---
 
@@ -79,27 +94,30 @@ The following transitions are **never permitted**:
 |---------------------|--------|
 | Open → Scheduled | Time reversal |
 | Closed → Open | Bidding cannot reopen |
-| Finalized → Any | Terminal state |
-| Inscribed → Any | Terminal state |
 | AwaitingSettlement → Open | Settlement does not reopen bidding |
-| Inscribing → AwaitingSettlement | Authority cannot be reclaimed |
-| Any → Inscribing without settlement resolution | Authority violation |
+| Finalized → Any | Terminal auction state |
+| Inscribed → Any | Terminal inscription state |
+| Ambiguous → Inscribing | Authority cannot be reclaimed |
+| Any → Inscribing without Finalized | Authority violation |
 | Paused → Any non-previous state | Pause does not advance lifecycle |
-| Any transition caused by ambiguity | Ambiguity does not advance lifecycle |
+| Any transition inferred from missing data | Guess-space forbidden |
 
 ---
 
-## Authority Rules
+## Authority Rules (Normative)
 
-- Authority is **first consumed** when entering `AwaitingSettlement`
-- Authority is **never created** by payment confirmation
-- Inscription consumes remaining authority exactly once
-- Ambiguity permanently reduces remaining authority
+- Auction authority is consumed by resolution
+- Settlement does **not** create authority
+- Inscription authority is exercised exactly once
+- Ambiguity permanently freezes remaining authority
 - Authority is never restored by:
   - time passing
   - operator action
   - retries
   - observation delay
+
+Authority semantics are defined exclusively in
+AUTHORITY-CONSUMPTION.md.
 
 ---
 
@@ -109,16 +127,20 @@ State **must** be durably persisted at:
 
 - Entry to `Open`
 - Entry to `Closed`
+- Resolution record creation
 - Entry to `AwaitingSettlement`
-- Settlement confirmation or settlement deadline expiry
-- Before any inscription attempt
-- Upon detection of ambiguity
-- Upon reaching any terminal state
+- Settlement confirmation or deadline expiry
+- Entry to `Finalized`
+- Inscription initiation
+- Ambiguity detection
+- Entry to any terminal state
+
+Absence of a required record **must** halt execution.
 
 ---
 
 ## Final Rule
 
-If a transition is not listed as allowed:
+If a transition is not listed above:
 
 **It is forbidden.**

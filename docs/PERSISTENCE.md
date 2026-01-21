@@ -12,7 +12,7 @@ Persistence exists to prevent:
 
 If state is not durably persisted,
 it **must** be treated as **unknown**,
-and authority **must not** be exercised.
+and authority **must not** be consumed.
 
 If there is a conflict,
 PRD.md, CORE-SEQUENCE.md, STATE-MACHINE.md, INVARIANTS.md,
@@ -24,7 +24,7 @@ and AUTHORITY-CONSUMPTION.md take precedence.
 
 Persistence ensures that:
 
-- every exercise of authority is durably recorded
+- every authority consumption is durably recorded
 - restarts do not change outcomes
 - ambiguity is preserved rather than erased
 - time passing does not recreate permission
@@ -47,22 +47,22 @@ unless its intent and outcome are recorded durably.
 
 ---
 
-## Persistence Principles
+## Persistence Principles (Normative)
 
 ### P-01. Write Before Authority
 
-Any action that exercises authority **must** be preceded by
+Any action that consumes authority **must** be preceded by
 a durable write that records intent to perform that action.
 
 If persistence fails:
 - the action **must not** occur
 - execution **must** halt or enter a safe paused state
 
-No authority **may** be exercised without prior persistence.
+No authority **may** be consumed without prior persistence.
 
 ---
 
-### P-02. Persistence Is Append-Only
+### P-02. Append-Only Persistence
 
 Persisted records **must never** be:
 - edited
@@ -90,19 +90,24 @@ memory is incorrect.
 
 ---
 
-## Required Persisted Records
+## Canonical Record Dependency (Normative)
 
-The following records **must** be persisted durably.
+Persistence applies **only** to canonical record types
+defined in **DATA-MODEL.md**.
 
-Absence of any required record is a **fatal error**.
+Persistence **must not** introduce new record categories,
+implicit state, or inferred records.
+
+If a required canonical record is missing,
+the system **must** halt.
 
 ---
 
-### Authority Boundary Rule (Normative)
+## Authority Boundary Rule (Normative)
 
 Any record whose absence would permit authority
-to be exercised more than once
-**must** be persisted **before** that authority is exercised.
+to be consumed more than once
+**must** be persisted **before** that authority is consumed.
 
 This includes, but is not limited to:
 - resolution records
@@ -115,12 +120,12 @@ Once such a record is persisted,
 the corresponding authority is **irreversibly consumed**
 as defined in **AUTHORITY-CONSUMPTION.md**.
 
-Any subsequent attempt to exercise the same authority
+Any subsequent attempt to consume the same authority
 **must** be refused.
 
 ---
 
-### Joint Authority Consumption (Normative)
+## Joint Authority Consumption (Normative)
 
 Some authority burns are represented by **multiple records**.
 
@@ -136,14 +141,14 @@ Rules:
 
 - partial persistence **must not** be treated as permission
 - missing companion records **must** result in halt
-- authority **must not** be re-exercised to “complete” a burn
+- authority **must not** be re-consumed to “complete” a burn
 
 Authority is consumed by the **first irreversible act**,
 not by successful completion.
 
 ---
 
-### Auction Lifecycle Persistence
+## Auction Lifecycle Persistence (Normative)
 
 For each auction number **N**, the system **must** persist:
 
@@ -163,7 +168,7 @@ Resolution and finalization **must never** be recomputed.
 
 ---
 
-### Settlement Persistence
+## Settlement Persistence (Normative)
 
 If settlement applies, the system **must** persist:
 
@@ -174,13 +179,13 @@ If settlement applies, the system **must** persist:
   (txid or explicit failure record)
 
 Settlement persistence **must** occur **before**
-inscription authority is exercised.
+inscription authority is consumed.
 
 Settlement failure **must** be explicit and durable.
 
 ---
 
-### Inscription Persistence
+## Inscription Persistence (Normative)
 
 For each auction **N**, the system **must** persist:
 
@@ -198,7 +203,7 @@ If ambiguity is detected:
 
 ---
 
-### System Control Persistence
+## System Control Persistence (Normative)
 
 The system **must** persist all system-level events:
 
@@ -220,7 +225,7 @@ System control records **must not** grant or restore authority.
 
 On process startup, the system **must**:
 
-1. Load all persisted records
+1. Load all persisted canonical records
 2. Reconstruct state machines exclusively from persisted history
 3. Resume only actions explicitly permitted by reconstructed state
 4. Never recompute resolution, settlement, or finalization
@@ -229,13 +234,13 @@ On process startup, the system **must**:
 If required records are missing or contradictory:
 
 - execution **must** halt
-- authority **must not** be exercised
+- authority **must not** be consumed
 
 Restarting is reconstruction, not recovery.
 
 ---
 
-## Forbidden Persistence Patterns
+## Forbidden Persistence Patterns (Normative)
 
 The following behaviors are explicitly forbidden:
 
@@ -244,14 +249,14 @@ The following behaviors are explicitly forbidden:
 - inferring resolution from absence of data
 - repairing missing records by assumption
 - deleting ambiguous records to unblock progress
-- reattempting authority due to crash or timeout
+- re-consuming authority due to crash or timeout
 
 If a required record is missing,
 the only correct response is to stop.
 
 ---
 
-## Idempotence Rules
+## Idempotence Rules (Normative)
 
 All persisted writes **must** be idempotent.
 
@@ -259,7 +264,7 @@ Re-applying the same write:
 
 - **must not** change meaning
 - **must not** advance state
-- **must not** duplicate authority
+- **must not** duplicate authority consumption
 
 Duplicate records are acceptable.
 Duplicate authority is not.

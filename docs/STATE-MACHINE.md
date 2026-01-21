@@ -7,6 +7,7 @@ It is **normative**.
 This document assumes familiarity with:
 - STATE-MACHINE-TABLE.md
 - CORE-SEQUENCE.md
+- AUTHORITY-CONSUMPTION.md
 
 It specifies:
 1. All valid states
@@ -20,8 +21,8 @@ It specifies:
 
 If behavior is not explicitly permitted here, it is forbidden.
 
-If there is a conflict,
-PRD.md, CORE-SEQUENCE.md, and STATE-MACHINE-TABLE.md take precedence.
+If a conflict exists between this document and any higher-authority document,
+execution must halt. This document must not be used to reconcile or infer intent.
 
 ---
 
@@ -51,7 +52,8 @@ The system consists of three distinct state machines:
 
 These state machines interact only at explicitly defined boundaries.
 
-This document defines **state legality and authority boundaries**.
+This document defines **state legality only**.
+Authority semantics are defined exclusively in AUTHORITY-CONSUMPTION.md.
 Timing guarantees are defined exclusively in CORE-SEQUENCE.md.
 
 ---
@@ -75,9 +77,9 @@ Once an auction reaches `Finalized`, its lifecycle is complete.
 
 ---
 
-## 3.2 Auction State Definitions
+### 3.2 Auction State Definitions
 
-### Scheduled
+#### Scheduled
 
 **Meaning**  
 Auction `N` exists but is not accepting bids.
@@ -92,7 +94,7 @@ Auction `N` exists but is not accepting bids.
 
 **Persistence**
 - Auction record exists
-- Start and end times recorded
+- Scheduled start time recorded
 
 **Exit trigger**
 - Inter-auction gap expires
@@ -102,7 +104,7 @@ Auction `N` exists but is not accepting bids.
 
 ---
 
-### Open
+#### Open
 
 **Meaning**  
 Auction `N` is actively accepting bids.
@@ -116,8 +118,8 @@ Auction `N` is actively accepting bids.
 - Reject invalid bids
 
 **Persistence**
-- Bid records appended
 - Auction open timestamp recorded
+- Bid records appended
 
 **Exit triggers**  
 Exactly one of:
@@ -126,7 +128,7 @@ Exactly one of:
 
 ---
 
-### Closed
+#### Closed
 
 **Meaning**  
 Auction `N` is closed to new bids and resolving.
@@ -149,7 +151,7 @@ Auction `N` is closed to new bids and resolving.
 
 ---
 
-### AwaitingSettlement
+#### AwaitingSettlement
 
 **Meaning**  
 Auction `N` has resolved but settlement is incomplete.
@@ -173,7 +175,7 @@ Exactly one of:
 
 ---
 
-### Finalized
+#### Finalized
 
 **Meaning**  
 Auction `N` has a final destination.
@@ -195,12 +197,12 @@ No auction action is permitted beyond this state.
 
 ---
 
-## 3.3 Auction State Transition Table
+### 3.3 Auction State Transition Table
 
 | From | To | Trigger | Persistence Required |
 |----|----|--------|----------------------|
-| Scheduled | Open | Inter-auction gap expires | Auction start time |
-| Open | Closed | Duration expires or cap reached | Close timestamp |
+| Scheduled | Open | Inter-auction gap expires | Auction open record |
+| Open | Closed | Duration expires or cap reached | Auction close timestamp |
 | Closed | AwaitingSettlement | Resolution written | Resolution record |
 | AwaitingSettlement | Finalized | Settlement success | Finalization record |
 | AwaitingSettlement | Finalized | Settlement failure or no bids | Finalization record |
@@ -209,7 +211,7 @@ No other auction transitions are valid.
 
 ---
 
-## 3.4 Illegal Auction Transitions
+### 3.4 Illegal Auction Transitions
 
 The following transitions are forbidden:
 
@@ -223,7 +225,10 @@ Illegal transitions are fatal and require operator inspection.
 
 ---
 
-## 3.5 Auction Restart Semantics
+### 3.5 Auction Restart Semantics
+
+Any state advancement performed during restart **must**
+emit the same persistence records as the equivalent uninterrupted transition.
 
 On process restart:
 
@@ -242,14 +247,17 @@ On process restart:
   Resume settlement observation only
 
 - **Finalized**  
-  No auction action permitted  
-  Inscription lifecycle proceeds independently
+  No auction action permitted
 
 ---
 
 ## 4. Inscription State Machine
 
-The inscription state machine begins only after auction finalization.
+The inscription state machine begins **only after auction finalization**.
+
+Auction finalization occurs only after:
+- settlement outcome is determined
+- destination address is persisted
 
 Inscription state does not affect auction truth.
 
@@ -288,7 +296,7 @@ No inscription attempt has begun.
 The inscription transaction is being constructed or broadcast.
 
 **Entry conditions**
-- Inscription process initiated
+- Inscription initiation record persisted
 
 **Allowed actions**
 - Construct payload
@@ -297,7 +305,7 @@ The inscription transaction is being constructed or broadcast.
 - Attempt broadcast
 
 **Persistence**
-- Inscription attempt recorded
+- Inscription initiation record written
 - Txid recorded if known
 
 ---
@@ -314,17 +322,17 @@ and its outcome cannot be determined with certainty.
 - Competing inscription cannot be ruled out
 
 **Allowed actions**
-- Observe chain state only
+- Observation only
+
+**Persistence**
+- Ambiguity record **must** be written immediately
+- This record is authoritative and irreversible
 
 **Observation (Normative)**  
-Observation is performed exclusively by deterministic system processes
-querying external sources of record.
+Observation is performed exclusively by deterministic system processes.
 
 Human judgment does not constitute observation
 and must not change system state.
-
-Observation updates knowledge only.
-Observation must not restore authority or permit transitions.
 
 This state is non-terminal and may persist indefinitely.
 
@@ -336,7 +344,7 @@ This state is non-terminal and may persist indefinitely.
 The canonical inscription is complete and known.
 
 **Entry conditions**
-- Inscription transaction is observed and accepted
+- Inscription transaction observed and accepted
 
 **Persistence**
 - Txid recorded
@@ -347,41 +355,20 @@ This is a terminal state.
 
 ---
 
-## 4.3 Authority Loss Rules (Normative)
-
-Authority rules apply only to inscription.
-
-**Pre-broadcast failure**
-- Transaction construction or signing fails
-- No transaction submitted
-- Retry is permitted
-
-**Post-broadcast ambiguity**
-- A transaction was submitted or submission cannot be excluded
-
-Once ambiguity exists:
-
-- Inscription authority is permanently consumed
-- Retry, replacement, or override is forbidden
-- Time passing does not restore permission
-- Observation is the only permitted activity
-
----
-
-## 4.4 Inscription Transition Table
+### 4.3 Inscription Transition Table
 
 | From | To | Trigger |
 |----|----|--------|
-| NotStarted | Inscribing | Inscription initiated |
+| NotStarted | Inscribing | Inscription initiation persisted |
 | Inscribing | Inscribed | Inscription observed |
-| Inscribing | Ambiguous | Broadcast uncertainty detected |
+| Inscribing | Ambiguous | Ambiguity detected |
 | Ambiguous | Inscribed | Inscription observed |
 
 No other inscription transitions are valid.
 
 ---
 
-## 4.5 Inscription Restart Semantics
+### 4.4 Inscription Restart Semantics
 
 On restart:
 
@@ -389,11 +376,11 @@ On restart:
   Initiation permitted
 
 - **Inscribing**  
-  Retry permitted only if a pre-broadcast failure is explicitly recorded
+  Retry permitted **only if** no broadcast or ambiguity record exists
 
 - **Ambiguous**  
-  Retry forbidden  
-  Observation only
+  Observation only  
+  Retry forbidden
 
 - **Inscribed**  
   No action permitted
@@ -416,7 +403,7 @@ On restart:
 - Pausing prevents `Scheduled → Open`
 - Pausing does not affect settlement or inscription
 
-Pause events are durably recorded with timestamp and reason.
+Pause events must be durably persisted.
 
 ---
 
@@ -428,41 +415,8 @@ Pause events are durably recorded with timestamp and reason.
 
 ---
 
-## 6. Safety Properties Enforced
+## 6. Final Rule
 
-This state machine enforces invariants defined in:
+If a transition is not listed as allowed:
 
-- INVARIANTS.md
-- TRANSITION-INVARIANTS.md
-
-Including:
-
-- Auctions resolve exactly once
-- Auctions finalize exactly once
-- At most one canonical inscription exists
-- Bidding never reopens
-- Ambiguity never grants authority
-
-Violation of these properties is fatal.
-
----
-
-## 7. Design Notes
-
-- Absence of bids is a valid outcome
-- Failure is treated as outcome, not exception
-- Auction truth is independent of inscription success
-- Time passing does not restore authority
-- Certainty is recorded; uncertainty is preserved
-
----
-
-## 8. External Assumptions
-
-The following are defined elsewhere and must be stable at implementation time:
-
-1. Settlement confirmation depth
-2. Fee selection policy prior to broadcast
-3. External observation mechanisms
-
-If any assumption changes, this document must be revised before execution.
+**It is forbidden.**

@@ -11,7 +11,8 @@ Restart handling exists to ensure that:
 - progress is never made without certainty
 
 If there is a conflict,
-PRD.md, INVARIANTS.md, CORE-SEQUENCE.md, STATE-MACHINE.md, and PERSISTENCE.md take precedence.
+PRD.md, INVARIANTS.md, CORE-SEQUENCE.md, STATE-MACHINE.md,
+and PERSISTENCE.md take precedence.
 
 ---
 
@@ -23,7 +24,16 @@ A restart is a continuation of the same execution,
 with memory restored **exclusively** from persisted state.
 
 If persisted memory is incomplete, missing, or contradictory,
-the system must halt.
+the system **must** halt.
+
+Restart does not introduce new states.
+
+On restart, the system **must not** create, infer, or substitute any state
+other than those explicitly defined in STATE-MACHINE.md and
+STATE-MACHINE-TABLE.md.
+
+Restart operates only by reconstructing and re-entering
+existing lifecycle states.
 
 ---
 
@@ -37,14 +47,15 @@ On restart:
 - All in-memory state is discarded
 - Logs are non-authoritative and advisory only
 
-If persisted state conflicts with expectation, intent, or operator belief,
+If persisted state conflicts with expectation, intent,
+or operator belief,
 expectation, intent, and belief are wrong.
 
 ---
 
 ### R-02. No Recomputing
 
-On restart, the system must **never**:
+On restart, the system **must never**:
 
 - recompute auction resolution
 - recompute settlement outcomes
@@ -52,7 +63,7 @@ On restart, the system must **never**:
 - infer outcomes from missing or partial data
 
 If an outcome is not durably persisted,
-it must be treated as **unknown**.
+it **must** be treated as **unknown**.
 
 Unknown does **not** grant authority.
 
@@ -60,7 +71,7 @@ Unknown does **not** grant authority.
 
 ### R-03. Authority Is Never Recreated
 
-Restart must not:
+Restart **must not**:
 
 - restore consumed authority
 - permit retries that were previously unsafe
@@ -73,13 +84,14 @@ Authority, once consumed, remains consumed permanently.
 
 ## Restart Procedure (Normative)
 
-On startup, the backend **must** execute the following steps in order.
+On startup, the backend **must** execute the following steps
+in the order listed.
 
 ---
 
 ### Step 1. Load All Persisted Records
 
-The system must load:
+The system **must** load:
 
 - auction lifecycle records
 - settlement records
@@ -87,9 +99,11 @@ The system must load:
 - ambiguity detection records
 - system control events
 
-If any required record is missing, unreadable, malformed, or contradictory:
-- execution must halt immediately
-- no authority may be exercised
+If any required record is missing, unreadable,
+malformed, or contradictory:
+
+- execution **must** halt immediately
+- no authority **may** be exercised
 
 ---
 
@@ -104,7 +118,8 @@ For each auction number **N**:
 Inference is forbidden.
 
 If reconstruction yields an invalid or forbidden transition:
-- execution must halt
+
+- execution **must** halt
 
 ---
 
@@ -121,24 +136,29 @@ For each reconstructed state:
 - If the auction end time has passed, transition to `Closed`
 
 #### Closed
-- A resolution record must already exist
-- Resolution must not be recomputed
+- A resolution record **must** already exist
+- Resolution **must not** be recomputed
 - Transition to `AwaitingSettlement`
 
 #### AwaitingSettlement
 - Resume settlement observation only
-- Deadlines must not be reset, extended, or inferred
+- Deadlines **must not** be reset, extended, or inferred
 
 #### Finalized
 - No auction actions are permitted
 - Inscription lifecycle proceeds only if not yet started
 
 #### Inscribing
-- Resume **only** if a pre-broadcast failure is explicitly persisted
-- Otherwise, treat the state as ambiguous
+- Resume **only** if a persisted Inscription record
+  explicitly indicates a pre-broadcast failure
+- Absence of a txid, absence of confirmation,
+  or lack of observation **must not** be interpreted
+  as pre-broadcast failure
+- If broadcast occurred or cannot be ruled out,
+  transition to `Ambiguous`
 
 #### Ambiguous
-- Observe only
+- Observation only
 - Retries are forbidden
 - Alternate actions are forbidden
 
@@ -150,10 +170,15 @@ For each reconstructed state:
 ### Step 4. Resume or Halt
 
 If **all** reconstructed states are valid and resumable:
-- resume execution conservatively
+
+- resume execution **only** for actions explicitly permitted
+  by the reconstructed state machines
+- no new authority-bearing action **may** occur
+  unless its preconditions are fully satisfied
 
 If **any** state is invalid, contradictory, or incomplete:
-- execution must halt
+
+- execution **must** halt
 - operator inspection is required
 
 ---
@@ -169,7 +194,7 @@ If an auction was ambiguous before restart:
 - retries remain forbidden
 - observation remains the only permitted activity
 
-Restart must never be used to escape ambiguity.
+Restart **must never** be used to escape ambiguity.
 
 ---
 
@@ -191,19 +216,22 @@ Restart is not a repair mechanism.
 
 If restart halts due to inconsistency:
 
-- the operator must determine whether authoritative history can be proven
-- the operator must not modify, delete, fabricate, or reinterpret records
-- the operator must not infer or invent missing events
+- the operator **must** determine whether authoritative history
+  can be proven
+- the operator **must not** modify, delete, fabricate,
+  or reinterpret records
+- the operator **must not** infer or invent missing events
 
 If authoritative history cannot be reconstructed faithfully,
-the system must remain halted.
+the system **must** remain halted.
 
 ---
 
 ## Final Rule
 
-On restart, any action lacking explicit proof of non-execution
-is treated as already completed and must not be retried.
+On restart, any action lacking explicit proof
+of non-execution is treated as already completed
+and **must not** be retried.
 
 Restart restores memory.
 It does not grant permission.

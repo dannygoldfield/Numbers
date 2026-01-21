@@ -4,12 +4,12 @@ This document defines **settlement semantics** for Numbers.
 
 It is **normative**.
 
-Settlement governs what happens **after an auction is resolved**
-and **before inscription authority is exercised**.
+Settlement governs what happens **after auction resolution**
+and **before auction finalization**.
 
 If there is a conflict,
 CORE-SEQUENCE.md, STATE-MACHINE.md, INVARIANTS.md,
-AUTHORITY-CONSUMPTION.md, and PERSISTENCE.md take precedence.
+PERSISTENCE.md, and DATA-MODEL.md take precedence.
 
 ---
 
@@ -33,8 +33,8 @@ It records whether payment occurred in time.
   The highest valid bid recorded at auction resolution.
 
 - **Settlement Window**  
-  A fixed duration following auction finalization during which payment
-  may be made.
+  A fixed duration following auction resolution
+  during which payment may be made.
 
 - **Settlement Deadline**  
   The exact timestamp at which the settlement window closes.
@@ -43,7 +43,8 @@ It records whether payment occurred in time.
   A valid on-chain payment confirmed before the settlement deadline.
 
 - **Settlement Failure**  
-  Absence of a confirmed payment by the deadline, for any reason.
+  Absence of a confirmed payment by the settlement deadline,
+  for any reason.
 
 ---
 
@@ -74,30 +75,29 @@ No funds are escrowed at bid time.
 The settlement window duration is **equal to the auction duration**
 for the same environment.
 
+Settlement timing values are:
+
+- computed at auction resolution
+- persisted durably
+- immutable for that auction
+
 ### Mainnet
 
-- Auction duration: `12:34:56` (12h 34m 56s)
+- Auction duration: `12:34:56`
 - Settlement window: `12:34:56`
-- Inter-auction pause: `1:23` (1m 23s)
+- Inter-auction pause: `1:23`
 
 ### Testnet
 
-- Auction duration: `12:34` (12m 34s)
+- Auction duration: `12:34`
 - Settlement window: `12:34`
-- Inter-auction pause: `1:23` (1m 23s)
-
-Settlement timing values are:
-
-- fixed at auction start
-- persisted durably
-- immutable for that auction
-- displayed exactly as recorded
+- Inter-auction pause: `1:23`
 
 ---
 
 ## Settlement Mechanics (Normative)
 
-1. At auction finalization:
+1. At auction resolution:
    - settlement intent **must** be persisted
    - settlement deadline **must** be computed and persisted
 
@@ -105,16 +105,33 @@ Settlement timing values are:
    - the system observes the blockchain
    - no retries, prompts, reminders, or extensions are permitted
 
-3. A settlement is **successful** if:
+3. Settlement is **successful** if:
    - a valid payment transaction is **confirmed**
    - confirmation occurs **before** the settlement deadline
 
-4. A settlement **fails** if:
-   - no confirmed payment exists at deadline
+4. Settlement **fails** if:
+   - no confirmed payment exists at the deadline
    - regardless of whether a transaction was broadcast earlier
 
 Broadcast does not count.
 Confirmation does.
+
+---
+
+## Finalization Binding (Normative)
+
+Finalization occurs **only after** settlement outcome is determined.
+
+Finalization **must** produce exactly one destination:
+
+- settlement succeeds → winning destination
+- settlement fails → `NullSteward`
+- no valid bids → `NullSteward`
+
+Finalization is irreversible.
+
+Settlement outcome **must not** rewrite or reinterpret
+the resolution record.
 
 ---
 
@@ -143,12 +160,12 @@ Settlement failure is a **valid outcome**, not an error.
 
 On settlement failure:
 
-- auction is finalized normally
+- auction proceeds to finalization
 - destination is set to `NullSteward`
-- inscription authority proceeds or is intentionally abandoned
-- bid amount is recorded as `0`
+- inscription authority remains subject to state machine rules
+- no retry or compensation is permitted
 
-No retries are permitted.
+No settlement state may be re-entered once finalized.
 
 ---
 
@@ -164,7 +181,7 @@ It does not permit repeated abuse without consequence.
 - During cooldown, bids from that address **must** be rejected.
 - Default cooldown: `123` auctions.
 
-Cooldown state is persisted and enforced mechanically.
+Cooldown state **must** be persisted and enforced mechanically.
 
 ### Mainnet
 
@@ -179,39 +196,18 @@ This exclusion:
 
 ---
 
-## Authority Protection
+## Authority Protection (Normative)
 
-Settlement outcomes consume authority.
+Settlement outcome consumes settlement authority.
 
 Once the settlement deadline passes:
 
-- settlement authority is burned
+- settlement authority is irreversibly consumed
 - no late payment may be accepted
-- no state may be rewritten
+- no settlement-related state may be rewritten
 
-Uncertainty reduces authority.
-It never restores it.
-
----
-
-## UI and API Implications (Non-Normative)
-
-Interfaces may:
-
-- display settlement deadlines
-- show wallet balances via wallet tooling
-- warn users that bids are commitments
-
-Interfaces must not:
-
-- imply enforcement
-- imply refunds
-- imply retries
-
-Suggested copy:
-
-> “Bids are commitments.  
-> If you win, payment is expected before the deadline.”
+Settlement authority exhaustion
+does not restore or guarantee inscription authority.
 
 ---
 
@@ -220,5 +216,5 @@ Suggested copy:
 Settlement records **what occurred**, not what was intended.
 
 If payment status is unclear,
-the system assumes failure
-and proceeds without guessing.
+the system **must** assume failure
+and proceed without guessing.

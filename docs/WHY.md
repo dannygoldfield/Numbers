@@ -12,3 +12,5 @@ Nothing more.
 Ownership is not asserted.  
 Ownership is tested.
 
+This document provides intent and motivation only. It defines no behavior and grants no authority.
+

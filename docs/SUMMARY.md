@@ -1,126 +1,145 @@
 # Summary — Numbers
 
-This document defines the reading order and authority structure of the Numbers specification.
+This document defines the **reading order, authority structure, and compilation map**
+of the Numbers specification.
 
-Documents are grouped by role and authority.
-If a document defines system behavior, it is listed under **System Law**.
-If a document describes consequences, operations, or interpretation boundaries, it appears elsewhere.
+It is **normative with respect to reading order only**.
 
-This file introduces no new rules.
+This document introduces no new behavior.
+It defines **how behavior-defining documents must be ingested and applied**.
+
+The primary audience is:
+- automated implementation agents
+- LLM-based code generation systems
+
+Human readability is secondary.
 
 ---
 
-## Orientation
+## Purpose
 
-Start here if you are new.
+Numbers is specified in plain language but designed to be translated
+mechanically into correct software.
+
+The primary goal of this specification is to:
+
+> Minimize guess-space during implementation.
+
+This summary exists to:
+- enforce strict authority ordering
+- prevent accidental inference
+- eliminate ambiguity about where truth is defined
+- support deterministic translation into code, tests, and invariants
+- serve as the table of contents for an LLM-focused mdBook
+
+---
+
+## Rules of Interpretation
+
+**Rule 1: Authority is ordered**  
+Documents earlier in the order have strictly higher authority.
+
+If a contradiction is detected:
+- the earlier document prevails
+- execution must halt
+- no reconciliation or inference is permitted
+
+**Rule 2: Silence forbids**  
+If behavior is not explicitly permitted, it is forbidden.
+
+**Rule 3: Restart is reconstruction**  
+State is reconstructed only from persisted records.
+No recovery, repair, or retry is implied.
+
+---
+
+# Chapters
+
+## Orientation (Non-Behavioral)
 
 - [Read This First](READ-THIS-FIRST.md)
-- [What If](WHAT-IF.md)
-- [Bidder](BIDDER.md)
-- [Glossary](GLOSSARY.md)
+- [Target Audience](TARGET-AUDIENCE.md)
+- [Why](WHY.md)
+- [Protocol Core](PROTOCOL-CORE.md)
+- [Poetics](POETICS.md)
+- [Non-Requirements](NON-REQUIREMENTS.md)
 
----
-
-## System Law (Normative)
-
-These documents define the behavior, constraints, and authority boundaries of the Numbers system.
-
-They are precedence-critical.
-
-If there is a conflict between documents, precedence is defined within these files.
+## Product and Authority Foundations
 
 - [Product Requirements](PRD.md)
-- [Core Sequence](CORE-SEQUENCE.md)
-- [State Machine — Canonical Table](STATE-MACHINE-TABLE.md)
-- [State Machine — Numbers](STATE-MACHINE.md)
 - [Invariants](INVARIANTS.md)
+- [Invariant Index](INVARIANT-INDEX.md)
 - [Transition Invariants](TRANSITION-INVARIANTS.md)
-- [Persistence](PERSISTENCE.md)
+- [Error Taxonomy](ERROR-TAXONOMY.md)
 - [Errors](ERRORS.md)
+- [Authority Consumption](AUTHORITY-CONSUMPTION.md)
 
----
+## Core State and Execution Semantics
 
-## System Definition (Descriptive)
+- [State Machine — Numbers](STATE-MACHINE.md)
+- [State Machine — Canonical Table](STATE-MACHINE-TABLE.md)
+- [State Machine Artifact](STATE-MACHINE-ARTIFACT.json)
 
-These documents describe the structure that emerges from the system law.
-They do not redefine behavior.
+## Persistence and Restart Semantics
+
+- [Data Model](DATA-MODEL.md)
+- [Persistence](PERSISTENCE.md)
+- [Restart Rules](RESTART-RULES.md)
+
+## Temporal and Procedural Flow
+
+- [Core Sequence](CORE-SEQUENCE.md)
+- [Settlement](SETTLEMENT.md)
+
+## Configuration, Limits, and Safety Valves
+
+- [Config Reference](CONFIG-REFERENCE.md)
+- [Config Limits](CONFIG-LIMITS.md)
+- [Limits and Circuit Breakers](LIMITS-AND-CIRCUIT-BREAKERS.md)
+
+## External Interfaces
+
+- [API State Shapes](API-STATE-SHAPES.md)
+- [API Specification](API-SPEC.md)
+
+## User Interface and Presentation
+
+- [UI Specification](UI-SPEC.md)
+- [Website PRD](WEBSITE-PRD.md)
+
+## System Structure and Description
 
 - [Architecture](ARCHITECTURE.md)
 - [Catalog](CATALOG.md)
+- [Platform](PLATFORM.md)
 - [Environment-Determined Rendering](ENVIRONMENT-DETERMINED-RENDERING.md)
 
----
-
-## Product and Interface
-
-These documents define how the system is presented and interacted with.
-They adapt to the system; they do not shape it.
-
-- [Product Requirements](PRD.md)
-- [Website PRD](WEBSITE-PRD.md)
-- [UI Specification](UI-SPEC.md)
-
----
-
-## Platform and Data
-
-These documents define data representation and access patterns.
-They expose system state without interpretation.
-
-- [Platform](PLATFORM.md)
-- [Data Model](DATA-MODEL.md)
-- [API Specification](API-SPEC.md)
-- [API State Shapes](API-STATE-SHAPES.md)
-
----
-
-## Risk and Failure (By Design)
-
-These documents describe failure modes, limits, and boundaries that are expected outcomes of the system design.
-
-Failure does not imply error.
-Documentation here does not grant authority to correct outcomes.
+## Risk, Failure, and Security
 
 - [Failure Modes](FAILURE-MODES.md)
 - [Threat Model](THREAT-MODEL.md)
-- [Limits and Circuit Breakers](LIMITS-AND-CIRCUIT-BREAKERS.md)
 - [Security Goals](SECURITY-GOALS.md)
 - [Security Non-Goals](SECURITY-NON-GOALS.md)
 
----
-
-## Operations
-
-These documents describe how the system is run and observed.
-They do not alter system truth.
+## Operations and Observability
 
 - [Deployment](DEPLOYMENT.md)
 - [Secrets and Configuration](SECRETS-AND-CONFIG.md)
 - [Observability](OBSERVABILITY.md)
 - [Operational Runbook](OPERATIONAL-RUNBOOK.md)
-- [Restart Rules](RESTART-RULES.md)
 
----
-
-## Validation and Continuity
-
-These documents support verification, launch readiness, and long-term continuity.
+## Validation, Testing, and Continuity
 
 - [Testing](TESTING.md)
 - [Test Vectors](TEST-VECTORS.md)
 - [Launch Checklist](LAUNCH-CHECKLIST.md)
+- [Spec Completeness Checklist](SPEC-COMPLETENESS-CHECKLIST.md)
 - [Roadmap](ROADMAP.md)
-- [Poetics](POETICS.md)
-- [FAQ](FAQ.md)
-
----
 
 ## Reference and Meta
 
-These documents provide supporting structure and naming discipline.
-
+- [Glossary](GLOSSARY.md)
 - [Naming Convention](NAMING-CONVENTION.md)
-- [Non-Requirements](NON-REQUIREMENTS.md)
 - [Non-Text Artifacts Required](NON-TEXT-ARTIFACTS-REQUIRED.md)
 - [Canonical Example](CANONICAL-EXAMPLE.md)
-- [Spec Completeness Checklist](SPEC-COMPLETENESS-CHECKLIST.md)
+- [FAQ](FAQ.md)
