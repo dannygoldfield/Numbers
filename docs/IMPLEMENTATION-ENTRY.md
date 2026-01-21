@@ -1,20 +1,95 @@
-# Implementation Entry — Numbers
+# Numbers — Specification Entry and Reading Order
 
-This document defines how an implementation agent must ingest,
-interpret, and apply the Numbers specification.
+This document defines the **reading order, authority structure, and ingestion rules**
+for the Numbers specification.
 
-This document is **normative**.
+It is **normative**.
 
-If there is a conflict, this document takes precedence over all
-**non-normative** documents.
-It does not override PRD.md, INVARIANTS.md, STATE-MACHINE.md,
-or any other normative specification.
+This document introduces **no new system behavior**.
+It defines **how behavior-defining documents must be read, ordered, and applied**.
+
+The primary audience is:
+- automated implementation agents
+- LLM-based code generation systems
+
+Human readability is secondary and non-authoritative.
 
 ---
 
-## 1. Audience
+## 1. Purpose
 
-This document is written exclusively for:
+Numbers is specified in plain language but designed to be translated
+mechanically into correct software.
+
+The primary goal of the specification is:
+
+> Minimize guess-space during implementation.
+
+This document exists to:
+- enforce strict authority ordering
+- prevent accidental inference
+- eliminate ambiguity about where truth is defined
+- support deterministic translation into code, tests, and invariants
+- define a single, machine-enforceable ingestion contract
+
+This document governs **ingestion**, not navigation.
+It is the behavioral companion to `SUMMARY.md` when used as an mdBook.
+
+---
+
+## 2. Scope and Precedence
+
+This document is **normative** with respect to:
+
+- reading order
+- authority ordering
+- implementation obligations
+- refusal conditions
+
+If a conflict exists:
+
+- this document overrides all **non-normative** documents
+- this document does **not** override:
+  - `PRD.md`
+  - `INVARIANTS.md`
+  - `STATE-MACHINE.md`
+  - any other explicitly normative specification
+
+This document must not be used to infer system behavior.
+
+---
+
+## 3. Rules of Interpretation (Absolute)
+
+### Rule 1: Authority Is Ordered
+
+Documents earlier in the order have strictly higher authority.
+
+If a contradiction is detected:
+- the earlier document prevails
+- execution must halt
+- no reconciliation or inference is permitted
+
+---
+
+### Rule 2: Silence Forbids
+
+If behavior is not explicitly permitted,
+it is forbidden.
+
+---
+
+### Rule 3: Restart Is Reconstruction
+
+State is reconstructed only from persisted records.
+
+No recovery, repair, retry, or inference is implied.
+
+---
+
+## 4. Audience Model
+
+This document is written **exclusively** for:
 
 - automated code generation systems
 - LLM-based implementation agents
@@ -27,12 +102,11 @@ It is not written for:
 
 Human interpretation is explicitly out of scope.
 
-The implementation agent is treated as a deterministic executor,
-not a designer.
+The implementation agent is treated as a **deterministic executor**, not a designer.
 
 ---
 
-## 2. Required Reading Order (Authority Ordering)
+## 5. Required Reading Order (Authority Ordering)
 
 An implementation agent **must** ingest and apply the specification
 in the following order.
@@ -40,29 +114,29 @@ in the following order.
 Earlier documents are strictly higher authority.
 Later documents must not contradict earlier ones.
 
-1. PRD.md  
-2. INVARIANTS.md  
-3. TRANSITION-INVARIANTS.md  
-4. STATE-MACHINE.md  
-5. STATE-MACHINE-TABLE.md  
-6. STATE-MACHINE-ARTIFACT.json  
-7. PERSISTENCE.md  
-8. RESTART-RULES.md  
-9. CORE-SEQUENCE.md  
-10. SETTLEMENT.md  
-11. CONFIG-REFERENCE.md  
-12. API-STATE-SHAPES.md  
-13. API-SPEC.md  
-14. UI-SPEC.md  
+1. `PRD.md`  
+2. `INVARIANTS.md`  
+3. `TRANSITION-INVARIANTS.md`  
+4. `STATE-MACHINE.md`  
+5. `STATE-MACHINE-TABLE.md`  
+6. `STATE-MACHINE-ARTIFACT.json`  
+7. `PERSISTENCE.md`  
+8. `RESTART-RULES.md`  
+9. `CORE-SEQUENCE.md`  
+10. `SETTLEMENT.md`  
+11. `CONFIG-REFERENCE.md`  
+12. `API-STATE-SHAPES.md`  
+13. `API-SPEC.md`  
+14. `UI-SPEC.md`
 
 If a contradiction is detected:
 - the earlier document prevails
 - the implementation agent **must halt**
-- no attempt may be made to reconcile or infer intent
+- no attempt may be made to reconcile, guess, or infer intent
 
 ---
 
-## 3. Prohibited Behaviors (Absolute)
+## 6. Prohibited Behaviors (Absolute)
 
 An implementation agent **must not**:
 
@@ -81,7 +155,7 @@ it is forbidden.
 
 ---
 
-## 4. Allowed Assumptions
+## 7. Allowed Assumptions (Exhaustive)
 
 The implementation agent may assume **only** that:
 
@@ -102,7 +176,7 @@ In particular, the agent must not assume:
 
 ---
 
-## 5. Implementation Obligations
+## 8. Implementation Obligations
 
 The implementation agent **must** produce:
 
@@ -117,7 +191,7 @@ Silent recovery, automatic retries, or inferred repair are forbidden.
 
 ---
 
-## 6. Refusal Condition
+## 9. Refusal Condition
 
 If any invariant, transition, or authority rule
 cannot be implemented safely,
@@ -131,7 +205,7 @@ Best-effort behavior is not permitted.
 
 ---
 
-## 7. Completion Criteria
+## 10. Completion Criteria
 
 An implementation is considered complete **only** when:
 
