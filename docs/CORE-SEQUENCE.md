@@ -62,6 +62,8 @@ Resolution:
 - must not be recomputed
 - must be durably persisted
 
+Auction resolution authority is consumed at this step.
+
 No further bids are accepted after resolution.
 
 ---
@@ -72,33 +74,39 @@ If a winning bidder exists, settlement begins.
 
 Settlement:
 
+- is an observational phase
 - executes asynchronously
 - has a fixed deadline
 - does not block subsequent auctions
 
-Finalization produces exactly one destination:
+Settlement observes whether payment is confirmed before the deadline.
 
-- settlement succeeds → winning address
-- settlement fails → NullSteward
+Finalization records exactly one destination:
+
+- settlement confirmed → winning address
+- settlement expired → NullSteward
 - no valid bids → NullSteward
 
-Finalization is irreversible
-and consumes all remaining auction authority.
+Finalization is irreversible.
+No authority is created or restored at this step.
 
 ---
 
 ## Inscription
 
-After finalization, the system performs **exactly one inscription attempt**
+After finalization, the system **may exercise inscription authority**
 for number **N**.
 
-The inscription attempt:
+Inscription authority:
+
+- exists at most once
+- permits at most one authority-bearing attempt
+
+The inscription attempt, if exercised:
 
 - has content equal to the number only
 - targets the destination determined by finalization
 - is constructed and broadcast as a Bitcoin transaction
-
-Inscription authority is exercised **once**.
 
 Possible outcomes include:
 
@@ -139,8 +147,8 @@ For every number **N**:
 
 - the auction opens at most once
 - the auction resolves exactly once
-- finalization produces exactly one destination
-- inscription authority is exercised at most once
+- finalization records exactly one destination
+- inscription authority exists at most once
 - the sequence advances monotonically
 
 Loss, ambiguity, and uncertainty

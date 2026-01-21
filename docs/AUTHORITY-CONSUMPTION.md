@@ -24,7 +24,7 @@ Authority exists to ensure that:
 
 Authority is not intent.
 Authority is not success.
-Authority is the **right to attempt an action exactly once**.
+Authority is the **right to attempt an irreversible action exactly once**.
 
 ---
 
@@ -40,7 +40,7 @@ Authority is the **right to attempt an action exactly once**.
   A terminal condition where authority can no longer be exercised,
   regardless of outcome or intent.
 
-Authority is consumed by **attempt**, not by success.
+Authority is consumed by **attempt or uncertainty**, not by success.
 
 ---
 
@@ -49,8 +49,7 @@ Authority is consumed by **attempt**, not by success.
 Numbers defines authority in the following scopes only:
 
 1. Auction resolution authority
-2. Settlement authority
-3. Inscription authority
+2. Inscription authority
 
 No other authority exists.
 
@@ -128,21 +127,23 @@ Resolution authority is consumed regardless of downstream success.
 
 ---
 
-## Settlement Authority
+## Settlement Phase (Non-Authority)
 
-Settlement authority:
+Settlement does **not** grant authority.
 
-- exists only if a winning bid exists
-- is consumed when the settlement window closes
-- is exhausted regardless of payment outcome
+Settlement is a bounded observation window during which:
+
+- payment **may** be observed
+- absence of payment **may** be observed
 
 Rules:
 
-- settlement authority **must not** be reused
-- late payments **must not** be accepted
-- settlement outcome **must not** be rewritten
+- settlement does not permit retries
+- settlement does not grant permission
+- settlement outcome must be recorded exactly once
+- late payment must not be accepted
 
-Settlement authority exhaustion does not imply inscription success.
+Settlement outcome does not create or restore inscription authority.
 
 ---
 
@@ -154,24 +155,24 @@ Inscription authority:
 - permits exactly one inscription attempt
 - is permanently exhausted by ambiguity
 
-### Pre-Broadcast Failure
+### Pre-Initiation Failure (Normative)
 
-If inscription construction fails **before** any transaction
-could have been broadcast:
+If inscription construction fails **before** an inscription initiation
+record is durably persisted:
 
-- authority is not yet consumed
+- inscription authority is not yet consumed
 - retry is permitted
 
 This is the **only** retry condition.
 
 ---
 
-### Post-Broadcast Ambiguity (Normative)
+### Post-Initiation Ambiguity (Normative)
 
-If a transaction:
+If an inscription initiation record exists and the system:
 
-- was broadcast, or
-- cannot be proven not to have been broadcast
+- broadcasts a transaction, or
+- cannot prove that no broadcast occurred
 
 Then:
 

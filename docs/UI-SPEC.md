@@ -2,14 +2,14 @@
 
 This document defines user interface behavior for Numbers.
 
-It is **normative** where it constrains interaction, visibility,
-and representation of system state.
+It is **normative only where it constrains interaction, visibility,
+and representation of recorded system state**.
 
-It does not define visual style, branding, or aesthetics.
+It does not define visual style, branding, tone, or aesthetics.
 
 If there is a conflict,
 PRD.md, CORE-SEQUENCE.md, STATE-MACHINE.md,
-and API-STATE-SHAPES.md take precedence.
+API-SPEC.md, and API-STATE-SHAPES.md take precedence.
 
 ---
 
@@ -38,14 +38,14 @@ Any normative statement using forbidden modal language is invalid.
 
 The Numbers interface exists to:
 
-- Expose canonical system state accurately
-- Allow user interaction **only** where the backend permits it
-- Prevent narrative framing, interpretation, or implication
+- reflect canonical backend state accurately
+- permit user interaction **only** where explicitly allowed by the backend
+- avoid narrative framing, implication, or interpretation
 
-The interface reflects recorded knowledge.  
+The interface reflects recorded knowledge.
 It does not explain, justify, predict, or reassure.
 
-The interface is not authoritative.
+The interface is **non-authoritative**.
 
 ---
 
@@ -57,12 +57,12 @@ Rules:
 
 - There are no routes, modes, or application states
 - Navigation alters **scroll position only**
-- No navigation action may alter system interaction eligibility
+- No navigation action may alter interaction eligibility
 
 Content sections (About, Docs) are informational only.
 They **must not** introduce modes or conditional behavior.
 
-The page **must always initialize** at the current auction.
+The page **must initialize** at the current auction.
 
 Deep-linking to past or future auctions is forbidden.
 
@@ -78,29 +78,31 @@ On page load or refresh:
 
 Clicking the “Numbers” logo **must** behave identically to refresh.
 
-The interface always reasserts *now*.
+The interface always reasserts the present.
 
 ---
 
 ## 4. System State Representation (Normative)
 
-The interface **must represent backend system state explicitly**.
+The interface **must represent backend system state exactly**.
 
 ### Representable States
 
-- `Open`
-- `Closing`
-- `AwaitingSettlement`
-- `Finalized`
-- `Inscribing`
-- `Inscribed`
-- `Degraded`
+UI state labels **must map directly** to backend states as follows:
+
+- `Open` → `Open`
+- `Closing` → `Closed`
+- `AwaitingSettlement` → `AwaitingSettlement`
+- `Finalized` → `Finalized`
+- `Inscribing` → `Inscribing`
+- `Inscribed` → `Inscribed`
+- `Degraded` → backend error or halted state
 
 Rules:
 
-- These states **must map directly** to backend state
-- No UI-only states **may** be introduced
-- UI state **must not** anticipate transitions
+- UI states **must not** introduce new semantics
+- UI states **must not** anticipate transitions
+- UI states **must not** combine multiple backend states
 
 The `Inscribed` state refers **only** to inscriptions
 recognized by the Numbers system.
@@ -109,32 +111,28 @@ recognized by the Numbers system.
 
 ## 5. Inter-Auction Pause (Normative)
 
-Between auctions:
+During inter-auction pause:
 
 - The next auction number **must** be visible and inactive
 - Bid input and controls **must** be visible but inert
 - Keyboard **must** display `1234567890` in inactive form
-- Timer **must** display `12:34:56` as a presentation placeholder
+- Timer **may** display a fixed, non-semantic placeholder
 
 Interaction rules:
 
 - Touching inactive elements **must have no effect**
-- No wallet connection **may** be initiated
+- Wallet connection **must not** be initiated
 - Menu remains accessible
 
-Displayed timing values during pause are **non-semantic**.
-They do not define protocol behavior.
-
-Liveness communication is limited to:
-
-- Countdown
-- Letline
+Displayed timing values during pause are **purely presentational**.
+They **must not** be derived from protocol timing
+or imply countdown semantics.
 
 ---
 
 ## 6. Letline (System Voice) (Normative)
 
-The Letline is a single, ambient textual element.
+The Letline is a single ambient textual element.
 
 Rules:
 
@@ -143,7 +141,7 @@ Rules:
 - It **must not** convey errors, confirmations, or diagnostics
 - Message content **may** change without semantic implication
 
-Typing behavior is presentation-only and non-authoritative.
+Typing or animation behavior is presentation-only and non-authoritative.
 
 ---
 
@@ -165,7 +163,8 @@ Disconnect:
 - Available only via menu
 - No emphasis, confirmation, or narrative framing
 
-Wallet connection does not imply bid acceptance.
+Wallet connection does not imply bid acceptance
+or bid validity.
 
 ---
 
@@ -191,13 +190,16 @@ Bid UI **must not** imply:
 - priority
 - acceptance beyond protocol rules
 
+The interface may reveal the existence of competing bids through recorded outcomes,
+but must not frame competition as urgency, encouragement, achievement, or loss.
+
 ---
 
 ## 9. Auction Transitions (Normative)
 
 Auction transitions:
 
-- **must** be immediate
+- **must** be immediate upon state change
 - **must not** animate
 - **must not** acknowledge the user
 - **must not** scroll automatically
@@ -212,7 +214,7 @@ State changes are presented as facts, not events.
 Layout rules:
 
 - The current auction **must** appear at the top
-- Past auctions **must** appear below in sequence order
+- Past auctions **must** appear below in strict sequence order
 - Past auctions **must** be non-interactive
 - Past auctions **must** be visually quieter
 
@@ -265,7 +267,7 @@ The interface **must display only canonical system data**.
 - Addresses **must not** be displayed
 - Ownership **must not** be implied
 
-### Historical Views
+### Historical Auctions
 
 - Addresses **may** be displayed in truncated form
 - Addresses **must** be presented as data, not identity
@@ -296,7 +298,7 @@ Bid amount for no-bid outcomes **must** be recorded as `0`.
 
 Rules:
 
-- `txid` and `satpoint` are distinct affordances
+- `txid` and `satpoint` are distinct references
 - They **must not** be merged conceptually
 - Each links to its canonical external viewer
 - They **must not** be embedded or interpreted
@@ -309,14 +311,14 @@ Transaction references are shown **only** for canonical outcomes.
 
 The interface **does not** provide:
 
-- User accounts
-- Personalization
-- Notifications
-- Rankings
-- Market data
-- Rarity indicators
-- Social features
-- Analytics
+- user accounts
+- personalization
+- notifications
+- rankings
+- market data
+- rarity indicators
+- social features
+- analytics
 
 Any feature not specified here is forbidden.
 
@@ -327,6 +329,6 @@ Any feature not specified here is forbidden.
 The interface **must never** imply meaning
 beyond recorded outcomes.
 
-Numbers records.  
-The interface reflects.  
+Numbers records.
+The interface reflects.
 Interpretation happens elsewhere.

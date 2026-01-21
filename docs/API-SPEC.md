@@ -40,15 +40,15 @@ Any normative statement using forbidden modal language is invalid.
 
 The API exists to:
 
-- Expose canonical system state
-- Accept explicitly permitted external actions
-- Surface knowledge without interpretation
+- expose canonical system state
+- accept explicitly permitted external actions
+- surface recorded knowledge without interpretation
 
-The API does **not**:
+The API **does not**:
 - infer outcomes
 - summarize meaning
 - provide convenience abstractions
-- grant authority
+- grant or restore authority
 
 ---
 
@@ -56,12 +56,12 @@ The API does **not**:
 
 The API is:
 
-- Read-only by default
-- Minimal and enumerable
-- Deterministic in shape
-- Explicit in failure
-- Versioned from inception
-- Aligned strictly with persisted canonical state
+- read-only by default
+- minimal and enumerable
+- deterministic in shape
+- explicit in failure
+- versioned from inception
+- aligned strictly with persisted canonical state
 
 The API reflects **what is recorded**.
 It does not speculate.
@@ -83,7 +83,7 @@ The API **must not**:
 - manufacture certainty
 - fill gaps with assumed values
 
-Absence of data **must not** be represented as resolution.
+Absence of data **must not** be represented as resolution or failure.
 
 Changes in knowledge exposed by the API:
 - **do not** imply new permission
@@ -103,10 +103,10 @@ Authority boundaries are fixed:
   - auction resolution
   - auction finalization
   - inscription intent and ambiguity tracking
-- The API exposes recorded backend state only.
+- The API exposes **persisted backend records only**.
 
 API availability, delay, restart, or failure
-**must not** alter outcomes or authority.
+**must not** alter outcomes, authority, or sequencing.
 
 ---
 
@@ -114,11 +114,13 @@ API availability, delay, restart, or failure
 
 All endpoints **must** obey:
 
-- Strict input validation
-- Deterministic output shapes
-- Missing fields represent unknown knowledge, not null outcomes
-- Field meaning **must not** change within a version
-- Side effects are forbidden unless explicitly stated
+- strict input validation
+- deterministic output shapes
+- missing fields represent unknown knowledge, not null outcomes
+- field meaning **must not** change within a version
+- side effects are forbidden unless explicitly stated
+
+The API **must not** expose derived or inferred fields.
 
 ---
 
@@ -133,20 +135,22 @@ No undocumented endpoint may exist.
 
 Returns the current global system state.
 
-Includes:
+Includes **only persisted or directly observable values**:
+
 - current auction number
 - auction lifecycle state
 - system control state (`Running` or `Paused`)
-- remaining time **if directly observed**
-- inter-auction gap status **if directly observed**
+- observed timestamps relevant to the current state
 
-This endpoint exposes **present knowledge only**.
-
-It **must not**:
+This endpoint **must not**:
 - predict future transitions
-- compute or project timing
+- compute remaining time
+- project deadlines
 - infer upcoming state changes
-- interpolate missing time data
+- interpolate missing temporal data
+
+If a value cannot be derived directly from persisted records,
+it **must** be omitted.
 
 ---
 
@@ -155,25 +159,28 @@ It **must not**:
 Returns finalized auction outcomes in strict sequence order.
 
 Rules:
-- Results are paginated
-- Each entry corresponds to **exactly one** auction number
-- Only finalized auctions are returned
-- Ordering is canonical and immutable
 
-Each entry includes only finalized knowledge:
+- results are paginated
+- each entry corresponds to **exactly one** auction number
+- only finalized auctions are returned
+- ordering is canonical and immutable
+
+Each entry includes **finalized recorded knowledge only**:
+
 - auction number
 - final destination address
 - settlement outcome
 - inscription state
 - inscription txid (if known)
 - inscription satpoint (if known)
-- timestamps of resolution and finalization
+- resolution timestamp
+- finalization timestamp
 
 This endpoint **must not**:
 - expose non-finalized state
 - infer ownership
 - collapse null outcomes
-- hide NullSteward results
+- hide `NullSteward` results
 - rewrite or reinterpret history
 
 ---
@@ -182,16 +189,17 @@ This endpoint **must not**:
 
 Returns the full recorded state for auction number `N`.
 
-Includes:
+Includes **only persisted records** applicable to `N`:
+
 - auction lifecycle state
-- bid summary (only if permitted by state)
+- bid summary **only if permitted by lifecycle state**
 - resolution record (if present)
-- settlement state
+- settlement state (if present)
 - inscription state
-- ambiguity indicators
+- ambiguity indicators (if present)
 
 If knowledge is unavailable,
-it **must** be omitted, not guessed.
+it **must** be omitted rather than represented as null or guessed.
 
 ---
 
@@ -205,14 +213,19 @@ This is the **only write-capable public endpoint**.
 
 A bid request is valid **only if all are true**:
 
-- System state is `Running`
-- An auction is in `Open` state
-- The bid targets the current auction number
-- The request proves control of the bidding wallet
-- The bid amount satisfies constraints fixed at auction start
+- system control state is `Running`
+- an auction is in `Open` state
+- the bid targets the current auction number
+- the request proves control of the bidding wallet
+- the bid amount satisfies constraints fixed at auction start
 
 If any precondition fails,
-the bid **must** be rejected.
+the bid **must** be rejected explicitly.
+
+Bid submission **must not**:
+- affect auction timing
+- alter authority
+- imply acceptance beyond validation
 
 ---
 
@@ -226,24 +239,27 @@ A bid is invalid if:
 - submitted outside the active auction window
 - malformed or incomplete
 - below the minimum valid bid
-- exceeds configured maximum (if set)
+- exceeds a configured maximum (if applicable)
 - not provably authorized
 
 The minimum valid bid:
+
 - is computed once at auction start
 - remains fixed for the auction duration
 - does not change in response to other bids
 
 Invalid bids:
+
 - are rejected explicitly
 - do not alter auction state
 - do not affect timing or resolution
 - do not consume authority
 
 Bid acceptance:
+
 - does **not** imply winning
 - does **not** imply settlement
-- does **not** imply future inscription
+- does **not** imply inscription
 
 ---
 
@@ -252,19 +268,21 @@ Bid acceptance:
 All responses use a strict envelope:
 
 - `status`: `"success"` or `"error"`
-- `data`: present only on success
-- `error`: present only on error
+- `data`: present **only** on success
+- `error`: present **only** on error
 
 Silent failure is forbidden.
 
 Error responses **must** include:
-- error class (ERROR-TAXONOMY.md)
-- human-readable message
+
+- error class (as defined in ERROR-TAXONOMY.md)
 - machine-stable error code
+- human-readable message
 
 Error codes:
+
 - **must not** change meaning within a version
-- **must not** be reused for different failure classes
+- **must not** be reused across error classes
 
 The API **must not** retry actions on behalf of clients.
 
@@ -272,12 +290,13 @@ The API **must not** retry actions on behalf of clients.
 
 ## 9. Versioning Rules (Normative)
 
-- API is versioned from first release
-- Breaking changes require a new version
-- Field meaning **must never** change within a version
-- Older versions **must not** silently change semantics
+- the API is versioned from first release
+- breaking changes require a new version
+- field meaning **must never** change within a version
+- older versions **must not** silently change semantics
 
 Deprecation:
+
 - must be explicit
 - must not alter historical responses
 
@@ -290,7 +309,7 @@ The API **must not**:
 - expose private keys
 - expose persistence internals
 - expose operator controls
-- allow clients to influence timing or authority
+- allow clients to influence timing, sequencing, or authority
 
 Clients observe.
 They do not steer.

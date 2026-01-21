@@ -124,6 +124,7 @@ If an inscription outcome is ambiguous:
 - Time passing does not restore certainty or permission
 
 Observation is the only permitted activity.
+No state transition, authority consumption, or retry may occur as a result of observation.
 
 ---
 
@@ -220,6 +221,8 @@ System pause:
 - Does not imply outcomes
 
 Pause is an overlay only.
+
+Pause must not extend deadlines, settlement windows, or auction timing.
 
 ---
 

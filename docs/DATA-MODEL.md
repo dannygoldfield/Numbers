@@ -5,15 +5,15 @@ This document defines the canonical data recorded by Numbers.
 It is **normative**.
 
 It specifies:
-- what records exist
+- which records exist
 - when records are written
-- what authority those records do and do not carry
+- which authorities those records consume or preserve
 
 Numbers uses **append-only persistence**.
 Once written, records **must never** be mutated, reinterpreted, or deleted.
 
 If there is a conflict,
-API-STATE-SHAPES.md, STATE-MACHINE.md, INVARIANTS.md,
+PRD.md, INVARIANTS.md, STATE-MACHINE.md,
 TRANSITION-INVARIANTS.md, and ERROR-TAXONOMY.md take precedence.
 
 ---
@@ -44,13 +44,13 @@ Any normative statement using forbidden modal language is invalid.
 All persisted data **must** obey the following principles:
 
 - all records are append-only
-- each record corresponds to a single system event
+- each record corresponds to a single irreversible system event
 - records describe procedure, not interpretation
-- records never claim truth beyond what was observed
-- Bitcoin remains the final authority
+- records never assert truth beyond what was observed
+- absence of a required record implies loss of authority
 
-The database records **what the system did or observed**,
-not what the system believes to be true.
+The data model records **what the system did or observed**,
+not what the system believes or intends.
 
 ---
 
@@ -58,12 +58,13 @@ not what the system believes to be true.
 
 The following record types constitute the **entire** canonical data model:
 
-1. Auction  
-2. Bid  
-3. Resolution  
-4. Settlement  
-5. Inscription  
-6. PauseEvent  
+1. AuctionRecord
+2. BidRecord
+3. ResolutionRecord
+4. SettlementRecord
+5. InscriptionRecord
+6. AmbiguityRecord
+7. PauseEventRecord
 
 No other record type **may** be persisted as canonical state.
 
@@ -74,9 +75,9 @@ Each canonical record:
 
 ---
 
-## 3. Auction Record
+## 3. AuctionRecord
 
-Represents a single auction in the global sequence.
+Represents the existence and timing of a single auction in the global sequence.
 
 ### Fields
 
@@ -86,25 +87,24 @@ Represents a single auction in the global sequence.
 - `number`  
   The number being auctioned. Exactly one per auction.
 
-- `start_time`  
-  Timestamp when the auction entered `Open`.
+- `scheduled_start_time`
 
-- `end_time`  
-  Timestamp when the auction exited `Open`.
+- `open_time`
 
-- `status`  
-  One of: `open`, `closed`
+- `close_time`
 
 ### Rules
 
-- an Auction record **must** be created exactly once
-- creation **must** occur at auction open
-- the record **must not** be modified after close
-- auction records **must not** be synthesized retroactively
+- an AuctionRecord **must** be created exactly once
+- creation **must** occur before bidding opens
+- timestamps **must** reflect actual transitions
+- AuctionRecords **must not** be synthesized retroactively
+
+AuctionRecord existence proves auction identity, not outcome.
 
 ---
 
-## 4. Bid Record
+## 4. BidRecord
 
 Represents a bid submission attempt.
 
@@ -112,73 +112,149 @@ Represents a bid submission attempt.
 
 - `bid_id`
 - `auction_id`
+- `bidder_address`
 - `amount`
-- `timestamp`
-- `status` (`valid`, `invalid`, `superseded`)
+- `destination_address`
+- `nonce`
+- `signature`
+- `submission_time`
+- `validity` (`valid`, `invalid`)
 
 ### Rules
 
-- bid validity **must** be evaluated against auction state fixed at auction start
-- bid validity **must not** change during the auction
-- bids **must never** be deleted or rewritten
-- invalid bids **must** be persisted explicitly
+- all bid attempts **must** be recorded
+- bid validity **must** be evaluated using rules fixed at auction start
+- bid validity **must not** change after evaluation
+- BidRecords **must never** be deleted or rewritten
 
-Bid records record **attempted action**, not authority.
+BidRecords record attempted participation.
+They do **not** consume authority.
 
 ---
 
-## 5. Resolution Record
+## 5. ResolutionRecord
 
-Represents the deterministic outcome at auction close.
+Represents the deterministic outcome of an auction.
 
 ### Fields
 
 - `auction_id`
-- `winning_bid_id` (absent if no valid bids)
-- `winning_amount` (zero if no valid bids)
+- `winning_bid_id` (null if no valid bids)
+- `winning_amount`
 - `resolution_time`
+- `resolution_inputs_hash`
 
 ### Rules
 
-- resolution **must** occur exactly once per auction
-- resolution **must not** depend on settlement success
-- resolution **must not** be delayed, recomputed, or retried
-- resolution **must** be recorded even when no bids exist
+- exactly one ResolutionRecord **must** exist per auction
+- resolution **must** be computed exactly once
+- resolution **must not** depend on settlement
+- resolution **must** be persisted immediately
 
-Resolution consumes auction authority.
+ResolutionRecord existence **consumes auction resolution authority**.
 
 ---
 
-## 6. Settlement Record
+## 6. SettlementRecord
 
-Represents the settlement outcome derived from resolution.
+Represents settlement outcome after resolution.
 
 ### Fields
 
 - `auction_id`
-- `destination`
+- `settlement_deadline`
 - `status` (`settled`, `failed`, `no-bid`)
+- `destination_address`
+- `confirmation_txid` (null if failed)
 - `finalization_time`
 
 ### Rules
 
-- settlement **must** be attempted exactly once
-- settlement **must not** block subsequent auctions
-- settlement **must** finalize to exactly one destination
-- settlement failure **must** be explicit and recorded
+- exactly one SettlementRecord **must** exist per auction
+- settlement outcome **must** be explicit
+- settlement authority **must not** be reused
+- settlement failure **must** be recorded durably
 
-Settlement fixes the inscription destination.
-It does not confer inscription certainty.
+Settlement fixes destination.
+It does not assert inscription success.
 
 ---
 
-## 7. Inscription Record
+## 7. InscriptionRecord
 
-Represents inscription intent and observed chain outcome.
+Represents inscription attempt initiation and known outcomes.
 
 ### Fields
 
 - `auction_id`
-- `txid` (if known)
-- `satpoint` (if known)
-- `status` (`pending`, `broadcast`, `confirmed`, `ambiguous`)
+- `initiation_time`
+- `txid` (null if unknown)
+- `satpoint` (null if unknown)
+- `status` (`initiated`, `broadcast`, `confirmed`)
+
+### Rules
+
+- at most one InscriptionRecord **may** be created per auction
+- record creation **must** precede any broadcast attempt
+- presence of this record **consumes inscription authority**
+- absence of confirmation does not restore authority
+
+InscriptionRecord does not resolve ambiguity.
+
+---
+
+## 8. AmbiguityRecord
+
+Represents permanent uncertainty regarding inscription outcome.
+
+### Fields
+
+- `auction_id`
+- `ambiguity_time`
+- `reason`
+
+### Rules
+
+- AmbiguityRecord **must** be written immediately upon detection
+- AmbiguityRecord **must** exist if broadcast cannot be ruled out
+- AmbiguityRecord is irreversible
+- Presence of this record permanently freezes inscription authority
+
+Ambiguity is preserved, not resolved.
+
+---
+
+## 9. PauseEventRecord
+
+Represents system-level pause or resume events.
+
+### Fields
+
+- `event_id`
+- `event_type` (`pause`, `resume`)
+- `timestamp`
+- `reason`
+
+### Rules
+
+- Pause events **must** be persisted
+- Pause records **must not** alter auction or inscription authority
+- Pause does not create, consume, or restore authority
+
+---
+
+## 10. Cross-Record Invariants (Normative)
+
+- absence of a required record **must** halt execution
+- duplicate authority-bearing records are forbidden
+- missing companion records **must not** be inferred
+- restart reconstruction **must** rely exclusively on records above
+
+---
+
+## Final Rule
+
+If a required canonical record is missing,
+ambiguous, or contradictory:
+
+**The system must halt rather than guess.**

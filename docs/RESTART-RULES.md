@@ -12,7 +12,7 @@ Restart handling exists to ensure that:
 
 If there is a conflict,
 PRD.md, INVARIANTS.md, CORE-SEQUENCE.md, STATE-MACHINE.md,
-and PERSISTENCE.md take precedence.
+PERSISTENCE.md, and AUTHORITY-CONSUMPTION.md take precedence.
 
 ---
 
@@ -23,17 +23,12 @@ A restart is **not** a new execution.
 A restart is a continuation of the same execution,
 with memory restored **exclusively** from persisted state.
 
-If persisted memory is incomplete, missing, or contradictory,
-the system **must** halt.
-
 Restart does not introduce new states.
+Restart does not create authority.
+Restart does not resolve uncertainty.
 
-On restart, the system **must not** create, infer, or substitute any state
-other than those explicitly defined in STATE-MACHINE.md and
-STATE-MACHINE-TABLE.md.
-
-Restart operates only by reconstructing and re-entering
-existing lifecycle states.
+If persisted state is incomplete, missing, or contradictory,
+the system **must** halt.
 
 ---
 
@@ -76,7 +71,8 @@ Restart **must not**:
 - restore consumed authority
 - permit retries that were previously unsafe
 - allow alternate actions for the same auction
-- “try again” after uncertainty or ambiguity
+- attempt a different irreversible action
+  for the same authority scope
 
 Authority, once consumed, remains consumed permanently.
 
@@ -84,23 +80,31 @@ Authority, once consumed, remains consumed permanently.
 
 ## Restart Procedure (Normative)
 
-On startup, the backend **must** execute the following steps
+On startup, the system **must** execute the following steps
 in the order listed.
 
 ---
 
-### Step 1. Load All Persisted Records
+### Step 1. Load All Persisted Canonical Records
 
-The system **must** load:
+The system **must** load all canonical record types
+defined in `DATA-MODEL.md`, including but not limited to:
 
 - auction lifecycle records
+- resolution records
 - settlement records
 - inscription records
-- ambiguity detection records
+- ambiguity records
 - system control events
 
-If any required record is missing, unreadable,
-malformed, or contradictory:
+If any **required canonical record** is:
+
+- missing
+- unreadable
+- malformed
+- internally contradictory
+
+Then:
 
 - execution **must** halt immediately
 - no authority **may** be exercised
@@ -111,13 +115,15 @@ malformed, or contradictory:
 
 For each auction number **N**:
 
-- Rebuild auction state strictly from persisted transitions
-- Rebuild inscription state strictly from persisted transitions
-- Rebuild system control state strictly from persisted events
+- Reconstruct auction state strictly from persisted transitions
+- Reconstruct inscription state strictly from persisted transitions
+- Reconstruct system control state strictly from persisted events
 
 Inference is forbidden.
 
-If reconstruction yields an invalid or forbidden transition:
+If reconstruction yields a state or transition
+not permitted by `STATE-MACHINE.md` or
+`STATE-MACHINE-TABLE.md`:
 
 - execution **must** halt
 
@@ -125,18 +131,18 @@ If reconstruction yields an invalid or forbidden transition:
 
 ### Step 3. Determine Resume Eligibility
 
-For each reconstructed state:
+Resume behavior is defined **only** by the reconstructed state.
 
 #### Scheduled
-- Resume the inter-auction timer if it has not expired
+- Resume inter-auction gap timer if it has not expired
 - Advancement before expiry is forbidden
 
 #### Open
-- If the auction end time has not passed, resume bidding
-- If the auction end time has passed, transition to `Closed`
+- If the auction end condition has not been met, resume bidding
+- If the auction end condition has been met, transition to `Closed`
 
 #### Closed
-- A resolution record **must** already exist
+- A resolution record **must already exist**
 - Resolution **must not** be recomputed
 - Transition to `AwaitingSettlement`
 
@@ -148,9 +154,12 @@ For each reconstructed state:
 - No auction actions are permitted
 - Inscription lifecycle proceeds only if not yet started
 
+#### NotStarted (Inscription)
+- Inscription initiation is permitted
+
 #### Inscribing
-- Resume **only** if a persisted Inscription record
-  explicitly indicates a pre-broadcast failure
+- Resume **only if** a persisted record proves
+  the inscription attempt failed **before broadcast**
 - Absence of a txid, absence of confirmation,
   or lack of observation **must not** be interpreted
   as pre-broadcast failure
@@ -173,7 +182,7 @@ If **all** reconstructed states are valid and resumable:
 
 - resume execution **only** for actions explicitly permitted
   by the reconstructed state machines
-- no new authority-bearing action **may** occur
+- no authority-bearing action **may** occur
   unless its preconditions are fully satisfied
 
 If **any** state is invalid, contradictory, or incomplete:
@@ -206,7 +215,8 @@ The following behaviors are explicitly forbidden:
 - restarting to reclaim lost authority
 - restarting to resolve ambiguity
 - restarting to skip stalled auctions
-- restarting with modified configuration to alter outcomes
+- restarting with modified configuration
+  to alter previously determined outcomes
 
 Restart is not a repair mechanism.
 
@@ -230,7 +240,8 @@ the system **must** remain halted.
 ## Final Rule
 
 On restart, any action lacking explicit proof
-of non-execution is treated as already completed
+that it did **not** occur
+is treated as already completed
 and **must not** be retried.
 
 Restart restores memory.

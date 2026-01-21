@@ -57,8 +57,8 @@ A valid bid **must** include a wallet signature binding:
 - auction number
 - bid amount
 - bidder address
-- destination address (default: bidder address)
-- unique commitment identifier (nonce)
+- destination address
+- unique commitment identifier
 
 The signature proves:
 
@@ -70,36 +70,25 @@ No funds are escrowed at bid time.
 
 ---
 
-## Settlement Window Timing (Normative)
+## Settlement Timing (Normative)
 
-The settlement window duration is **equal to the auction duration**
-for the same environment.
+Settlement timing values:
 
-Settlement timing values are:
+- are derived from configuration
+- are computed at auction resolution
+- **must** be persisted durably
+- **must not** change for that auction
 
-- computed at auction resolution
-- persisted durably
-- immutable for that auction
-
-### Mainnet
-
-- Auction duration: `12:34:56`
-- Settlement window: `12:34:56`
-- Inter-auction pause: `1:23`
-
-### Testnet
-
-- Auction duration: `12:34`
-- Settlement window: `12:34`
-- Inter-auction pause: `1:23`
+Settlement semantics do not define timing constants.
 
 ---
 
 ## Settlement Mechanics (Normative)
 
 1. At auction resolution:
-   - settlement intent **must** be persisted
-   - settlement deadline **must** be computed and persisted
+   - the winning bid reference **must** be persisted
+   - the settlement deadline **must** be computed and persisted
+   - settlement authority enters an active state
 
 2. During the settlement window:
    - the system observes the blockchain
@@ -122,7 +111,7 @@ Confirmation does.
 
 Finalization occurs **only after** settlement outcome is determined.
 
-Finalization **must** produce exactly one destination:
+Finalization **must** record exactly one destination:
 
 - settlement succeeds → winning destination
 - settlement fails → `NullSteward`
@@ -162,43 +151,14 @@ On settlement failure:
 
 - auction proceeds to finalization
 - destination is set to `NullSteward`
-- inscription authority remains subject to state machine rules
+- settlement authority is exhausted
 - no retry or compensation is permitted
 
 No settlement state may be re-entered once finalized.
 
 ---
 
-## Griefing Controls (Normative)
-
-Numbers permits non-payment.
-It does not permit repeated abuse without consequence.
-
-### Testnet
-
-- A bidding address that wins and fails to settle
-  enters a **cooldown**.
-- During cooldown, bids from that address **must** be rejected.
-- Default cooldown: `123` auctions.
-
-Cooldown state **must** be persisted and enforced mechanically.
-
-### Mainnet
-
-- A bidding address that wins and fails to settle
-  is **permanently excluded** from future participation.
-
-This exclusion:
-
-- is irreversible
-- requires no operator intervention
-- is enforced solely by persisted state
-
----
-
 ## Authority Protection (Normative)
-
-Settlement outcome consumes settlement authority.
 
 Once the settlement deadline passes:
 

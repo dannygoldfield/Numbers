@@ -38,10 +38,10 @@ Any normative statement using forbidden modal language is invalid.
 
 This taxonomy exists to:
 
-- Prevent silent failure
-- Prevent unsafe retries
-- Prevent authority from being exercised after ambiguity
-- Ensure failures are visible, bounded, and non-destructive
+- prevent silent failure
+- prevent unsafe retries
+- prevent authority from being exercised after ambiguity
+- ensure failures are visible, bounded, and non-destructive
 
 Errors are treated as **states of knowledge**, not merely runtime exceptions.
 
@@ -57,7 +57,7 @@ All errors fall into **exactly one** of the following classes:
 4. **Fatal Errors**
 5. **Operator Errors**
 
-An error must never belong to more than one class at the same time.
+An error **must never** belong to more than one class.
 
 ---
 
@@ -67,10 +67,10 @@ An error must never belong to more than one class at the same time.
 
 Errors where:
 
-- The cause is known
-- The outcome is known
-- No irreversible action has occurred
-- Authority has not been exercised
+- the cause is known
+- the outcome is known
+- no irreversible action has occurred
+- authority has not been exercised
 
 ### Examples
 
@@ -81,11 +81,11 @@ Errors where:
 - Transaction construction failure before signing
 - Inscription payload serialization failure
 
-### Handling Rules
+### Handling Rules (Normative)
 
-- Must be rejected immediately
-- Must not alter canonical state
-- Must be logged
+- The action **must** be rejected immediately
+- Canonical state **must not** be altered
+- The error **must** be logged
 - Retry is permitted **only if** explicitly allowed by the current state machine
 
 ### Authority Impact
@@ -102,9 +102,9 @@ Deterministic errors do not consume authority.
 
 Errors where:
 
-- The cause is transient
-- Authority has not been exercised
-- Retry is explicitly permitted by the state machine
+- the cause is transient
+- authority has not been exercised
+- retry is explicitly permitted by the state machine
 
 ### Examples
 
@@ -118,29 +118,29 @@ Errors where:
 
 Retry is permitted **only when all of the following are true**:
 
-- The current state explicitly permits retry
-- No irreversible action has occurred
-- No ambiguity has been introduced
+- the current state explicitly permits retry
+- no irreversible action has occurred
+- no ambiguity has been introduced
 
 Retry constraints:
 
-- Retries **must** be bounded by configuration
-- The retry bound **must** be explicit and finite
-- The retry bound **must** be defined per action type
-- Retries **must** be logged individually
+- retries **must** be bounded
+- the retry bound **must** be explicit and finite
+- the retry bound **must** be defined per action type
+- retries **must** be logged individually
 
 If the retry bound is exceeded:
 
-- The error **must** escalate to **Fatal**
-- Execution **must** halt
-- Authority **must not** be exercised further
+- the error **must** escalate to **Fatal**
+- execution **must** halt
+- no further authority-bearing action is permitted
 
 ### Authority Impact
 
 None, unless escalation occurs.
 
 If ambiguity is introduced at any point,
-the error **must be reclassified immediately** as an Ambiguous Error.
+the error **must be reclassified immediately** as **Ambiguous**.
 
 ---
 
@@ -150,9 +150,9 @@ the error **must be reclassified immediately** as an Ambiguous Error.
 
 Errors where:
 
-- An irreversible action has occurred **or cannot be ruled out**
-- The system cannot determine the outcome with certainty
-- Authority has been partially or fully exercised
+- an irreversible action has occurred **or cannot be ruled out**
+- the system cannot determine the outcome with certainty
+- authority has been exercised or must be treated as exercised
 
 Ambiguous errors are **not failures**.  
 They represent **loss of certainty**.
@@ -169,21 +169,21 @@ They represent **loss of certainty**.
 
 Once classified as Ambiguous:
 
-- All retries are forbidden
-- No competing or alternative action is permitted
-- Authority must be treated as permanently consumed
-- Ambiguity must be persisted durably
-- Observation is the **only** permitted activity
+- all retries are forbidden
+- no competing or alternative action is permitted
+- authority **must** be treated as permanently consumed
+- ambiguity **must** be persisted durably
+- observation is the **only** permitted activity
 
 ### Authority Impact
 
-Authority is permanently reduced.
+Authority is permanently exhausted.
 
 Once ambiguity exists:
 
-- Time passing does not restore authority
-- Operator action does not restore authority
-- External confirmation does not justify retries
+- time passing does not restore authority
+- operator action does not restore authority
+- external confirmation does not justify retries
 
 This rule applies most critically to inscription broadcast.
 
@@ -195,8 +195,8 @@ This rule applies most critically to inscription broadcast.
 
 Errors where:
 
-- A core invariant is violated
-- Continuing execution risks corrupting history
+- a core invariant is violated
+- continued execution risks corrupting authoritative history
 
 ### Examples
 
@@ -210,12 +210,12 @@ Errors where:
 ### Handling Rules (Normative)
 
 - Execution **must** halt immediately
-- Error **must** be logged loudly and durably
+- The error **must** be logged durably and prominently
 - Operator intervention is required
 
 ### Authority Impact
 
-Execution authority is suspended.
+Execution is suspended.
 
 Fatal errors exist to protect history by stopping the system.
 
@@ -236,15 +236,16 @@ Errors introduced by human action outside the automated execution path.
 
 ### Handling Rules (Normative)
 
-- Must be rejected if they violate invariants
-- Must be logged with operator identity and context
-- Must never bypass or weaken system rules
+- Operator actions **must** be validated mechanically
+- Any operator action violating invariants **must** be rejected
+- The error **must** be logged with operator identity and context
 
 ### Authority Impact
 
 None, unless the action introduces ambiguity or violates invariants.
 
-In such cases, the error **must escalate** to Ambiguous or Fatal.
+In such cases, the error **must escalate immediately**
+to **Ambiguous** or **Fatal**.
 
 ---
 
@@ -265,7 +266,7 @@ Forbidden transitions:
 - Fatal → Any
 
 Once ambiguity or fatality exists,
-authority does not return automatically.
+authority does not return.
 
 ---
 
@@ -273,17 +274,17 @@ authority does not return automatically.
 
 All errors **must** be logged with:
 
-- Error class
-- Auction ID (if applicable)
-- Current state
-- Triggering action
-- Timestamp
+- error class
+- auction number (if applicable)
+- current lifecycle state
+- triggering action
+- timestamp
 
 Ambiguous and Fatal errors **must additionally** include:
 
-- What is known
-- What is unknown
-- What actions are now forbidden
+- what is known
+- what is unknown
+- which actions are now forbidden
 
 Logs are append-only and non-authoritative.
 
@@ -291,11 +292,11 @@ Logs are append-only and non-authoritative.
 
 ## 10. Design Principles
 
-- Absence of certainty is not permission
-- Time passing is not evidence
-- Retrying is a privilege, not a default
-- Safety is preferred over liveness
-- History must not be rewritten
+- absence of certainty is not permission
+- time passing is not evidence
+- retrying is a privilege, not a default
+- safety is preferred over liveness
+- history must not be rewritten
 
 ---
 
@@ -315,10 +316,10 @@ Logs are append-only and non-authoritative.
 
 This taxonomy does not:
 
-- Optimize throughput
-- Minimize downtime
-- Hide failure from users
-- Resolve ambiguity heuristically
+- optimize throughput
+- minimize downtime
+- hide failure from users
+- resolve ambiguity heuristically
 
 Its sole purpose is correctness.
 

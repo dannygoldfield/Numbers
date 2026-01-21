@@ -10,9 +10,9 @@ Persistence exists to prevent:
 - accidental authority reuse
 - mutation of recorded history
 
-If state is not durably persisted,
-it **must** be treated as **unknown**,
-and authority **must not** be consumed.
+If a required state is not durably persisted,
+the system **must treat that state as unknown**
+and **must not consume authority**.
 
 If there is a conflict,
 PRD.md, CORE-SEQUENCE.md, STATE-MACHINE.md, INVARIANTS.md,
@@ -43,22 +43,23 @@ Persistence is the mechanism by which authority consumption
 is made irreversible and observable.
 
 An authority-bearing action **does not exist**
-unless its intent and outcome are recorded durably.
+unless its intent and boundary conditions
+are recorded durably.
 
 ---
 
 ## Persistence Principles (Normative)
 
-### P-01. Write Before Authority
+### P-01. Persist Before Authority
 
 Any action that consumes authority **must** be preceded by
-a durable write that records intent to perform that action.
+a durable persistence record that establishes intent.
 
 If persistence fails:
 - the action **must not** occur
 - execution **must** halt or enter a safe paused state
 
-No authority **may** be consumed without prior persistence.
+Authority without memory is forbidden.
 
 ---
 
@@ -95,19 +96,22 @@ memory is incorrect.
 Persistence applies **only** to canonical record types
 defined in **DATA-MODEL.md**.
 
-Persistence **must not** introduce new record categories,
-implicit state, or inferred records.
+Persistence **must not** introduce:
+- new record categories
+- implicit state
+- inferred records
 
 If a required canonical record is missing,
-the system **must** halt.
+execution **must** halt.
 
 ---
 
 ## Authority Boundary Rule (Normative)
 
-Any record whose absence would permit authority
+Any record whose absence could permit authority
 to be consumed more than once
-**must** be persisted **before** that authority is consumed.
+**must** be persisted **before**
+that authority is exercised.
 
 This includes, but is not limited to:
 - resolution records
@@ -127,15 +131,16 @@ Any subsequent attempt to consume the same authority
 
 ## Joint Authority Consumption (Normative)
 
-Some authority burns are represented by **multiple records**.
+Some authority consumptions are represented
+by **multiple persisted records**.
 
 Example:
 - resolution record
-- settlement finalization record
+- settlement outcome record
 - inscription initiation record
 
-Together, these records represent **one and only one**
-authority consumption event.
+Together, these records represent
+**one and only one** authority burn.
 
 Rules:
 
@@ -175,11 +180,12 @@ If settlement applies, the system **must** persist:
 - settlement intent
 - settlement deadline
 - settlement outcome
-- settlement confirmation evidence  
-  (txid or explicit failure record)
+- settlement evidence:
+  - confirmed txid, or
+  - explicit failure record
 
-Settlement persistence **must** occur **before**
-inscription authority is consumed.
+Settlement persistence **must** occur
+before inscription authority is exercised.
 
 Settlement failure **must** be explicit and durable.
 
@@ -191,9 +197,9 @@ For each auction **N**, the system **must** persist:
 
 - inscription initiation record
 - inscription attempt metadata
-- known txid (if available)
-- ambiguity detection record (if applicable)
-- inscription confirmation record (if applicable)
+- known txid, if available
+- ambiguity detection record, if applicable
+- inscription confirmation record, if applicable
 
 If ambiguity is detected:
 
@@ -209,15 +215,13 @@ The system **must** persist all system-level events:
 
 - pause events
 - resume events
-- fatal error halts
+- fatal execution halts
 - configuration snapshots active at the time of each event
 
-Pause and resume records **must** include:
-- timestamp
-- triggering condition
-- operator identity, if applicable
-
-System control records **must not** grant or restore authority.
+System control records **must not**:
+- grant authority
+- restore authority
+- advance lifecycle state
 
 ---
 
@@ -226,7 +230,7 @@ System control records **must not** grant or restore authority.
 On process startup, the system **must**:
 
 1. Load all persisted canonical records
-2. Reconstruct state machines exclusively from persisted history
+2. Reconstruct state exclusively from persisted history
 3. Resume only actions explicitly permitted by reconstructed state
 4. Never recompute resolution, settlement, or finalization
 5. Never infer missing records
@@ -295,10 +299,10 @@ Durability **must** survive:
 
 ## Final Rule
 
-If the system is unsure whether an authority-bearing action
-has already occurred:
+If the system cannot prove
+that an authority-bearing action did **not** occur:
 
-**It must assume it has, and refuse to repeat it.**
+**It must assume it did, and refuse to repeat it.**
 
 Persistence preserves memory.
 Forgetting is equivalent to lying.
