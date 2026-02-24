@@ -10,7 +10,7 @@ This document assumes familiarity with:
 - ERROR-TAXONOMY.md
 
 If there is a conflict,
-PRD.md, CORE-SEQUENCE.md, STATE-MACHINE-TABLE.md, STATE-MACHINE.md,
+CORE-SEQUENCE.md, STATE-MACHINE-TABLE.md, STATE-MACHINE.md,
 and INVARIANTS.md take precedence.
 
 ---
@@ -120,7 +120,10 @@ All endpoints **must** obey:
 - field meaning **must not** change within a version
 - side effects are forbidden unless explicitly stated
 
-The API **must not** expose derived or inferred fields.
+The API must not expose inferred fields.
+
+Mechanically derived fields that are strictly computed
+from persisted canonical records are permitted.
 
 ---
 
@@ -135,12 +138,19 @@ No undocumented endpoint may exist.
 
 Returns the current global system state.
 
-Includes **only persisted or directly observable values**:
+Includes only persisted canonical values and mechanically derived values:
 
 - current auction number
 - auction lifecycle state
 - system control state (`Running` or `Paused`)
-- observed timestamps relevant to the current state
+- opened_at
+- base_end_time
+- number_of_extension_events
+- closed_at
+- finalized_at
+
+Derived values must be computable strictly from persisted records.
+Time-remaining projections are forbidden.
 
 This endpoint **must not**:
 - predict future transitions
@@ -205,7 +215,7 @@ it **must** be omitted rather than represented as null or guessed.
 
 ### POST /bid
 
-Submits a bid for the **currently open auction only**.
+Submits a bid for the current auction when auction state is one of: Scheduled or Open
 
 This is the **only write-capable public endpoint**.
 
@@ -242,11 +252,18 @@ A bid is invalid if:
 - exceeds a configured maximum (if applicable)
 - not provably authorized
 
-The minimum valid bid:
+The minimum opening bid:
 
-- is computed once at auction start
-- remains fixed for the auction duration
-- does not change in response to other bids
+- is defined by configuration
+- must not change during the auction
+
+The minimum increment:
+
+- is fixed at auction open
+- must not change during the auction
+
+Minimum constraints must not change
+in response to other bids.
 
 Invalid bids:
 

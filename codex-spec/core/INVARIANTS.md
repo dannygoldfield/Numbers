@@ -2,12 +2,9 @@
 
 This document defines the invariants that govern the Numbers system.
 
-It is **normative**.
+It is normative.
 
-This document assumes familiarity with:
-- CORE-SEQUENCE.md
-- STATE-MACHINE.md
-- STATE-MACHINE-TABLE.md
+Authority precedence is defined exclusively in AUTHORITY-ORDER.md.
 
 An invariant is a property that must hold true at all times.
 Violating an invariant permanently constrains or halts authority.
@@ -16,18 +13,15 @@ Some violations require immediate execution halt.
 If a behavior depends on an assumption not stated here,
 that assumption is invalid.
 
-If there is a conflict,
-PRD.md, CORE-SEQUENCE.md, STATE-MACHINE-TABLE.md, and STATE-MACHINE.md take precedence.
-
 ---
 
 ## Modal Language Rule (Normative)
 
 In all normative documents:
 
-- **must / must not** define obligations
-- **only / exactly once / at most once** define bounds
-- **may** is permitted **only** to describe observational uncertainty  
+- must / must not define obligations
+- only / exactly once / at most once define bounds
+- may is permitted only to describe observational uncertainty  
   and must never authorize action, imply permission, or introduce discretion
 
 Any modal usage violating this rule is invalid.
@@ -36,15 +30,14 @@ Any modal usage violating this rule is invalid.
 
 ## 1. Auction Identity and Order
 
-### I-01. Auction Numbers Are Monotonic
+### I-01. Auction Numbers Are Strictly Monotonic
 
-Auction numbers advance strictly forward.
+Auction numbers must increase strictly by 1 when a new auction is created.
 
 - Each auction number appears exactly once
 - Auction numbers are never reused
-- Auction numbers are never skipped or reordered
-
-Once auction `N` completes, the system advances to `N+1`.
+- Auction numbers are never skipped
+- Auction numbers are never reordered
 
 ---
 
@@ -52,8 +45,12 @@ Once auction `N` completes, the system advances to `N+1`.
 
 At most one auction may exist in a non-terminal lifecycle state at any time.
 
-- Auctions must not overlap
-- Concurrent bidding windows are forbidden
+A terminal auction state is:
+
+- `Finalized`
+
+Auctions must not overlap.
+Concurrent bidding windows are forbidden.
 
 This invariant applies globally.
 
@@ -65,9 +62,10 @@ This invariant applies globally.
 
 Each auction resolves exactly once.
 
-- Resolution is idempotent
-- Re-running resolution must not alter outcome
-- Any second resolution attempt is forbidden
+- Resolution must be deterministic
+- If resolution logic is invoked more than once,
+  the resulting outcome must be identical
+- Any second resolution attempt that would alter outcome is forbidden
 
 ---
 
@@ -124,29 +122,36 @@ If an inscription outcome is ambiguous:
 - Time passing does not restore certainty or permission
 
 Observation is the only permitted activity.
-No state transition, authority consumption, or retry may occur as a result of observation.
+
+Observation must not:
+- trigger new authority-bearing transitions
+- consume additional authority
+- permit retries or substitutions
 
 ---
 
-### I-09. Observation Cannot Create Authority
+### I-09. Observation Is Knowledge Update Only
 
-Observation updates knowledge only.
+Observation is a deterministic evaluation of:
+
+- persisted canonical records
+- external authoritative systems
+- confirmation depth rules defined in configuration
+
+Observation may update knowledge.
+Observation must not create permission.
 
 Observation must not:
-- permit new actions
 - restore authority
-- enable retries or substitutions
+- justify retries
+- substitute alternate actions
+- alter historical records
 
-Observation is limited to deterministic system processes.
-
-Human interpretation, operator intent, or subjective assessment
-does not constitute observation
-and must not change system state.
-
-Knowledge change does not imply permission.
+Human interpretation or operator intent
+must not change system state.
 
 Any reimbursement or compensation performed by an operator
-is an external human action and must not:
+is external to the system and must not:
 - alter outcomes
 - restore authority
 - substitute system behavior
@@ -160,10 +165,10 @@ is an external human action and must not:
 
 Time passing alone:
 
-- Does not resolve ambiguity
-- Does not imply success or failure
-- Does not permit retries
-- Does not grant certainty
+- does not resolve ambiguity
+- does not imply success or failure
+- does not permit retries
+- does not grant certainty
 
 Only explicit observation may change knowledge.
 
@@ -171,13 +176,14 @@ Only explicit observation may change knowledge.
 
 ## 6. State Immutability
 
-### I-11. Past States Are Immutable
+### I-11. Persisted History Is Immutable
 
-Once a state is exited:
+Once the canonical records corresponding to a transition
+are durably persisted:
 
-- It must not be edited
-- It must not be reinterpreted
-- It must not be rewritten
+- they must not be edited
+- they must not be removed
+- they must not be reinterpreted
 
 History is append-only.
 
@@ -187,9 +193,9 @@ History is append-only.
 
 Once a terminal state is reached:
 
-- No further lifecycle transitions are permitted
-- No background process may mutate state
-- No operator action may revive the auction
+- no further lifecycle transitions are permitted
+- no background process may mutate state
+- no operator action may revive the auction
 
 Terminality applies across all subsystems.
 
@@ -199,11 +205,11 @@ Terminality applies across all subsystems.
 
 ### I-13. Illegal State Transitions Halt Execution
 
-Any transition not permitted by STATE-MACHINE.md:
+Any transition not permitted by STATE-MACHINE-TABLE.md:
 
-- Must halt execution immediately
-- Must be logged
-- Must not be retried or auto-corrected
+- must halt execution immediately
+- must be logged
+- must not be retried or auto-corrected
 
 Silent correction is forbidden.
 
@@ -215,24 +221,38 @@ Silent correction is forbidden.
 
 System pause:
 
-- Does not advance state
-- Does not extend or compress lifecycle timing
-- Does not change meaning of any state
-- Does not imply outcomes
+- does not advance state
+- does not change lifecycle truth
+- does not alter the meaning of any state
+- does not imply outcomes
 
 Pause is an overlay only.
 
-Pause must not extend deadlines, settlement windows, or auction timing.
+While `system_state = Paused`:
+
+- no new authority-bearing action may begin
+- no new bids may be accepted
+
+Time continues to advance while paused.
+
+Deadlines and expiration conditions must evaluate
+based on absolute persisted timestamps.
+
+Pause must not extend deadlines,
+settlement windows, or auction timing.
 
 ---
 
-### I-15. Pause Cannot Interrupt Authority
+### I-15. Pause Cannot Restore or Create Authority
 
 System pause:
 
-- Must not interrupt bidding, settlement, or inscription
-- Must occur only at safe boundaries
-- Must not infer outcomes during pause
+- must not restore consumed authority
+- must not justify retries
+- must not authorize alternate actions
+
+Pause does not retroactively affect actions
+that were completed before the pause event was persisted.
 
 ---
 
@@ -242,15 +262,16 @@ System pause:
 
 Once an error escalates:
 
-- It must not downgrade
-- Authority must not automatically return
+- it must not downgrade
+- authority must not automatically return
+- no automated or operator action may downgrade classification
 
 Ambiguous and Fatal errors are terminal with respect to authority.
 
 ---
 
-## 10. Final Rule
+## Final Rule
 
 If any behavior would violate an invariant in this document:
 
-**That behavior is forbidden.**
+That behavior is forbidden.

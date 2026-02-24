@@ -1,41 +1,52 @@
 {
   "meta": {
     "name": "Numbers State Machine",
-    "authoritative_source": "STATE-MACHINE-TABLE.md",
+    "authoritative_source": "STATE-MACHINE.md",
     "normative": true,
-    "version": "1.1",
+    "version": "2.0",
     "notes": [
-      "Ambiguity is not a state",
       "Pause is an overlay, not a lifecycle state",
-      "Authority is consumed when entering AwaitingSettlement",
+      "Authority semantics are defined in AUTHORITY-CONSUMPTION.md",
+      "All timing decisions use server_time",
       "Any transition not listed is forbidden"
     ]
   },
 
-  "states": {
+  "auction_states": {
     "Scheduled": {
       "terminal": false,
-      "description": "Auction is known but not yet open"
+      "description": "Auction exists but is not accepting bids"
     },
     "Open": {
       "terminal": false,
-      "description": "Auction is accepting bids"
+      "description": "Auction is actively accepting bids"
     },
     "Closed": {
       "terminal": false,
-      "description": "Auction has closed to bids"
+      "description": "Auction closed to bids and resolving"
     },
     "AwaitingSettlement": {
       "terminal": false,
-      "description": "Winning bid recorded, settlement window open"
+      "description": "Resolution persisted; settlement outcome pending"
     },
     "Finalized": {
       "terminal": true,
-      "description": "Auction outcome fixed with no further authority"
+      "description": "Auction outcome fixed and irreversible"
+    }
+  },
+
+  "inscription_states": {
+    "NotStarted": {
+      "terminal": false,
+      "description": "Auction finalized; no inscription attempt initiated"
     },
     "Inscribing": {
       "terminal": false,
-      "description": "Inscription attempt in progress"
+      "description": "Inscription initiation persisted; authority consumed"
+    },
+    "Ambiguous": {
+      "terminal": true,
+      "description": "Inscription outcome uncertain; authority permanently frozen"
     },
     "Inscribed": {
       "terminal": true,
@@ -43,96 +54,83 @@
     }
   },
 
-  "overlays": {
+  "system_overlays": {
     "Paused": {
-      "description": "System pause overlay",
       "affects_state": false,
-      "notes": [
-        "Does not advance lifecycle",
-        "Does not infer outcomes",
-        "Resumes only to previous state"
-      ]
+      "description": "System pause overlay; does not alter lifecycle state"
     }
   },
 
-  "allowed_transitions": [
+  "auction_transitions": [
     {
       "from": "Scheduled",
-      "trigger": "start_time_reached",
       "to": "Open",
-      "automatic": true
+      "trigger": "first_valid_bid_accepted",
+      "automatic": false
     },
     {
       "from": "Open",
-      "trigger": "end_time_reached",
       "to": "Closed",
+      "trigger": "current_end_time_reached_or_cap",
       "automatic": true
     },
     {
       "from": "Closed",
-      "trigger": "resolution_with_winning_bid",
       "to": "AwaitingSettlement",
-      "authority_consumed": true
-    },
-    {
-      "from": "Closed",
-      "trigger": "resolution_with_no_bids",
-      "to": "Finalized",
-      "destination": "NullSteward"
+      "trigger": "resolution_record_persisted",
+      "automatic": true
     },
     {
       "from": "AwaitingSettlement",
-      "trigger": "settlement_confirmed",
-      "to": "Inscribing"
-    },
-    {
-      "from": "AwaitingSettlement",
-      "trigger": "settlement_deadline_expired",
       "to": "Finalized",
-      "destination": "NullSteward"
+      "trigger": "settlement_terminal",
+      "automatic": true
+    }
+  ],
+
+  "inscription_transitions": [
+    {
+      "from": "NotStarted",
+      "to": "Inscribing",
+      "trigger": "inscription_initiation_persisted",
+      "automatic": false
     },
     {
       "from": "Inscribing",
-      "trigger": "inscription_confirmed",
-      "to": "Inscribed"
+      "to": "Inscribed",
+      "trigger": "inscription_observed",
+      "automatic": true
+    },
+    {
+      "from": "Inscribing",
+      "to": "Ambiguous",
+      "trigger": "ambiguity_detected",
+      "automatic": true
     }
   ],
 
   "forbidden_transitions": [
     { "from": "Open", "to": "Scheduled" },
     { "from": "Closed", "to": "Open" },
+    { "from": "AwaitingSettlement", "to": "Open" },
     { "from": "Finalized", "to": "*" },
     { "from": "Inscribed", "to": "*" },
-    { "from": "AwaitingSettlement", "to": "Open" },
-    { "from": "Inscribing", "to": "AwaitingSettlement" },
-    {
-      "from": "*",
-      "to": "Inscribing",
-      "condition": "no_settlement_confirmation"
-    },
-    { "from": "Paused", "to": "any_non_previous_state" }
+    { "from": "Ambiguous", "to": "*" }
   ],
 
-  "ambiguity_rules": {
-    "is_state": false,
-    "causes_transition": false,
-    "effects": [
-      "freeze_remaining_authority",
-      "forbid_retries",
-      "forbid_rebroadcast",
-      "allow_observation_only"
-    ]
+  "timing_rules": {
+    "time_source": "server_time",
+    "open_to_closed_condition": "server_time >= current_end_time",
+    "scheduled_to_open_never_time_driven": true
   },
 
-  "persistence_points": [
-    "enter_Open",
-    "enter_Closed",
-    "enter_AwaitingSettlement",
-    "settlement_confirmed_or_expired",
-    "before_inscription_attempt",
-    "on_ambiguity_detected",
-    "on_terminal_state"
-  ],
+  "extension_model": {
+    "base_end_time_immutable": true,
+    "current_end_time_derived": true,
+    "formula": "base_end_time + (extension_increment * number_of_extension_events)",
+    "extension_event_required_for_change": true,
+    "max_extensions_enforced": true
+  },
 
   "final_rule": "If a transition is not explicitly listed as allowed, it is forbidden."
 }

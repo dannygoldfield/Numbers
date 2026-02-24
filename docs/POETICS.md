@@ -35,7 +35,11 @@ to infer requirements, constraints, or semantics.
 
 ---
 
-## Poem 0: Loss
+## Poem: Unmade Space
+
+Numbers can be understood as creating outcomes analogous to private space, public space, and unmade space. For each number, the system either produces a private destination for the winner, produces a public destination at a NullSteward address, or deliberately leaves space unmade by not exercising inscription authority. Unmade space belongs to nobody.
+
+## Poem: Loss
 
 Loss is the price of refusing to invent certainty.
 
@@ -54,7 +58,7 @@ Conceptual resonance:
 
 ---
 
-## Poem 1: Bitcoin as Memory, Not Mind
+## Poem: Bitcoin as Memory, Not Mind
 
 Bitcoin behaves like memory.
 It records events exactly.
@@ -70,7 +74,7 @@ Conceptual resonance:
 
 ---
 
-## Poem 2: Outcome vs Control
+## Poem: Outcome vs Control
 
 An outcome may be final even if control is temporary.
 
@@ -91,7 +95,7 @@ Conceptual resonance:
 
 ---
 
-## Poem 3: Null as a Valid Result
+## Poem: Null as a Valid Result
 
 Failure to settle is not an error.
 No bid is not an exception.
@@ -107,7 +111,7 @@ Conceptual resonance:
 
 ---
 
-## Poem 4: Scale Does Not Change Meaning
+## Poem: Scale Does Not Change Meaning
 
 One unspendable output and one million unspendable outputs
 are identical to Bitcoin.
@@ -118,7 +122,7 @@ Accumulation exists only outside the protocol.
 
 ---
 
-## Poem 5: Recognition Without Uniqueness
+## Poem: Recognition Without Uniqueness
 
 Many inscriptions may contain the same number.
 Only one is recognized by this system.
@@ -132,7 +136,7 @@ Conceptual resonance:
 
 ---
 
-## Poem 6: Sequence as Constraint
+## Poem: Sequence as Constraint
 
 The sequence does not pause.
 It does not optimize.
@@ -147,7 +151,7 @@ Conceptual resonance:
 
 ---
 
-## Poem 7: Where Meaning Is Allowed
+## Poem: Where Meaning Is Allowed
 
 Meaning is allowed only where it cannot be enforced.
 
@@ -162,7 +166,7 @@ Conceptual resonance:
 
 ---
 
-## Poem 8: As-If
+## Poem: As-If
 
 Numbers behaves **as if** ownership were meaningful,
 without asserting that it is.
@@ -173,7 +177,7 @@ Any meaning beyond that is external.
 
 ---
 
-## Poem 9: Ordinals and Numbers
+## Poem: Ordinals and Numbers
 
 Bitcoin records data.
 Ordinals provide legibility.
@@ -184,7 +188,7 @@ No layer can repair what it does not receive.
 
 ---
 
-## Closing Note
+## Poem: In Closing
 
 Numbers prefers loss to lies.
 

@@ -79,6 +79,14 @@ Settlement timing values:
 - **must** be persisted durably
 - **must not** change for that auction
 
+Settlement deadline **must** be computed as:
+```Text
+settlement_deadline =
+resolved_at + settlement.deadline_seconds
+```
+
+The computed deadline must be persisted exactly once.
+
 Settlement semantics do not define timing constants.
 
 ---
@@ -88,7 +96,7 @@ Settlement semantics do not define timing constants.
 1. At auction resolution:
    - the winning bid reference **must** be persisted
    - the settlement deadline **must** be computed and persisted
-   - settlement authority enters an active state
+   - auction state transitions to `AwaitingSettlement`
 
 2. During the settlement window:
    - the system observes the blockchain
@@ -151,7 +159,6 @@ On settlement failure:
 
 - auction proceeds to finalization
 - destination is set to `NullSteward`
-- settlement authority is exhausted
 - no retry or compensation is permitted
 
 No settlement state may be re-entered once finalized.
@@ -162,12 +169,10 @@ No settlement state may be re-entered once finalized.
 
 Once the settlement deadline passes:
 
-- settlement authority is irreversibly consumed
 - no late payment may be accepted
 - no settlement-related state may be rewritten
 
-Settlement authority exhaustion
-does not restore or guarantee inscription authority.
+Settlement does not restore or guarantee inscription authority.
 
 ---
 

@@ -88,45 +88,23 @@ The interface **must represent backend system state exactly**.
 
 ### Representable States
 
-UI state labels **must map directly** to backend states as follows:
+UI state labels must map exactly to backend states:
 
-- `Open` → `Open`
-- `Closing` → `Closed`
-- `AwaitingSettlement` → `AwaitingSettlement`
-- `Finalized` → `Finalized`
-- `Inscribing` → `Inscribing`
-- `Inscribed` → `Inscribed`
-- `Degraded` → backend error or halted state
+- `Scheduled`
+- `Open`
+- `Closed`
+- `AwaitingSettlement`
+- `Finalized`
+- `Inscribing`
+- `Inscribed`
+- `Ambiguous`
 
 Rules:
 
-- UI states **must not** introduce new semantics
-- UI states **must not** anticipate transitions
-- UI states **must not** combine multiple backend states
-
-The `Inscribed` state refers **only** to inscriptions
-recognized by the Numbers system.
-
----
-
-## 5. Inter-Auction Pause (Normative)
-
-During inter-auction pause:
-
-- The next auction number **must** be visible and inactive
-- Bid input and controls **must** be visible but inert
-- Keyboard **must** display `1234567890` in inactive form
-- Timer **may** display a fixed, non-semantic placeholder
-
-Interaction rules:
-
-- Touching inactive elements **must have no effect**
-- Wallet connection **must not** be initiated
-- Menu remains accessible
-
-Displayed timing values during pause are **purely presentational**.
-They **must not** be derived from protocol timing
-or imply countdown semantics.
+- UI states must not introduce new states
+- UI states must not alias backend states
+- UI states must not anticipate transitions
+- UI states must not combine multiple backend states
 
 ---
 
@@ -151,12 +129,11 @@ Rules:
 
 - Viewing the site **must not** require a wallet
 - Wallet connection **must** be requested only when attempting to bid
-- Wallet connection **must not** occur during inter-auction pause
 
 Connection behavior:
 
-- Connection persists across auctions
-- Connection persists until explicit user disconnect
+- Wallet connection state may persist across auctions
+  until explicitly disconnected by the user.
 
 Disconnect:
 
@@ -287,10 +264,7 @@ Every auction resolves to exactly one destination.
 Rules:
 
 - `NullSteward` is unspendable
-- A new address **must** be used per occurrence
 - No participant controls the destination
-
-Bid amount for no-bid outcomes **must** be recorded as `0`.
 
 ---
 

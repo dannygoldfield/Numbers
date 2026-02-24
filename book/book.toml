@@ -7,7 +7,7 @@ build-dir = "build"
 
 [output.html]
 additional-css = ["theme/custom.css"]
+additional-js = ["theme/force-dark.js"]
+default-theme = "navy"
+preferred-dark-theme = "navy"
 
-[output.html.fold]
-enable = true
-level = 0

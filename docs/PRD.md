@@ -27,10 +27,10 @@ This document is a protocol boundary, not a product plan.
 
 ## 1. Definition
 
-Numbers is a system that auctions integers sequentially and inscribes each outcome onto Bitcoin transactions.
+Numbers is a system that auctions integers sequentially and inscribes each finalized outcome onto Bitcoin transactions.
 
 Each auction resolves exactly once.  
-Each resolution produces exactly one canonical inscription.  
+Each number permits at most one inscription attempt.  
 The sequence advances without retry.
 
 The inscription content is the number.
@@ -42,11 +42,11 @@ The inscription content is the number.
 These properties must remain true across all implementations, environments, and versions.
 
 1. Numbers are auctioned strictly in order, starting from 1.
-2. Each auction has a fixed duration defined by configuration.
-3. Each auction resolves exactly once.
-4. Each number produces exactly one canonical inscription.
-5. There are no retries and no re-auctions.
-6. Settlement does not block progression to the next number.
+2. An auction enters `Open` only upon acceptance of the first valid bid.
+3. Once opened, an auction has a fixed duration defined by configuration.
+4. Each auction resolves exactly once.
+5. Each number permits at most one inscription authority consumption.
+6. There are no retries and no re-auctions.
 7. Nonpayment and no-bid outcomes are final and normal, and resolve to the NullSteward.
 8. Inscription content is the number only.
 9. Rendering is determined entirely by the viewing environment.
