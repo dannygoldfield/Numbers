@@ -1,88 +1,9 @@
-# Settlement — Numbers
-
-This document defines **settlement semantics** for Numbers.
-
-It is **normative**.
-
-Settlement governs what happens **after auction resolution**
-and **before auction finalization**.
-
-If there is a conflict,
-CORE-SEQUENCE.md, STATE-MACHINE.md, INVARIANTS.md,
-PERSISTENCE.md, and DATA-MODEL.md take precedence.
-
----
-
-## Purpose
-
-Settlement exists to:
-
-- bind a winning bid to an obligation
-- provide a finite opportunity to fulfill that obligation
-- allow failure without authority reuse
-- prevent the system from guessing intent
-
-Settlement does **not** enforce payment.
-It records whether payment occurred in time.
-
----
-
-## Definitions
-
-- **Winning Bid**  
-  The highest valid bid recorded at auction resolution.
-
-- **Settlement Window**  
-  A fixed duration following auction resolution
-  during which payment may be made.
-
-- **Settlement Deadline**  
-  The exact timestamp at which the settlement window closes.
-
-- **Settlement Success**  
-  A valid on-chain payment confirmed before the settlement deadline.
-
-- **Settlement Failure**  
-  Absence of a confirmed payment by the settlement deadline,
-  for any reason.
-
----
-
-## Bid Commitment Model (Normative)
-
-A bid is a **signed commitment**, not a payment.
-
-A valid bid **must** include a wallet signature binding:
-
-- auction number
-- bid amount
-- bidder address
-- destination address
-- unique commitment identifier
-
-The signature proves:
-
-- control of the bidding address
-- intent to bid
-- acceptance of settlement rules
-
-No funds are escrowed at bid time.
-
----
-
 ## Settlement Timing (Normative)
 
-Settlement timing values:
-
-- are derived from configuration
-- are computed at auction resolution
-- **must** be persisted durably
-- **must not** change for that auction
-
-Settlement deadline **must** be computed as:
+Settlement deadline must be computed as:
 ```Text
 settlement_deadline =
-resolved_at + settlement.deadline_seconds
+resolved_at + settlement.deadline_second
 ```
 
 The computed deadline must be persisted exactly once.
@@ -96,22 +17,54 @@ Settlement semantics do not define timing constants.
 1. At auction resolution:
    - the winning bid reference **must** be persisted
    - the settlement deadline **must** be computed and persisted
+   - the winner destination address **must** be extracted from the signed bid
+   - the winner destination address **must** be validated
+   - the winner destination address **must** be persisted immutably
    - auction state transitions to `AwaitingSettlement`
 
 2. During the settlement window:
-   - the system observes the blockchain
+   - the system observes the blockchain via the authoritative node defined in `chain/CHAIN-INTERACTION.md`
    - no retries, prompts, reminders, or extensions are permitted
 
 3. Settlement is **successful** if:
-   - a valid payment transaction is **confirmed**
+   - a valid payment transaction is Known Confirmed
+   - confirmation depth is >= `chain.confirmation_depth`
    - confirmation occurs **before** the settlement deadline
 
 4. Settlement **fails** if:
-   - no confirmed payment exists at the deadline
+   - no qualifying Known Confirmed payment exists at the deadline
    - regardless of whether a transaction was broadcast earlier
 
 Broadcast does not count.
 Confirmation does.
+
+---
+
+## Winner Destination Address (Normative)
+
+The winner must provide exactly one destination address for inscription delivery.
+
+Rules:
+
+- The destination address must be included in the signed bid payload.
+- The destination address does not need to match the bidding address.
+- The destination address does not need to match the payment source address.
+- The destination address must be valid under the permitted Bitcoin address types defined by this specification.
+- The destination address must be persisted in canonical records at auction resolution.
+- The destination address must be immutable thereafter.
+
+If the destination address is:
+
+- missing,
+- malformed,
+- invalid under permitted address types,
+- or cannot be deterministically converted to a scriptPubKey,
+
+then:
+
+- the bid must be considered invalid at resolution time.
+
+The inscription machine must not select, modify, or reinterpret the destination address.
 
 ---
 
@@ -121,7 +74,7 @@ Finalization occurs **only after** settlement outcome is determined.
 
 Finalization **must** record exactly one destination:
 
-- settlement succeeds → winning destination
+- settlement succeeds → winner destination address
 - settlement fails → `NullSteward`
 - no valid bids → `NullSteward`
 
@@ -129,25 +82,6 @@ Finalization is irreversible.
 
 Settlement outcome **must not** rewrite or reinterpret
 the resolution record.
-
----
-
-## Destination Semantics (Normative)
-
-The inscription destination is determined by the **winning bid signature**.
-
-Rules:
-
-- default destination is the bidding address
-- an alternate destination may be specified
-- destination **must** be included in the signed bid payload
-
-Settlement payment:
-
-- may originate from any wallet
-- does not alter destination
-
-Payment source and inscription destination are independent.
 
 ---
 

@@ -82,8 +82,9 @@ Inscription lifecycle does not alter auction state.
 
 | State | Description | Terminal |
 |-------|------------|----------|
-| NotStarted | No inscription attempt has been initiated. | No |
-| Inscribing | Inscription initiation persisted. Attempt in progress. | No |
+| NotStarted | No inscription broadcast attempt has occurred. | No |
+| Broadcasting | A broadcast attempt is in progress; authority not yet consumed. | No |
+| Inscribing | A committed broadcast exists; awaiting confirmation. | No |
 | Ambiguous | Outcome cannot be determined with certainty. | Yes |
 | Inscribed | Canonical inscription observed. | Yes |
 
@@ -91,6 +92,7 @@ Notes:
 
 - Inscription lifecycle authority is independent from auction lifecycle authority.
 - `Ambiguous` and `Inscribed` are terminal inscription states.
+- Authority is consumed at `broadcast_commit`, not at intent persistence.
 
 ---
 
@@ -98,8 +100,11 @@ Notes:
 
 | From | Trigger | To | Notes |
 |------|--------|----|-------|
-| NotStarted | Inscription initiation persisted | Inscribing | Authority boundary. Persist InscriptionRecord. Inscription authority consumed. |
-| Inscribing | Canonical inscription observed | Inscribed | Persist confirmation data. Terminal. |
+| NotStarted | Broadcast attempt initiated | Broadcasting | InscriptionIntentRecord must exist. Authority not yet consumed. |
+| Broadcasting | broadcast_commit | Inscribing | Occurs when broadcast RPC succeeds AND authoritative node reports mempool presence. Authority consumed. |
+| Broadcasting | Broadcast classified as not_committed | NotStarted | Authority not consumed. Retry permitted. |
+| Broadcasting | Broadcast classified as ambiguous | Ambiguous | Persist AmbiguityRecord. Authority frozen. |
+| Inscribing | Canonical inscription observed to confirmation depth | Inscribed | Persist InscriptionConfirmationRecord. Terminal. |
 | Inscribing | Ambiguity detected | Ambiguous | Persist AmbiguityRecord immediately. Terminal. |
 
 No other inscription transitions are permitted.
@@ -110,7 +115,8 @@ No other inscription transitions are permitted.
 
 | Forbidden | Reason |
 |-----------|--------|
-| NotStarted → Inscribed | Cannot skip initiation |
+| NotStarted → Inscribed | Cannot skip broadcast |
+| NotStarted → Inscribing | Cannot skip commit boundary |
 | Inscribing → NotStarted | Authority cannot be restored |
 | Ambiguous → Any | Terminal ambiguity |
 | Inscribed → Any | Terminal inscription state |
@@ -122,13 +128,19 @@ No other inscription transitions are permitted.
 
 - Auction resolution occurs exactly once per auction.
 - Settlement does not create inscription authority.
-- Inscription authority is consumed at transition `NotStarted → Inscribing`.
+- Inscription authority is consumed only at `broadcast_commit`.
+- `broadcast_commit` occurs when:
+  - a broadcast RPC succeeds, and
+  - the authoritative node reports the transaction present in its mempool.
 - Inscription authority may be exercised at most once per auction.
+- After `broadcast_commit`, no semantically distinct inscription attempt is permitted.
+- Controlled fee replacement (RBF) is permitted only under the equivalence rules defined in `inscription/INSCRIPTION-MACHINE.md`.
 - Ambiguity permanently freezes inscription authority.
 - Authority is never restored by:
   - time passing,
   - operator action,
-  - retries,
+  - restart,
+  - retry of a semantically distinct action,
   - observation.
 
 Authority semantics are defined exclusively in AUTHORITY-CONSUMPTION.md.

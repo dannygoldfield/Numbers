@@ -177,28 +177,41 @@ Ambiguity represents loss of certainty.
 
 ### Handling Rules (Normative)
 
-Once classified as Ambiguous:
+Retry is permitted only if:
 
-- all retries are forbidden
-- no alternative action is permitted
-- ambiguity must be persisted immediately
-- authority associated with the action must be treated as consumed
-- observation is the only permitted activity
+- the current lifecycle state permits retry
+- no irreversible action has occurred
+- no ambiguity has been introduced
 
-Ambiguity must never be resolved by retry.
+Retry constraints:
 
-Time passing does not restore authority.
+- retries must be deterministic
+- retries must be finite
+- retry bounds must be defined in code
+- retry bounds must not be configurable
+- each retry attempt must be logged
 
-Operator action does not restore authority.
+If the retry bound is exceeded:
 
-External confirmation does not justify retry.
+- if no irreversible action has occurred,
+  the error must escalate to Fatal only if forward progress is impossible
+- if an irreversible action cannot be ruled out,
+  the error must be reclassified immediately as Ambiguous
+
+Execution must halt only when classified as Fatal.
 
 ### Authority Impact
 
-Authority associated with the ambiguous action
-is permanently exhausted.
+Authority consumption under Ambiguous classification
+is limited strictly to the authority scope
+associated with the triggering irreversible action.
 
-Ambiguity must not implicitly consume unrelated authority scopes.
+In Numbers, this scope is:
+
+- inscription authority for the canonical number involved.
+
+Ambiguity must not affect unrelated auctions
+or unrelated authority scopes.
 
 ---
 
@@ -234,6 +247,23 @@ An error is Fatal when:
 Authority state remains as persisted.
 
 Fatal errors protect history by halting execution.
+
+### Canonical Contradiction Rule
+
+If persisted canonical records contradict
+authoritative chain truth
+as defined in chain/CHAIN-INTERACTION.md,
+the error must be classified as Fatal.
+
+Examples include:
+
+- Persisted confirmation record for a txid
+  not present in the active best chain.
+- Confirmation depth previously asserted
+  no longer satisfied.
+
+Contradictions must halt execution immediately.
+Canonical records must not be rewritten to repair contradiction.
 
 ---
 

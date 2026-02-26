@@ -59,7 +59,10 @@ Specifically:
 - if ResolutionRecord exists, resolution must not be recomputed
 - if SettlementRecord exists, settlement must not be recomputed
 - if FinalizationRecord exists, destination must not be recomputed
-- if InscriptionRecord exists, inscription initiation must not be repeated
+- if any InscriptionBroadcastRecord has classified_outcome = committed,
+  inscription initiation must not be repeated
+- if InscriptionConfirmationRecord exists,
+  confirmation must not be recomputed
 
 If an outcome record does not exist
 but its prerequisite transition has occurred,
@@ -121,11 +124,10 @@ For auctions in state `Open`:
 - load `base_end_time` from AuctionOpenRecord
 - count ExtensionEventRecords
 - derive:
-```TEXT
+
 current_end_time =
 base_end_time +
 (extension_increment_seconds * number_of_extension_events)
-```
 
 All time comparison must use authoritative `server_time`.
 
@@ -160,46 +162,33 @@ Time must not:
 
 ---
 
-### Step 4. Resume Eligibility by State
+### Step 4. Inscription Lifecycle Reconstruction
 
-#### Scheduled
-- Remains `Scheduled`
-- No automatic advancement
+Inscription state must be reconstructed strictly from persisted records.
 
-#### Open
-- If `server_time < current_end_time`, resume accepting bids
-- If `server_time >= current_end_time`, persist AuctionCloseRecord
+For a given canonical_number:
 
-#### Closed
-- If ResolutionRecord does not exist:
-  - compute and persist ResolutionRecord
-- If ResolutionRecord exists:
-  - transition to `AwaitingSettlement`
+1. If InscriptionConfirmationRecord exists:
+   - State is Inscribed.
+   - No further action permitted.
 
-#### AwaitingSettlement
-- Resume observation only
-- Deadlines must not be reset or modified
+2. Else if any InscriptionBroadcastRecord has classified_outcome = ambiguous:
+   - State is Ambiguous.
+   - No retry permitted.
+   - Observation only.
 
-#### Finalized
-- No auction transitions permitted
-- Inscription lifecycle proceeds only if not yet initiated
+3. Else if any InscriptionBroadcastRecord has classified_outcome = committed:
+   - State is Inscribing.
+   - Authority is already consumed.
+   - Active candidate set consists only of:
+     - The committed txid, and
+     - Any replacement txids recorded in subsequent InscriptionBroadcastRecords.
+   - Only confirmation observation is permitted.
 
-#### NotStarted (Inscription)
-- `Finalized → Inscribing` may occur once
-- Only if InscriptionRecord does not exist
-
-#### Inscribing
-- If AmbiguityRecord exists → no action permitted
-- If InscriptionRecord exists → no retry permitted
-- Only observation permitted
-
-#### Ambiguous
-- Observation only
-- No retry
-- No alternate action
-
-#### Inscribed
-- No action permitted
+4. Else:
+   - State is NotStarted.
+   - Authority has not yet been consumed.
+   - Inscription initiation may proceed only if auction state = Finalized.
 
 ---
 
@@ -210,7 +199,7 @@ If all reconstructed states are valid and consistent:
 - resume execution only for transitions explicitly permitted
 - authority-bearing transitions must satisfy all preconditions
 
-If any state is invalid or incomplete:
+If any state is invalid, contradictory, or incomplete:
 
 - execution must halt
 - operator inspection is required
@@ -261,10 +250,9 @@ the system must remain halted.
 
 ## Final Rule
 
-On restart, any inscription attempt lacking explicit proof
-that it did not occur
-must be treated as already executed
-and must not be retried.
+If any InscriptionBroadcastRecord exists with
+classified_outcome = committed or ambiguous,
+inscription authority must be treated as permanently consumed.
 
 Restart restores memory.
 It does not grant permission.

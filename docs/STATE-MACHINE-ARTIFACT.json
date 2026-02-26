@@ -1,16 +1,16 @@
 {
   "meta": {
     "name": "Numbers State Machine",
-    "authoritative_source": "STATE-MACHINE.md",
-    "normative": true,
-    "version": "2.0",
+    "status": "derived_artifact",
+    "derived_from": "STATE-MACHINE-TABLE.md",
+    "normative": false,
+    "version": "2.x",
     "notes": [
-      "Pause is an overlay, not a lifecycle state",
-      "Authority semantics are defined in AUTHORITY-CONSUMPTION.md",
-      "All timing decisions use server_time",
-      "Any transition not listed is forbidden"
+      "Generated projection of canonical state machine table",
+      "Not authoritative",
+      "If conflict exists, STATE-MACHINE-TABLE.md prevails"
     ]
-  },
+  }
 
   "auction_states": {
     "Scheduled": {
