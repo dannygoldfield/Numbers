@@ -3,31 +3,62 @@
 Status: evolving  
 Objective: eliminate guess-space before backend implementation.
 
-This plan identifies missing normative surfaces.
+This plan identifies missing normative surfaces.  
 It does not introduce new protocol behavior.
 
-Current codex-spec structure:
-
-- core/
-- data/
-- bidding/
-- api/
-- config/
-- errors/
-- chain/ (new, incomplete)
-- wallet/ (new, incomplete)
-- inscription/ (new, incomplete)
-
-The following workstreams must be completed before semantic freeze.
+All behavior must remain governed exclusively by the state machine and invariants.
 
 ---
 
-## 1. Chain Interaction Specification
+# 0. Canonical Vocabulary Freeze
 
-File:
+File:  
+core/CANONICAL-TERMS.md
+
+Purpose:  
+Eliminate synonym drift and alias ambiguity across all normative documents.
+
+Must define:
+
+- One canonical term per concept.
+- Explicit definitions for all protocol-level nouns.
+- Explicit prohibition of interchangeable phrasing in normative sections.
+- Explicit mapping of any deprecated terms to canonical terms.
+- Capitalization or styling convention for protocol terms.
+
+Rules:
+
+- One concept → One term → One definition → One state effect.
+- No undefined protocol term may appear in any normative document.
+- No implicit equivalence permitted.
+- Narrative documents may use flexible language.
+- Normative documents may not.
+
+All normative documents must pass canonical term validation before semantic freeze.
+
+---
+
+# 1. Definition Authority Order
+
+Authority precedence in case of contradiction:
+
+1. INVARIANTS.md  
+2. TRANSITION-INVARIANTS.md  
+3. STATE-MACHINE-TABLE.md  
+4. CANONICAL-TERMS.md  
+5. Subsystem specifications (chain, wallet, inscription, config, errors)
+
+If contradiction exists, lower documents must be revised.  
+No document may override a higher authority document.
+
+---
+
+# 2. Chain Interaction Specification
+
+File:  
 chain/CHAIN-INTERACTION.md
 
-Purpose:
+Purpose:  
 Define how Numbers observes and interacts with Bitcoin.
 
 Must specify:
@@ -37,10 +68,10 @@ Must specify:
   - settlement
   - inscription
 - Reorg handling
-- Definition of:
-  - observed
-  - known
-  - unknown
+- Definitions of:
+  - Observed
+  - Known
+  - Unknown
 - Node failure classifications
 - Mempool usage rules (if any)
 
@@ -50,12 +81,12 @@ No Bitcoin interaction may occur without mechanical definition here.
 
 ---
 
-## 2. Wallet Specification
+# 3. Wallet Specification
 
-File:
+File:  
 wallet/WALLET-SPEC.md
 
-Purpose:
+Purpose:  
 Define custody, signing, and UTXO policy.
 
 Must specify:
@@ -70,18 +101,17 @@ Must specify:
 - Signing surfaces
 - Deterministic transaction construction inputs
 
-Must not introduce new auction states.
-
+Must not introduce new auction states.  
 Must not alter authority semantics.
 
 ---
 
-## 3. Inscription Machine Specification
+# 4. Inscription Machine Specification
 
-File:
+File:  
 inscription/INSCRIPTION-MACHINE.md
 
-Purpose:
+Purpose:  
 Define inscription lifecycle separate from auction lifecycle.
 
 Must specify:
@@ -102,7 +132,7 @@ Ambiguity must freeze authority permanently.
 
 ---
 
-## 4. Restart Matrix for Chain Boundary
+# 5. Restart Matrix for Chain Boundary
 
 Either:
 
@@ -122,16 +152,19 @@ Each row must define:
 
 - Reconstructed state
 - Authority status
-- Whether ambiguity triggers
+- Ambiguity status
 - Whether operational continuation is allowed
 
 No operator discretion permitted.
 
 ---
 
-## 5. Error Taxonomy Completion
+# 6. Error Taxonomy Completion
 
-errors/ERROR-TAXONOMY.md must include:
+File:  
+errors/ERROR-TAXONOMY.md
+
+Must include:
 
 Chain errors:
 - chain_unavailable
@@ -145,15 +178,20 @@ Wallet errors:
 - signer_unavailable
 - fee_ceiling_exceeded
 
-Each error must mandate system action.
+Each error must mandate deterministic system action.
 
-No implicit retry allowed.
+No implicit retry allowed.  
+No best-effort semantics allowed.  
+No “eventual” resolution language permitted.
 
 ---
 
-## 6. Circuit Breaker Integration
+# 7. Circuit Breaker Integration
 
-config/CONFIG-REFERENCE.md must define:
+File:  
+config/CONFIG-REFERENCE.md
+
+Must define:
 
 - Fee ceiling
 - Maximum inscription backlog
@@ -161,26 +199,28 @@ config/CONFIG-REFERENCE.md must define:
 - Confirmation depth parameter
 - Maximum mempool wait window (if applicable)
 
-These must not alter semantic truth.
-They may only halt or pause subsystems.
+Circuit breakers may halt subsystems.  
+They may not alter semantic truth.
 
 ---
 
-## 7. Boundary Consistency Check
+# 8. Boundary Consistency Check
 
-After completing sections 1–6:
+After completing sections 0–7:
 
 Verify:
 
 - STATE-MACHINE-TABLE.md remains sole transition authority.
 - No new lifecycle states introduced.
-- Inscription states remain consistent with JSON artifact (if retained).
+- Inscription states remain consistent with JSON artifact.
 - No implicit retries exist.
 - No undefined crash window remains.
+- No undefined protocol term exists.
+- No contradiction exists across authority layers.
 
 ---
 
-## 8. Semantic Audit
+# 9. Semantic Audit
 
 Perform full cross-document audit:
 
@@ -190,19 +230,24 @@ Perform full cross-document audit:
 4. No default behavior assumed.
 5. All authority consumption one-shot.
 6. All undefined behavior explicitly forbidden.
+7. All protocol-level nouns appear in CANONICAL-TERMS.md.
+8. No synonym drift across normative documents.
 
-Output:
+Output:  
 SEMANTICS-AUDIT.md listing conflicts and resolutions.
+
+Semantic freeze occurs only after all conflicts resolved.
 
 ---
 
-## 9. Implementation Entry Gate
+# 10. Implementation Entry Gate
 
 Codex implementation may begin only when:
 
-- chain/ is fully specified
-- wallet/ is fully specified
-- inscription/ is fully specified
+- Canonical vocabulary frozen
+- chain/ fully specified
+- wallet/ fully specified
+- inscription/ fully specified
 - restart matrix complete
 - error taxonomy covers chain and wallet
 - no unresolved ambiguity at authority boundaries
@@ -211,7 +256,7 @@ If any subsystem requires guessing, stop and add clause.
 
 ---
 
-## 10. Implementation Order
+# 11. Implementation Order
 
 1. Persistence
 2. State machine enforcement
