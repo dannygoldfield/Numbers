@@ -34,6 +34,29 @@ the sequence remains at `N`.
 
 Sequence advancement is event-driven, not time-driven.
 
+Canonical records must be appended through a single serialized commit path that guarantees a total ordering of records.
+
+---
+
+## 1.1 Canonical Event Boundary (Normative)
+
+External observations have no authority until converted into a canonical event.
+
+The operator observes the Bitcoin network and other external inputs.
+
+When a condition defined by this specification is satisfied,  
+the operator appends the corresponding canonical record to persistent storage.
+
+Persisted records form the authoritative event log.
+
+External network state, mempool observations, client submissions,  
+or block ordering have no authority once a canonical record has been appended.
+
+All lifecycle transitions and deterministic evaluation must be derived exclusively  
+from the ordered sequence of persisted records.
+
+If a required canonical record is absent, the corresponding event must be treated as not having occurred.
+
 ---
 
 ## 2. Auction Initialization
@@ -75,17 +98,17 @@ While state = `Open`:
 
 Configuration parameters:
 
-- `auction.duration_seconds = 45296`  (12:34:56)
-- `extension_window_seconds = 83`     (1:23)
-- `extension_increment_seconds = 83`  (1:23)
+- `auction.duration_seconds = 45296`
+- `extension_window_seconds = 83`
+- `extension_increment_seconds = 83`
 - `max_extensions = 3`
 
 Definitions:
 
 - `base_end_time` is persisted in `AuctionOpenRecord`
 - `number_of_extension_events` equals the count of `ExtensionEventRecord` entries
-- `current_end_time` is defined as:
 
+`current_end_time`:
 ```Text
 current_end_time =
 base_end_time +
@@ -137,6 +160,23 @@ Closing is automatic and deterministic.
 
 ---
 
+## 6.1 Canonical Ordering Rule (Normative)
+
+The ordered event log defines the canonical sequence of actions.
+
+If a `BidRecord` appears in the persisted event log before the canonical close record,  
+the bid is valid for resolution.
+
+If a `BidRecord` appears after the canonical close record,  
+the bid is invalid regardless of when the bid transaction or request was observed.
+
+External observation order, mempool propagation order, block inclusion order,  
+or network timing must never influence bid validity once records are persisted.
+
+Deterministic replay of the event log must always produce the same resolution outcome.
+
+---
+
 ## 7. Resolution
 
 In state `Closed`:
@@ -163,12 +203,10 @@ Exactly one of the following occurs:
 2. Settlement deadline expires  
    → Destination = `NullSteward`
 
-3. No valid bids (status = not_required)  
+3. No valid bids  
    → Destination = `NullSteward`
 
 Settlement outcome must be persisted exactly once.
-
-Settlement does not create inscription authority.
 
 After settlement outcome is determined:
 
@@ -183,7 +221,6 @@ In state `Finalized`:
 - Destination is fixed.
 - `FinalizationRecord` must be persisted exactly once.
 - Auction lifecycle is complete.
-- No further auction transitions are permitted.
 
 Sequence advancement to `N+1` is permitted only after `Finalized`.
 
@@ -199,17 +236,11 @@ If inscription is initiated:
 - Persist `InscriptionRecord`
 - Inscription authority is consumed
 
-While `Inscribing`:
-
-- Transaction may be constructed
-- Broadcast may be attempted
-- Network may be observed
-
 If inscription is observed:
 
 - Transition `Inscribing → Inscribed`
 
-If outcome cannot be determined with certainty:
+If outcome cannot be determined:
 
 - Transition `Inscribing → Ambiguous`
 
@@ -226,12 +257,11 @@ On restart:
 - State must be reconstructed exclusively from persisted records.
 - Missing required records must halt execution.
 - Authority must not be consumed during reconstruction.
-- No transition may be inferred from absence of data.
 
-Restart may cause deterministic evaluation of:
+Restart may deterministically evaluate:
 
-- `Open → Closed` if `server_time >= current_end_time`
-- `AwaitingSettlement → Finalized` if deadline expired
+- `Open → Closed`
+- `AwaitingSettlement → Finalized`
 
 No other automatic transition is permitted.
 

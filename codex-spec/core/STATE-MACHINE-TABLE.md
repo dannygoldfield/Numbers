@@ -1,4 +1,4 @@
-# State Machine — Canonical Table
+# State Machine Table
 
 This document defines the authoritative lifecycle tables for Numbers.
 

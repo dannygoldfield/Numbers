@@ -9,6 +9,10 @@ If there is any conflict, all normative specification documents take precedence.
 
 ---
 
+## Logline
+
+Deterministic issuance under irreversible authority consumption
+
 ## Premise
 
 There are systems that operate without a central authority.

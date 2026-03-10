@@ -26,6 +26,7 @@ It specifies:
 
 State is always derived from persisted records.
 State must never be stored as mutable truth.
+Canonical record ordering defines all lifecycle precedence.
 
 ---
 
@@ -128,6 +129,21 @@ Allowed actions:
 
 ---
 
+### Bid Ordering Rule (Normative)
+
+When multiple valid bids are accepted during the `Open` state:
+
+- each bid must be persisted as exactly one `BidRecord`
+- `BidRecord`s are appended to persistent storage in the order accepted by the system
+- this order defines bid precedence
+
+Resolution must determine the winning bid using only persisted `BidRecord`s.
+
+Network arrival order, mempool propagation order, and block inclusion order
+must not influence bid precedence once records are persisted.
+
+---
+
 ### Extension Rule (Normative)
 
 While state = `Open`:
@@ -161,6 +177,24 @@ Exit trigger (exactly one):
 
 - `server_time >= current_end_time`
 - or configured bid cap reached
+
+---
+
+### Close Boundary Rule (Normative)
+
+Bid acceptance and auction closing must compete through the same
+serialized canonical record commit path.
+
+If a BidRecord commits before an AuctionCloseRecord,
+the bid is valid.
+
+If an AuctionCloseRecord commits before a BidRecord,
+the bid must be rejected.
+
+Evaluation of `server_time` alone must never determine bid validity
+once commit ordering is known.
+
+Canonical record ordering is authoritative.
 
 ---
 
