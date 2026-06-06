@@ -1,306 +1,473 @@
-# Inscription Machine — Numbers
+# Inscription Machine: Numbers
 
 This document defines the inscription subsystem lifecycle, authority boundary, and permitted delivery behavior.
 
 It is normative.
 
-The inscription machine is separate from the auction lifecycle. Auctions must not halt due to inscription progress or failure.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
+
+The inscription machine is separate from the auction lifecycle.
+
+Auction correctness must not depend on inscription progress, inscription broadcast, inscription confirmation, or inscription failure.
 
 If a behavior is not specified here, it is forbidden.
 
 ---
 
-## 1. Purpose
+# 1. Purpose
 
 The inscription machine exists to:
 
-- Construct an inscription transaction for a finalized auction outcome.
-- Broadcast it to the Bitcoin network via the authoritative node.
-- Observe confirmation to the configured depth.
-- Record outcomes without repair or concealment.
+- construct an inscription payload for a finalized auction outcome
+- persist inscription intent
+- optionally broadcast an inscription transaction through the authoritative Bitcoin node
+- classify broadcast outcome
+- observe confirmation to the configured depth
+- record outcomes without repair or concealment
 
 The inscription machine must:
 
-- Prefer explicit failure over inferred success.
-- Freeze authority permanently upon ambiguity.
-- Permit controlled delivery repricing without semantic change.
+- prefer explicit failure over inferred success
+- freeze authority permanently upon ambiguity
+- preserve append-only truth
+- avoid speculative recovery behavior
 
 ---
 
-## 2. Definitions
+# 2. Prototype Scope Interaction
 
-### 2.1 Authoritative Node
+The current prototype is divided into demonstration stages as defined in `PROTOTYPE-SCOPE.md`.
+
+## Demo 1
+
+Demo 1 must not require:
+
+- live Ordinals broadcast
+- `ord` availability
+- Bitcoin Core RPC availability
+- wallet availability
+- mempool recognition
+- confirmation observation
+- external SSD availability
+
+For Demo 1:
+
+- `InscriptionIntentRecord` may be persisted
+- inscription adapter mode must be `deferred_in_this_slice`
+- no `InscriptionBroadcastRecord` is required
+- no `InscriptionConfirmationRecord` is required
+- no live inscription success may be silently simulated
+
+Auction lifecycle, winner resolution, finalization, sequence advancement, and restart reconstruction must remain demonstrable without live inscription execution.
+
+## Demo 2
+
+Demo 2 may add:
+
+- local Bitcoin Core Testnet integration
+- local wallet integration
+- inscription transaction construction
+- testnet inscription broadcast attempt
+- broadcast outcome classification
+- confirmation observation
+
+Demo 2 must still preserve the rule that Numbers canonical truth is the append-only Numbers record log.
+
+Bitcoin Testnet, Ordinals, wallet state, mempool state, and confirmation state are external execution surfaces. They do not replace Numbers canonical event records.
+
+---
+
+# 3. Definitions
+
+## Authoritative Node
 
 The authoritative Bitcoin Core node is defined in `chain/CHAIN-INTERACTION.md`.
 
 All broadcast and observation must use only this node.
 
-### 2.2 Knowledge
+## Knowledge
 
 Knowledge classification follows `chain/CHAIN-INTERACTION.md`.
 
-### 2.3 Confirmation Depth
+## Confirmation Depth
 
 `chain.confirmation_depth` is defined in `chain/CHAIN-INTERACTION.md` and `config/CONFIG-REFERENCE.md`.
 
-### 2.4 Canonical Number
+## Canonical Number
 
-The canonical number is the number being auctioned for the current auction lifecycle.
+The canonical number is the number associated with the finalized auction outcome.
 
 ---
 
-## 3. Inscription States
+# 4. Inscription States
 
 The inscription machine has the following states per auction:
 
-- NotStarted
-- Inscribing
-- Inscribed
-- Ambiguous
+- `NotStarted`
+- `Inscribing`
+- `Inscribed`
+- `Ambiguous`
 
-State meanings:
+## State Meanings
 
-- NotStarted: No committed inscription broadcast has occurred.
-- Inscribing: A committed broadcast exists and confirmation is pending.
-- Inscribed: The inscription transaction is Known Confirmed to confirmation depth.
-- Ambiguous: Inscription outcome is uncertain; authority is permanently frozen.
+### `NotStarted`
 
-Terminal states:
+No committed inscription broadcast exists and no terminal inscription ambiguity exists.
 
-- Inscribed
-- Ambiguous
+`InscriptionIntentRecord` alone does not move inscription state out of `NotStarted`.
+
+### `Inscribing`
+
+A committed inscription broadcast exists and confirmation has not yet been observed.
+
+### `Inscribed`
+
+The inscription transaction is Known Confirmed to the configured confirmation depth.
+
+### `Ambiguous`
+
+Inscription outcome is uncertain and inscription authority is permanently frozen.
+
+## Terminal States
+
+Terminal inscription states are:
+
+- `Inscribed`
+- `Ambiguous`
+
+There is no canonical `Broadcasting` lifecycle state.
+
+Broadcast attempt is an operation, not a lifecycle state.
 
 ---
 
-## 4. Destination of Inscribed Output (Normative)
+# 5. Destination of Inscribed Output
 
-The inscription transaction must deliver the inscribed output to the winner destination address.
+The inscription transaction must deliver the inscribed output to the finalized destination address.
 
-The winner destination address must be:
+The finalized destination address must be:
 
-- The address persisted as part of settlement outcome records.
-- Immutable once persisted.
-- Deterministically convertible to a valid scriptPubKey under permitted address types.
+- persisted in the auction finalization records
+- immutable once persisted
+- deterministically convertible to a valid scriptPubKey under permitted address types
 
 The inscription machine must not:
 
-- Choose a destination,
-- Modify the destination,
-- Infer a fallback destination,
-- Or reinterpret settlement records.
+- choose a destination
+- modify the destination
+- infer a fallback destination
+- reinterpret settlement records
+- reinterpret finalization records
 
 If the persisted destination address:
 
-- Is missing,
-- Is malformed,
-- Is not permitted under the configured address policy,
-- Or cannot be deterministically converted to a scriptPubKey,
+- is missing
+- is malformed
+- is not permitted under the configured address policy
+- cannot be deterministically converted to a scriptPubKey
 
 then:
 
-- The inscription attempt must not proceed.
-- The condition must be classified via `errors/ERROR-TAXONOMY.md`.
-- No authority may be consumed.
+- inscription broadcast must not proceed
+- the condition must be classified via `errors/ERROR-TAXONOMY.md`
+- no inscription authority may be consumed
 
 Destination resolution must occur before transaction construction.
 
 ---
 
-## 5. Authority Boundary
+# 6. Authority Boundary
 
-### 5.1 Authority Consumption Event
+## 6.1 Authority Consumption Event
 
-Inscription authority is consumed at the first moment both are true:
+Inscription authority is consumed at `broadcast_commit`.
 
-1. The system has broadcast a candidate inscription transaction using the authoritative node, and
-2. The authoritative node reports the transaction present in its mempool.
+`broadcast_commit` occurs only when both are true:
 
-This event is called `broadcast_commit`.
+1. the system has broadcast a candidate inscription transaction using the authoritative node
+2. the authoritative node reports the transaction present in its mempool
 
-Before `broadcast_commit`, authority is not consumed.
+Before `broadcast_commit`, inscription authority is not consumed.
 
-After `broadcast_commit`, authority is consumed exactly once.
+After `broadcast_commit`, inscription authority is consumed exactly once.
 
-### 5.2 No Semantic Retries
+## 6.2 No Semantic Retries After Authority Consumption
 
 After authority consumption, the system must not attempt any action that could create a semantically distinct inscription.
 
-Delivery repricing is permitted only under the controlled RBF rules in Section 8.
+Delivery repricing is permitted only under the controlled RBF rules in this document and only when RBF behavior is included in the active implementation slice.
+
+## 6.3 Ambiguity
+
+If the system cannot determine whether `broadcast_commit` occurred, the result is `ambiguous`.
+
+Ambiguity freezes inscription authority permanently.
+
+Ambiguity must not be repaired by:
+
+- time passing
+- operator action
+- restart
+- later observation
+- speculative rebroadcast
 
 ---
 
-## 6. Canonical Records
+# 7. Canonical Records
 
-The inscription machine must persist canonical records in append-only form as defined in `data/PERSISTENCE.md`.
+The inscription machine must persist canonical event records in append-only form as defined in `data/PERSISTENCE.md`.
 
-Records listed here are required at minimum. Field names are normative.
+The inscription-related canonical event record types are:
 
-### 6.1 InscriptionIntentRecord
+1. `InscriptionIntentRecord`
+2. `InscriptionBroadcastRecord`
+3. `InscriptionConfirmationRecord`
+4. `AmbiguityRecord`
 
-An InscriptionIntentRecord must be persisted before any broadcast attempt.
-
-Fields:
-
-- record_type: "InscriptionIntentRecord"
-- canonical_number: integer
-- created_at_server_time: timestamp
-- content_type: "text/plain; charset=utf-8"
-- payload_hash: bytes32
-- destination_script_pubkey: bytes
-- settlement_reference: opaque identifier linking to finalized auction outcome
-- funding_policy: object (see 6.4)
-- fee_policy: object (see 6.5)
-- rbf_policy: object (see 6.6)
-- intent_id: bytes32
-
-Rules:
-
-- destination_script_pubkey must be derived solely from the persisted winner destination address.
-- content_type must match the value defined in `inscription/INSCRIPTION-FORMAT.md`.
-- payload_hash must be SHA-256 over the exact payload bytes defined in `inscription/INSCRIPTION-FORMAT.md` for the canonical_number.
-- intent_id must be deterministically derived from all other fields.
-- The intent must be immutable once persisted.
-- There must be at most one InscriptionIntentRecord per canonical_number.
-
-### 6.2 InscriptionBroadcastRecord
-
-An InscriptionBroadcastRecord must be persisted after each broadcast attempt.
-
-Fields:
-
-- record_type: "InscriptionBroadcastRecord"
-- canonical_number: integer
-- attempt_index: integer (starts at 0)
-- attempted_at_server_time: timestamp
-- tx_hex_hash: bytes32
-- txid: bytes32 or null
-- rpc_result: "success" | "error" | "unknown"
-- mempool_presence: "present" | "absent" | "unknown"
-- classified_outcome: "committed" | "not_committed" | "ambiguous"
-- error_code: optional string (must map to ERROR-TAXONOMY.md)
-
-Rules:
-
-- attempt_index must be strictly increasing.
-- If rpc_result is unknown, mempool_presence must be unknown.
-- classified_outcome must be:
-  - committed only if rpc_result = success AND mempool_presence = present
-  - not_committed only if rpc_result = error AND mempool_presence = absent
-  - ambiguous otherwise
-
-### 6.3 InscriptionConfirmationRecord
-
-An InscriptionConfirmationRecord must be persisted when the inscription is Known Confirmed.
-
-Fields:
-
-- record_type: "InscriptionConfirmationRecord"
-- canonical_number: integer
-- confirmed_at_server_time: timestamp
-- txid: bytes32
-- block_height: integer
-- confirmations: integer
-
-Rules:
-
-- txid must refer to the active inscription txid being tracked.
-- confirmations must be >= chain.confirmation_depth at record creation time.
-
-### 6.4 Funding Policy
-
-funding_policy must specify:
-
-- funding_source: "operator_wallet"
-- utxo_selection_mode: "deterministic"
-- utxo_reservation_required: true
-
-UTXO reservation rules must be defined in `wallet/WALLET-SPEC.md`.
-
-### 6.5 Fee Policy
-
-fee_policy must specify:
-
-- fee_mode: "adaptive"
-- fee_ceiling_sats: integer
-- fee_estimation_source: "authoritative_node"
-
-Fee computation must be deterministic given:
-
-- node fee estimate response
-- configured caps
-- transaction weight
-
-If the required fee exceeds fee_ceiling_sats, the broadcast attempt must not proceed and must be recorded as not_committed with error_code = fee_ceiling_exceeded.
-
-### 6.6 RBF Policy
-
-rbf_policy must specify:
-
-- rbf_allowed: true
-- max_replacements: integer
-- replacement_requires_equivalence: true
+No inscription-specific record type outside this set may be persisted as canonical system truth.
 
 ---
 
-## 7. Broadcast Procedure
+## 7.1 InscriptionIntentRecord
 
-The broadcast procedure is the only permitted way to submit an inscription transaction.
+`InscriptionIntentRecord` represents persisted inscription intent.
 
-### 7.1 Preconditions
+It must be persisted before any broadcast attempt.
+
+## Required Payload Fields
+
+- `intent_time`
+- `destination_address`
+- `destination_script_pubkey`
+- `inscription_payload_hash`
+- `inscription_content_type`
+- `adapter_mode`
+- `settlement_reference`
+- `intent_id`
+
+## Field Rules
+
+### `adapter_mode`
+
+Must be one of:
+
+- `deferred_in_this_slice`
+- `testnet_ordinals`
+
+### `inscription_content_type`
+
+Must match the value defined in `inscription/INSCRIPTION-FORMAT.md`.
+
+### `inscription_payload_hash`
+
+Must be SHA-256 over the exact payload bytes defined in `inscription/INSCRIPTION-FORMAT.md` for the canonical number.
+
+### `destination_script_pubkey`
+
+Must be derived solely from the finalized destination address.
+
+### `intent_id`
+
+Must be deterministically derived from the other intent fields.
+
+## Rules
+
+- at most one `InscriptionIntentRecord` may exist per auction
+- intent must be immutable once persisted
+- intent persistence does not consume inscription authority
+- intent persistence does not prove broadcast
+- intent persistence does not prove confirmation
+- intent persistence must not alter auction lifecycle state
+
+For Demo 1, `adapter_mode` must be `deferred_in_this_slice` unless live testnet inscription has been explicitly moved into Demo 1 by a later scope revision.
+
+---
+
+## 7.2 InscriptionBroadcastRecord
+
+`InscriptionBroadcastRecord` represents the classified result of an inscription broadcast attempt.
+
+It may exist only when `InscriptionIntentRecord.adapter_mode = testnet_ordinals`.
+
+It must not exist when `InscriptionIntentRecord.adapter_mode = deferred_in_this_slice`.
+
+## Required Payload Fields
+
+- `broadcast_time`
+- `candidate_txid`
+- `tx_hex_hash`
+- `broadcast_outcome`
+- `broadcast_reason`
+- `rpc_result`
+- `mempool_presence`
+- `attempt_index`
+
+## Field Rules
+
+### `broadcast_outcome`
+
+Must be one of:
+
+- `committed`
+- `pre_commit_rejected`
+- `ambiguous`
+
+### `rpc_result`
+
+Must be one of:
+
+- `success`
+- `error`
+- `unknown`
+
+### `mempool_presence`
+
+Must be one of:
+
+- `present`
+- `absent`
+- `unknown`
+
+### `candidate_txid`
+
+- must be non-null when `broadcast_outcome = committed`
+- may be null when `broadcast_outcome = pre_commit_rejected`
+- may be null when `broadcast_outcome = ambiguous`
+
+### `attempt_index`
+
+- must start at `0`
+- must increase by one for each permitted broadcast attempt for the same auction
+
+## Classification Rules
+
+`broadcast_outcome = committed` only if:
+
+- `rpc_result = success`
+- `mempool_presence = present`
+
+`broadcast_outcome = pre_commit_rejected` only if:
+
+- the system can determine that `broadcast_commit` did not occur
+
+`broadcast_outcome = ambiguous` when:
+
+- the system cannot determine whether `broadcast_commit` occurred
+
+If `rpc_result = unknown`, then `mempool_presence` must be `unknown`.
+
+## Authority Rules
+
+- `committed` consumes inscription authority
+- `pre_commit_rejected` does not consume inscription authority
+- `ambiguous` freezes inscription authority permanently
+
+## Retry Rule
+
+This document does not permit automatic retry after `pre_commit_rejected`.
+
+A later implementation slice may explicitly permit bounded retry behavior.
+
+Without that explicit permission, `pre_commit_rejected` records the failed broadcast classification and no further broadcast attempt may be made automatically.
+
+---
+
+## 7.3 InscriptionConfirmationRecord
+
+`InscriptionConfirmationRecord` represents observed canonical inscription confirmation.
+
+It may exist only after an `InscriptionBroadcastRecord` with `broadcast_outcome = committed`.
+
+## Required Payload Fields
+
+- `confirmation_time`
+- `confirmed_txid`
+- `block_height`
+- `block_hash`
+- `confirmations`
+
+## Rules
+
+- `confirmed_txid` must equal the committed `candidate_txid` or an explicitly permitted equivalent replacement txid
+- `confirmations` must be greater than or equal to `chain.confirmation_depth`
+- confirmation does not consume additional authority
+- confirmation must not remove or alter prior records
+- confirmation is terminal for inscription lifecycle
+
+---
+
+# 8. Broadcast Procedure
+
+Broadcast procedure is included only in implementation slices that enable `testnet_ordinals`.
+
+## 8.1 Preconditions
 
 Before attempting broadcast:
 
-- The auction must be finalized.
-- An InscriptionIntentRecord must exist for the canonical_number.
-- Required wallet funds and UTXO reservations must be satisfied.
-- The constructed transaction must be derivable from the InscriptionIntentRecord.
-- The destination_script_pubkey must match the persisted winner destination address.
+- auction state must be `Finalized`
+- an `InscriptionIntentRecord` must exist
+- `InscriptionIntentRecord.adapter_mode` must be `testnet_ordinals`
+- required wallet funds must be available
+- required UTXO reservations must be satisfied
+- the constructed transaction must be derivable from `InscriptionIntentRecord`
+- destination scriptPubKey must match the finalized destination address
 
-### 7.2 Steps
+If any precondition is not satisfied, broadcast must not proceed.
 
-1. Construct tx candidate deterministically from InscriptionIntentRecord and wallet state.
-2. If computed fee exceeds fee ceiling, do not broadcast. Persist InscriptionBroadcastRecord with not_committed and fee_ceiling_exceeded.
-3. Call the authoritative node to broadcast the raw transaction.
-4. If the node returns a txid, immediately check mempool presence for that txid via the authoritative node.
-5. Persist InscriptionBroadcastRecord capturing rpc_result and mempool_presence.
+The failed condition must be classified via `errors/ERROR-TAXONOMY.md`.
 
-### 7.3 Authority Consumption Classification
+No inscription authority may be consumed.
 
-If InscriptionBroadcastRecord.classified_outcome = committed:
+## 8.2 Steps
 
-- Transition inscription state to Inscribing.
-- Authority is consumed.
+1. Construct candidate transaction deterministically from `InscriptionIntentRecord` and wallet state.
+2. If computed fee exceeds fee ceiling, do not broadcast.
+3. If broadcast does not proceed, persist `InscriptionBroadcastRecord` with `broadcast_outcome = pre_commit_rejected`.
+4. If broadcast proceeds, call the authoritative node to broadcast the raw transaction.
+5. If the node returns a txid, immediately check mempool presence for that txid via the authoritative node.
+6. Persist `InscriptionBroadcastRecord` capturing `rpc_result`, `mempool_presence`, and `broadcast_outcome`.
 
-If classified_outcome = not_committed:
+## 8.3 State Effects
 
-- Remain in NotStarted.
-- Authority is not consumed.
+If `broadcast_outcome = committed`:
 
-If classified_outcome = ambiguous:
+- inscription state becomes `Inscribing`
+- inscription authority is consumed
 
-- Transition inscription state to Ambiguous.
-- Authority is frozen permanently.
+If `broadcast_outcome = pre_commit_rejected`:
+
+- inscription state remains `NotStarted`
+- inscription authority is not consumed
+
+If `broadcast_outcome = ambiguous`:
+
+- inscription state becomes `Ambiguous`
+- inscription authority is frozen permanently
 
 ---
 
-## 8. Controlled RBF
+# 9. Controlled RBF
 
-RBF is permitted only as a delivery adjustment after authority is consumed.
+Controlled RBF is not required for Demo 1.
 
-### 8.1 Equivalence Rule
+Controlled RBF is not active unless explicitly included in the active implementation slice.
+
+When controlled RBF is not active, no replacement transaction is permitted.
+
+## 9.1 Equivalence Rule
 
 A replacement transaction is permitted only if it is semantically equivalent to the originally committed transaction.
 
-Two inscription transactions are semantically equivalent if all of the following are identical:
+Two inscription transactions are semantically equivalent only if all of the following are identical:
 
-- canonical_number
-- content_type
-- payload_hash
-- destination_script_pubkey
+- canonical number
+- content type
+- payload hash
+- destination scriptPubKey
 - inscription content semantics as defined in `inscription/INSCRIPTION-FORMAT.md`
-- funding lineage (inputs derive from the same reserved UTXO set)
+- funding lineage as defined by the reserved UTXO set
 
-Allowed differences:
+Allowed differences are limited to:
 
 - fee amount
 - change output value
@@ -308,103 +475,105 @@ Allowed differences:
 
 Any other difference is forbidden.
 
-### 8.2 Replacement Limits
+## 9.2 Replacement Limits
 
-- The number of replacements must not exceed rbf_policy.max_replacements.
-- Each replacement must be recorded as a new InscriptionBroadcastRecord with incremented attempt_index.
+Replacement limits must be defined in the active implementation slice before controlled RBF is enabled.
 
-### 8.3 Replacement Ambiguity
+If no replacement limit is defined, controlled RBF is disabled.
 
-If during replacement the system cannot determine mempool presence for either the prior txid or the new txid, the inscription must transition to Ambiguous.
+## 9.3 Replacement Ambiguity
+
+If during replacement the system cannot determine mempool presence for either the prior txid or the new txid, the inscription state becomes `Ambiguous`.
 
 ---
 
-## 9. Confirmation Observation
+# 10. Confirmation Observation
 
-After authority consumption, the system must observe the authoritative node until either:
+Confirmation observation is included only in implementation slices that enable `testnet_ordinals`.
 
-- A candidate txid becomes Known Confirmed to confirmation depth, or
-- Ambiguity is detected.
+After authority consumption, the system may observe the authoritative node until either:
 
-### 9.1 Observed Candidate Set
+- a candidate txid becomes Known Confirmed to confirmation depth
+- ambiguity is detected
+
+## 10.1 Observed Candidate Set
 
 The candidate set consists only of:
 
-- The committed txid, and
-- Any replacement txids recorded in InscriptionBroadcastRecords.
+- the committed txid
+- explicitly permitted equivalent replacement txids recorded in `InscriptionBroadcastRecord`
 
 No other txids may be considered.
 
-### 9.2 Confirmation Rule
+## 10.2 Confirmation Rule
 
 When a candidate txid is Known Confirmed to confirmation depth:
 
-- Persist InscriptionConfirmationRecord.
-- Transition inscription state to Inscribed.
+- persist `InscriptionConfirmationRecord`
+- inscription state becomes `Inscribed`
 
-Mempool presence alone must not trigger Inscribed.
+Mempool presence alone must not trigger `Inscribed`.
 
 ---
 
-## 10. Restart Detection Logic
+# 11. Restart Reconstruction
 
 Restart handling must follow `data/RESTART-RULES.md`.
 
-Additional inscription-specific reconstruction rules:
+On startup, the system must reconstruct inscription state from canonical event records only.
 
-### 10.1 Reconstruction Inputs
+## Reconstruction Rules
 
-On startup, the system must reconstruct inscription state from persisted records only.
+For a given auction:
 
-### 10.2 Reconstruction Rules
+1. If `InscriptionConfirmationRecord` exists:
+   - inscription state is `Inscribed`.
 
-For a given canonical_number:
+2. Else if any `AmbiguityRecord` with `authority_scope = inscription` exists:
+   - inscription state is `Ambiguous`.
 
-1. If InscriptionConfirmationRecord exists:
-   - State is Inscribed.
+3. Else if any `InscriptionBroadcastRecord` has `broadcast_outcome = ambiguous`:
+   - inscription state is `Ambiguous`.
 
-2. Else if any InscriptionBroadcastRecord has classified_outcome = ambiguous:
-   - State is Ambiguous.
-
-3. Else if any InscriptionBroadcastRecord has classified_outcome = committed:
-   - State is Inscribing and the active candidate set is the committed txid plus any recorded replacements.
-
-4. Else if InscriptionIntentRecord exists:
-   - State is NotStarted.
+4. Else if any `InscriptionBroadcastRecord` has `broadcast_outcome = committed`:
+   - inscription state is `Inscribing`.
 
 5. Else:
-   - State is NotStarted.
+   - inscription state is `NotStarted`.
 
-### 10.3 Post-Restart Chain Checks
+`InscriptionIntentRecord` alone does not change inscription state.
 
-If state reconstructs to Inscribing:
+## Post-Restart Chain Checks
 
-- The system must query the authoritative node for confirmation status of all candidate txids.
-- If any candidate is Known Confirmed, transition to Inscribed.
-- If node responses are contradictory relative to persisted records, classify Fatal and halt.
+Post-restart chain checks are included only in implementation slices that enable `testnet_ordinals`.
 
-The system must not attempt a new broadcast after restart unless:
+If inscription state reconstructs to `Inscribing`:
 
-- No committed broadcast exists for the canonical_number, and
-- No ambiguity record exists.
+- the system may query the authoritative node for confirmation status of all candidate txids
+- if any candidate is Known Confirmed to the configured confirmation depth, the system must persist `InscriptionConfirmationRecord`
+- if node responses are contradictory relative to persisted records, the condition must be classified through `errors/ERROR-TAXONOMY.md`
+
+The system must not attempt a new broadcast after restart unless a later implementation slice explicitly permits that behavior.
 
 ---
 
-## 11. Failure Handling
+# 12. Failure Handling
 
 All failures must be classified via `errors/ERROR-TAXONOMY.md`.
 
 Rules:
 
-- Any loss of certainty after authority consumption is Ambiguous.
-- Any contradiction between persisted confirmation record and authoritative node truth is Fatal.
-- Fee ceiling exceeded is not a chain failure; it is a policy refusal.
+- any loss of certainty after authority consumption is `Ambiguous`
+- any contradiction between a persisted confirmation record and authoritative node truth is `Fatal`
+- fee ceiling exceeded is a policy refusal, not a chain failure
+- policy refusal before broadcast_commit does not consume inscription authority
 
 ---
 
-## 12. Final Rule
+# Final Rule
 
-If a transition or action is not explicitly permitted by this document,
-it is forbidden.
+If a transition or action is not explicitly permitted by this document:
 
-Ambiguity freezes authority permanently.
+It is forbidden.
+
+Ambiguity freezes inscription authority permanently.

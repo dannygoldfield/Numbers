@@ -1,308 +1,328 @@
 # Event Types — Numbers
 
-This document defines the canonical event records that form the
-Numbers event log.
+This document defines the canonical event records that form the Numbers append-only event log.
 
 It is normative.
 
-Events are append-only and totally ordered.
-
-All lifecycle state transitions and deterministic evaluation must
-be derived exclusively from the ordered sequence of persisted events.
-
-If an event type is not defined in this document, it is forbidden.
-
-Event records must be appended through the serialized canonical
-commit path defined in CORE-SEQUENCE.md.
-
-Event ordering defines system truth.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
 ---
 
-# 1. Event Log Principles
+# 1. Event Record Model
 
-The Numbers system is defined by an append-only event log.
+The Numbers system is defined by an append-only ordered log of canonical event records.
 
-Events:
+A canonical event record is the same persisted object as a canonical record.
+
+The terms `event`, `event record`, `canonical record`, and `persisted record` refer to the same append-only object when used for system truth.
+
+There is no separate event model and record model.
+
+Record type names are the canonical event names.
+
+All lifecycle state transitions and deterministic evaluations must be derived exclusively from the ordered sequence of canonical event records.
+
+If an event record type is not defined in this document, it is forbidden.
+
+---
+
+# 2. Event Log Principles
+
+Canonical event records:
 
 - are immutable once persisted
 - are totally ordered
 - must never be modified
 - must never be deleted
 - must never be rewritten
+- must never be reinterpreted after persistence
 
-System state is always derived from the ordered sequence of events.
+System state is always derived from the ordered sequence of canonical event records.
 
 State must never be stored as mutable truth.
 
-External observations have no authority until converted into a
-canonical event record.
+External observations have no authority until converted into a canonical event record.
+
+Event ordering defines system truth.
 
 ---
 
-# 2. Auction Lifecycle Events
+# 3. Canonical Event Record Types
 
-These events govern the auction lifecycle for number `N`.
+The canonical event record types are:
 
----
+1. `AuctionRecord`
+2. `BidRecord`
+3. `AuctionOpenRecord`
+4. `ExtensionEventRecord`
+5. `AuctionCloseRecord`
+6. `ResolutionRecord`
+7. `SettlementRecord`
+8. `FinalizationRecord`
+9. `InscriptionIntentRecord`
+10. `InscriptionBroadcastRecord`
+11. `InscriptionConfirmationRecord`
+12. `AmbiguityRecord`
+13. `PauseEventRecord`
 
-## BidPlaced
-
-Fields:
-
-- `number`
-- `bidder_address`
-- `bid_amount`
-- `server_time`
-
-Meaning:
-
-A valid bid has been accepted during the `Open` state.
-
-Acceptance of the first `BidPlaced` event triggers the
-`Scheduled → Open` lifecycle transition.
-
-Each valid bid must produce exactly one `BidPlaced` event.
+No other event record type may be persisted as canonical system truth.
 
 ---
 
-## AuctionOpened
+# 4. Auction Lifecycle Event Records
 
-Fields:
+## AuctionRecord
 
-- `number`
-- `opened_at`
-- `base_end_time`
+Represents the existence of an auction for number `N`.
 
-Meaning:
+Rules:
 
-The auction lifecycle for number `N` has entered the `Open` state.
+- exactly one `AuctionRecord` must exist per number
+- `AuctionRecord` does not open the auction
+- `AuctionRecord` does not store lifecycle state
+- the auction remains `Scheduled` until the first valid `BidRecord` is accepted and an `AuctionOpenRecord` is atomically persisted
 
-`opened_at` is the authoritative `server_time` when the first valid
-bid was accepted.
+---
 
-`base_end_time` is defined as:
-```Text
-opened_at + auction.duration_seconds
+## BidRecord
+
+Represents a bid submission attempt as evaluated at authoritative server receipt time.
+
+A `BidRecord` may have validity:
+
+- `valid`
+- `invalid`
+
+Rules:
+
+- every bid submission attempt that reaches admission evaluation must produce exactly one `BidRecord`
+- `server_time` must equal authoritative receipt time
+- validity must be evaluated deterministically at submission
+- validity must never change after persistence
+- `BidRecord` does not consume auction authority
+- `BidRecord` does not consume inscription authority
+
+Only a `BidRecord` with `validity = valid` may:
+
+- open a `Scheduled` auction
+- trigger an extension
+- participate in winner resolution
+
+A `BidRecord` with `validity = invalid`:
+
+- must not open an auction
+- must not trigger an extension
+- must not participate in winner resolution
+- must not alter lifecycle state except as append-only audit truth
+
+The first valid `BidRecord` for a `Scheduled` auction must be atomically persisted with `AuctionOpenRecord`.
+
+---
+
+## AuctionOpenRecord
+
+Represents transition `Scheduled → Open`.
+
+Rules:
+
+- exactly one `AuctionOpenRecord` may exist per auction
+- must be persisted atomically with the first valid `BidRecord`
+- `opened_at` must equal authoritative `server_time`
+- `base_end_time` must equal `opened_at + auction.duration_seconds`
+- `base_end_time` must never change
+
+Presence of `AuctionOpenRecord` proves the auction entered `Open`.
+
+---
+
+## ExtensionEventRecord
+
+Represents one extension increment.
+
+Rules:
+
+- one `ExtensionEventRecord` must exist per extension increment
+- extension records are append-only
+- extension records must not modify `base_end_time`
+- extension records must not create new lifecycle states
+- extension records do not consume authority
+- extension records must not exceed configured `max_extensions`
+
+`current_end_time` is derived as:
+
+```text
+current_end_time =
+base_end_time +
+(extension_increment_seconds * number_of_extension_events)
 ```
 
-This event must occur exactly once per auction.
+---
+
+## AuctionCloseRecord
+
+Represents transition `Open → Closed`.
+
+Rules:
+
+- exactly one `AuctionCloseRecord` must exist per opened auction
+- no further valid bids are permitted after `AuctionCloseRecord`
+- close timestamp must equal authoritative `server_time`
+- bid validity for resolution is determined by canonical event order and `BidRecord.validity`
+
+A valid `BidRecord` before `AuctionCloseRecord` may participate in resolution.
+
+A `BidRecord` after `AuctionCloseRecord` must be invalid.
 
 ---
 
-## ExtensionRecorded
+## ResolutionRecord
 
-Fields:
+Represents deterministic winner resolution.
 
-- `number`
-- `extension_index`
-- `extension_seconds`
-- `server_time`
+Rules:
 
-Meaning:
+- exactly one `ResolutionRecord` must exist per closed auction
+- resolution must be computed exactly once
+- resolution must not be recomputed
+- resolution must use only persisted valid `BidRecord` entries for the auction
+- invalid `BidRecord` entries must not participate in resolution
 
-An extension has been applied to the auction end time.
-
-Extensions occur only when the extension window conditions defined
-in CORE-SEQUENCE.md are satisfied.
-
-Extensions:
-
-- must not modify prior events
-- must not modify `base_end_time`
-- must not create new lifecycle states
+Presence of `ResolutionRecord` proves auction resolution occurred.
 
 ---
 
-## AuctionClosed
+## SettlementRecord
 
-Fields:
+Represents settlement determination.
 
-- `number`
-- `closed_at`
+Settlement status must be one of:
 
-Meaning:
-
-The auction lifecycle for number `N` has transitioned to `Closed`.
-
-No further bids are permitted after this event.
-
-Bid validity is determined solely by canonical event ordering.
-
----
-
-## ResolutionRecorded
-
-Fields:
-
-- `number`
-- `winning_bid_id`
-
-Meaning:
-
-The winning bid has been determined deterministically from the
-persisted `BidPlaced` events.
-
-Resolution must occur exactly once.
-
-Resolution must never be recomputed after this event exists.
-
----
-
-## SettlementRecorded
-
-Fields:
-
-- `number`
-- `destination_address`
-- `settlement_outcome`
-
-Possible outcomes:
-
-- `confirmed`
+- `settled`
 - `expired`
 - `not_required`
 
-Meaning:
+Rules:
 
-The settlement outcome for the auction has been determined.
-
-Destination must be either:
-
-- the winning bidder address
-- `NullSteward`
+- exactly one `SettlementRecord` must exist per resolved auction
+- `SettlementRecord` must follow `ResolutionRecord`
+- `SettlementRecord` does not create inscription authority
+- settlement outcome must determine whether final destination is the winning destination or `NullSteward`
 
 ---
 
-## FinalizationRecorded
+## FinalizationRecord
 
-Fields:
+Represents transition to `Finalized`.
 
-- `number`
-- `destination_address`
+Rules:
 
-Meaning:
-
-The auction lifecycle has permanently finalized.
-
-Destination is fixed and cannot be modified.
-
-After this event:
-
-- the auction lifecycle is complete
-- sequence advancement to `N+1` is permitted
+- exactly one `FinalizationRecord` must exist per auction
+- `FinalizationRecord` must follow `SettlementRecord`
+- finalization is irreversible
+- destination is fixed once persisted
+- sequence advancement to `N + 1` is permitted only after `FinalizationRecord`
 
 ---
 
-# 3. Inscription Lifecycle Events
+# 5. Inscription Lifecycle Event Records
 
-These events govern the inscription lifecycle that begins after
-auction state = `Finalized`.
+Inscription lifecycle begins only after auction state = `Finalized`.
 
----
-
-## InscriptionStarted
-
-Fields:
-
-- `number`
-- `commit_txid`
-
-Meaning:
-
-An inscription attempt has begun.
-
-Inscription authority is consumed at this event boundary.
-
-This event corresponds to the `broadcast_commit` boundary defined
-in AUTHORITY-CONSUMPTION.md.
+Inscription lifecycle does not alter auction state.
 
 ---
 
-## InscriptionObserved
+## InscriptionIntentRecord
 
-Fields:
+Represents persisted inscription intent.
 
-- `number`
-- `inscription_txid`
+Rules:
 
-Meaning:
-
-The inscription transaction has been observed and confirmed
-according to the observation rules defined in the inscription
-machine specification.
-
-This event is terminal.
+- must exist before any inscription broadcast attempt
+- does not consume inscription authority
+- does not prove broadcast
+- does not prove confirmation
+- must not create auction lifecycle changes
 
 ---
 
-## InscriptionAmbiguous
+## InscriptionBroadcastRecord
 
-Fields:
+Represents the classified result of an inscription broadcast attempt.
 
-- `number`
-- `reason`
+A broadcast outcome must be one of:
 
-Meaning:
+- `committed`
+- `pre_commit_rejected`
+- `ambiguous`
 
-The system cannot determine the outcome of the inscription attempt
-with certainty.
+Rules:
 
-Possible causes include:
+- `committed` corresponds to the `broadcast_commit` boundary
+- inscription authority is consumed at `broadcast_commit`
+- `pre_commit_rejected` does not consume inscription authority
+- `ambiguous` freezes inscription authority permanently
+- after `committed`, no semantically distinct inscription attempt is permitted
+- after `ambiguous`, no further inscription attempt is permitted
 
-- mempool observation failure
-- contradictory authoritative node responses
-- inability to determine confirmation status
+`broadcast_commit` occurs only when:
 
-This event permanently exhausts inscription authority.
+1. the broadcast RPC succeeds
+2. the authoritative node reports the transaction present in its mempool
 
-No further inscription attempt is permitted.
+`pre_commit_rejected` may be recorded only when the system can determine that broadcast_commit did not occur.
 
----
+`ambiguous` must be recorded when the system cannot determine whether broadcast_commit occurred.
 
-# 4. System Control Events
-
-These events affect system execution but do not alter auction
-lifecycle state.
-
----
-
-## SystemPaused
-
-Fields:
-
-- `paused_at`
-- `operator_id`
-
-Meaning:
-
-The system has entered the `Paused` control state.
-
-While paused:
-
-- no new authority-bearing actions may begin
-- deadlines continue to advance
+Ambiguity must not block auction finalization or sequence advancement unless another specification document explicitly says so.
 
 ---
 
-## SystemResumed
+## InscriptionConfirmationRecord
 
-Fields:
+Represents observed canonical inscription confirmation.
 
-- `resumed_at`
-- `operator_id`
+Rules:
 
-Meaning:
+- may exist only after a committed `InscriptionBroadcastRecord`
+- confirms inscription observation according to inscription rules
+- does not consume additional authority
+- terminal for inscription lifecycle
 
-The system has resumed execution and entered the `Running`
-control state.
+---
 
-Resume must not restore or recreate authority.
+## AmbiguityRecord
+
+Represents detected ambiguity.
+
+Rules:
+
+- must be persisted immediately upon ambiguity detection
+- irreversible
+- permanently freezes affected authority
+- must not be removed by restart, observation, operator action, or time passing
+
+---
+
+# 6. System Control Event Records
+
+## PauseEventRecord
+
+Represents a system-level pause or resume event.
+
+Rules:
+
+- must not alter auction lifecycle state
+- must not alter inscription lifecycle state
+- must not restore authority
+- must not recreate authority
+- must not modify deadlines
+- is a system control record, not a lifecycle state
 
 ---
 
 # Final Rule
 
-If an event is not defined in this document:
+If an event record type is not defined in this document:
 
 It is forbidden.

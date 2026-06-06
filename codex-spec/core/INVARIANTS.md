@@ -1,157 +1,256 @@
-# Invariants — Numbers
+# Invariants: Numbers
 
 This document defines the invariants that govern the Numbers system.
 
 It is normative.
 
-Authority precedence is defined exclusively in AUTHORITY-ORDER.md.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
 An invariant is a property that must hold true at all times.
-Violating an invariant permanently constrains or halts authority.
-Some violations require immediate execution halt.
 
-If a behavior depends on an assumption not stated here,
-that assumption is invalid.
+Violating an invariant permanently constrains execution or requires execution halt.
+
+If a behavior depends on an assumption not stated here, that assumption is invalid.
+
+If behavior would violate an invariant in this document, that behavior is forbidden.
 
 ---
 
-## Modal Language Rule (Normative)
+## Modal Language Rule
 
 In all normative documents:
 
-- must / must not define obligations
-- only / exactly once / at most once define bounds
-- may is permitted only to describe observational uncertainty  
-  and must never authorize action, imply permission, or introduce discretion
+- `must` and `must not` define obligations
+- `only`, `exactly once`, and `at most once` define bounds
+- `may` is permitted only to describe observational uncertainty
+- `may` must never authorize action, imply permission, or introduce discretion
 
 Any modal usage violating this rule is invalid.
 
 ---
 
-## 1. Auction Identity and Order
+# 1. Auction Identity and Order
 
-### I-01. Auction Numbers Are Strictly Monotonic
+## I-01: Auction Numbers Are Strictly Monotonic
 
-Auction numbers must increase strictly by 1 when a new auction is created.
+Auction numbers must increase strictly by `1` when a new auction is created.
 
-- Each auction number appears exactly once
-- Auction numbers are never reused
-- Auction numbers are never skipped
-- Auction numbers are never reordered
+Rules:
+
+- each auction number appears exactly once
+- auction numbers are never reused
+- auction numbers are never skipped
+- auction numbers are never reordered
+
+Sequence advancement to `N + 1` is permitted only after `FinalizationRecord` exists for number `N`.
+
+Sequence advancement must not depend on live inscription broadcast, live inscription confirmation, or inscription success.
 
 ---
 
-### I-02. Only One Auction May Be Active
+## I-02: Only One Auction May Be Active
 
-At most one auction may exist in a non-terminal lifecycle state at any time.
+At most one auction may exist in a non-terminal auction lifecycle state at any time.
 
-A terminal auction state is:
+A terminal auction lifecycle state is:
 
 - `Finalized`
 
 Auctions must not overlap.
+
 Concurrent bidding windows are forbidden.
 
 This invariant applies globally.
 
 ---
 
-## 2. Resolution and Finality
+# 2. Canonical Event Records
 
-### I-03. Each Auction Resolves Exactly Once
+## I-03: Canonical Event Records Define Truth
 
-Each auction resolves exactly once.
+System truth must be derived from canonical event records.
 
-- Resolution must be deterministic
-- If resolution logic is invoked more than once,
-  the resulting outcome must be identical
-- Any second resolution attempt that would alter outcome is forbidden
+The following terms refer to the same persisted truth when used for system state:
 
----
+- `event`
+- `event record`
+- `canonical record`
+- `persisted record`
 
-### I-04. Resolution Is Final
+There is no separate event model and record model.
 
-Once resolution occurs:
-
-- The winner, or lack of winner, is fixed
-- Resolution must not be revised
-- Resolution must not be overridden
+Lifecycle state must never be stored as mutable truth.
 
 ---
 
-## 3. Settlement Authority
+## I-04: Canonical Event Records Are Append-Only
 
-### I-05. Settlement Outcome Is Irreversible
+Once a canonical event record is durably persisted:
 
-Once settlement reaches a terminal state
-(`settled`, `expired`, or `not_required`):
+- it must not be edited
+- it must not be removed
+- it must not be reordered
+- it must not be reinterpreted
+- it must not be replaced by external observation
 
-- The outcome must not change
-- Late payment must not be accepted
-- Settlement authority must not return
+History is append-only.
+
+Corrections are forbidden unless an explicit correction record type is defined by the specification.
 
 ---
 
-### I-06. NullSteward Is a Valid Outcome
+# 3. Auction Resolution and Finality
+
+## I-05: Each Closed Auction Resolves Exactly Once
+
+Each closed auction must resolve exactly once.
+
+Rules:
+
+- resolution must be deterministic
+- resolution must use only persisted valid `BidRecord` entries
+- invalid `BidRecord` entries must not participate in resolution
+- resolution must be persisted in exactly one `ResolutionRecord`
+- resolution must not be recomputed after `ResolutionRecord` exists
+
+Any second resolution attempt that would alter outcome is forbidden.
+
+---
+
+## I-06: Resolution Is Final
+
+Once `ResolutionRecord` exists:
+
+- the winner, or lack of winner, is fixed
+- resolution must not be revised
+- resolution must not be overridden
+- resolution must not be recomputed
+
+---
+
+# 4. Settlement Finality
+
+## I-07: Settlement Outcome Is Irreversible
+
+Once `SettlementRecord` exists, settlement outcome is terminal.
+
+Settlement status must be one of:
+
+- `settled`
+- `expired`
+- `not_required`
+
+After settlement outcome is persisted:
+
+- the outcome must not change
+- late payment must not be accepted
+- settlement must not be recomputed
+- settlement must not restore authority
+- settlement must not create authority
+
+Settlement is not an authority scope.
+
+---
+
+## I-08: NullSteward Is a Valid Outcome
 
 Routing to `NullSteward` is a valid and complete outcome.
 
-- It is not a failure
-- It does not imply error
-- It does not reduce system correctness
+`NullSteward`:
+
+- is not a system failure
+- does not imply error
+- does not reduce system correctness
+- is not a configurable destination
+- is a protocol outcome
 
 ---
 
-## 4. Inscription Authority
+# 5. Inscription Authority
 
-### I-07. Inscription Authority Is Exercised At Most Once
+## I-09: Inscription Authority Exists At Most Once Per Auction
 
 For each auction:
 
-- At most one inscription attempt is permitted
-- Inscription authority must not be retried, duplicated, or substituted
+- inscription authority exists at most once
+- inscription authority is never renewed
+- inscription authority is never recreated by time, restart, or operator action
+- inscription authority is consumed only at `broadcast_commit`
+- inscription authority is frozen by ambiguity
+
+Intent persistence does not consume inscription authority.
+
+Transaction construction does not consume inscription authority.
+
+Confirmation observation does not consume inscription authority.
 
 ---
 
-### I-08. Ambiguity Permanently Consumes Authority
+## I-10: At Most One broadcast_commit Is Permitted
 
-If an inscription outcome is ambiguous:
+For each auction, at most one `broadcast_commit` is permitted.
 
-- Inscription authority is permanently consumed
-- Retry, rebroadcast, replacement, or override is forbidden
-- Time passing does not restore certainty or permission
+After `broadcast_commit`:
 
-Observation is the only permitted activity.
+- inscription authority is consumed
+- no semantically distinct inscription attempt is permitted
+- replacement is permitted only if explicitly allowed by the active implementation slice and inscription specification
 
-Observation must not:
-- trigger new authority-bearing transitions
-- consume additional authority
-- permit retries or substitutions
+A `pre_commit_rejected` outcome does not consume inscription authority.
+
+A `pre_commit_rejected` outcome does not automatically permit retry.
+
+Retry is forbidden unless explicitly permitted by the active implementation slice.
 
 ---
 
-### I-09. Observation Is Knowledge Update Only
+## I-11: Ambiguity Permanently Freezes Authority
+
+If inscription authority becomes ambiguous:
+
+- affected inscription authority is frozen
+- frozen authority must be treated as exhausted
+- retry is forbidden
+- rebroadcast is forbidden
+- replacement is forbidden unless already explicitly permitted and not made ambiguous
+- override is forbidden
+- semantically distinct inscription is forbidden
+
+Time passing does not restore certainty or permission.
+
+Restart does not restore certainty or permission.
+
+Operator action does not restore certainty or permission.
+
+Later observation must not repair ambiguity unless a higher-authority specification revision explicitly permits that behavior.
+
+---
+
+# 6. Observation and Knowledge
+
+## I-12: Observation Is Knowledge Only
 
 Observation is a deterministic evaluation of:
 
-- persisted canonical records
-- external authoritative systems
-- confirmation depth rules defined in configuration
+- canonical event records
+- explicitly permitted external authoritative systems
+- confirmation depth rules defined by configuration
 
-Observation may update knowledge.
-Observation must not create permission.
+Observation may produce a canonical event record only when explicitly permitted.
 
 Observation must not:
+
 - restore authority
-- justify retries
-- substitute alternate actions
+- create authority
+- justify retry
+- substitute alternate action
 - alter historical records
+- replace canonical event records
 
-Human interpretation or operator intent
-must not change system state.
+Human interpretation and operator intent must not change system state.
 
-Any reimbursement or compensation performed by an operator
-is external to the system and must not:
+Any reimbursement or compensation performed by an operator is external to the system and must not:
+
 - alter outcomes
 - restore authority
 - substitute system behavior
@@ -159,118 +258,142 @@ is external to the system and must not:
 
 ---
 
-## 5. Time and Knowledge
-
-### I-10. Time Passing Is Not Evidence
+## I-13: Time Passing Is Not Evidence
 
 Time passing alone:
 
 - does not resolve ambiguity
-- does not imply success or failure
-- does not permit retries
+- does not imply success
+- does not imply failure
+- does not permit retry
 - does not grant certainty
+- does not create authority
+- does not restore authority
 
-Only explicit observation may change knowledge.
-
----
-
-## 6. State Immutability
-
-### I-11. Persisted History Is Immutable
-
-Once the canonical records corresponding to a transition
-are durably persisted:
-
-- they must not be edited
-- they must not be removed
-- they must not be reinterpreted
-
-History is append-only.
+Only explicitly permitted deterministic evaluation may change knowledge or lifecycle state.
 
 ---
 
-### I-12. Terminal States Are Globally Terminal
+# 7. Lifecycle Terminality
 
-Once a terminal state is reached:
+## I-14: Terminal States Are Terminal Within Their Lifecycle
 
-- no further lifecycle transitions are permitted
-- no background process may mutate state
-- no operator action may revive the auction
+Terminality applies within the lifecycle machine where the terminal state occurs.
 
-Terminality applies across all subsystems.
+Auction terminal state:
+
+- `Finalized`
+
+Inscription terminal states:
+
+- `Inscribed`
+- `Ambiguous`
+
+After auction state becomes `Finalized`:
+
+- no further auction lifecycle transition is permitted
+- final destination must not change
+- sequence advancement to `N + 1` is permitted
+- inscription lifecycle may begin if permitted by the active implementation slice
+
+After inscription state becomes `Inscribed`:
+
+- no further inscription lifecycle transition is permitted
+
+After inscription state becomes `Ambiguous`:
+
+- no further inscription attempt is permitted
+- affected inscription authority remains frozen
+
+Terminality must not be used to block unrelated lifecycle machines unless explicitly specified.
 
 ---
 
-## 7. State Machine Enforcement
+# 8. State Machine Enforcement
 
-### I-13. Illegal State Transitions Halt Execution
+## I-15: Illegal State Transitions Halt Execution
 
-Any transition not permitted by STATE-MACHINE-TABLE.md:
+Any transition not permitted by `core/STATE-MACHINE-TABLE.md`:
 
 - must halt execution immediately
 - must be logged
-- must not be retried or auto-corrected
+- must not be retried
+- must not be auto-corrected
+- must not be repaired by inference
 
 Silent correction is forbidden.
 
 ---
 
-## 8. System Pause
+# 9. System Pause
 
-### I-14. Pause Is Non-Semantic
+## I-16: Pause Is Non-Semantic
 
 System pause:
 
-- does not advance state
+- does not advance lifecycle state
 - does not change lifecycle truth
-- does not alter the meaning of any state
+- does not alter the meaning of any lifecycle state
 - does not imply outcomes
+- does not restore authority
+- does not freeze authority by itself
 
 Pause is an overlay only.
 
-While `system_state = Paused`:
+While system control state is `Paused`:
 
+- no new bid may be accepted as valid
 - no new authority-bearing action may begin
-- no new bids may be accepted
+- time continues to advance
+- deadlines are not modified
+- auction end times are not modified
+- settlement windows are not extended
 
-Time continues to advance while paused.
+Pause must not extend deadlines, settlement windows, or auction timing.
 
-Deadlines and expiration conditions must evaluate
-based on absolute persisted timestamps.
-
-Pause must not extend deadlines,
-settlement windows, or auction timing.
-
----
-
-### I-15. Pause Cannot Restore or Create Authority
-
-System pause:
-
-- must not restore consumed authority
-- must not justify retries
-- must not authorize alternate actions
-
-Pause does not retroactively affect actions
-that were completed before the pause event was persisted.
+Pause does not retroactively affect actions completed before the pause event was persisted.
 
 ---
 
-## 9. Error Classification
+# 10. Error Classification
 
-### I-16. Errors Cannot Downgrade
+## I-17: Errors Cannot Downgrade
 
 Once an error escalates:
 
 - it must not downgrade
 - authority must not automatically return
-- no automated or operator action may downgrade classification
+- no automated action may downgrade classification
+- no operator action may downgrade classification
 
-Ambiguous and Fatal errors are terminal with respect to authority.
+`Ambiguous` must not downgrade.
+
+`Fatal` must not downgrade.
+
+Once ambiguity exists, affected authority does not return.
 
 ---
 
-## Final Rule
+# 11. Demo 1 Boundary
+
+## I-18: Demo 1 Must Not Depend on Live Inscription
+
+For Demo 1:
+
+- live inscription broadcast is not required
+- Bitcoin Core RPC is not required for auction correctness
+- wallet interaction is not required for auction correctness
+- mempool recognition is not required
+- confirmation observation is not required
+- external SSD availability is not required
+- live inscription success must not be simulated
+- confirmation must not be simulated
+
+Auction lifecycle, finalization, sequence advancement, API state, and restart reconstruction must remain demonstrable without live inscription execution.
+
+---
+
+# Final Rule
 
 If any behavior would violate an invariant in this document:
 

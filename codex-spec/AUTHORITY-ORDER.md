@@ -2,44 +2,84 @@
 
 The normative authority order of documents within `codex-spec` is:
 
-1. core/INVARIANTS.md  
-2. core/TRANSITION-INVARIANTS.md  
-3. core/EVENT-TYPES.md  
-4. core/STATE-MACHINE-TABLE.md  
-5. core/AUTHORITY-CONSUMPTION.md  
-6. core/STATE-MACHINE.md  
-7. core/CORE-SEQUENCE.md  
-8. settlement/SETTLEMENT.md  
-9. inscription/INSCRIPTION-MACHINE.md  
-10. inscription/INSCRIPTION-FORMAT.md  
-11. chain/CHAIN-INTERACTION.md  
-12. wallet/WALLET-SPEC.md  
-13. data/DATA-MODEL.md  
-14. data/PERSISTENCE.md  
-15. data/RESTART-RULES.md  
-16. errors/ERROR-TAXONOMY.md  
-17. config/CONFIG-REFERENCE.md  
-18. bidding/BIDDING-ADMISSION.md  
-19. api/API-SPEC.md  
-20. api/API-STATE-SHAPES.md  
+1. `AUTHORITY-ORDER.md`
+2. `PROTOTYPE-SCOPE.md`
+3. `core/INVARIANTS.md`
+4. `core/TRANSITION-INVARIANTS.md`
+5. `core/EVENT-TYPES.md`
+6. `core/STATE-MACHINE-TABLE.md`
+7. `core/AUTHORITY-CONSUMPTION.md`
+8. `core/STATE-MACHINE.md`
+9. `core/CORE-SEQUENCE.md`
+10. `bidding/SETTLEMENT.md`
+11. `inscription/INSCRIPTION-MACHINE.md`
+12. `inscription/INSCRIPTION-FORMAT.md`
+13. `chain/CHAIN-INTERACTION.md`
+14. `wallet/WALLET-SPEC.md`
+15. `data/DATA-MODEL.md`
+16. `data/PERSISTENCE.md`
+17. `data/RESTART-RULES.md`
+18. `errors/ERROR-TAXONOMY.md`
+19. `config/CONFIG-REFERENCE.md`
+20. `bidding/BIDDING-ADMISSION.md`
+21. `api/API-SPEC.md`
+22. `api/API-STATE-SHAPES.md`
 
 If two documents conflict, the document higher in this list prevails.
 
-Silence in a higher-authority document does not grant interpretive authority to a lower-authority document.  
+Silence in a higher-authority document does not grant interpretive authority to a lower-authority document.
+
 Behavior must be explicitly defined to be valid.
 
-`core/EVENT-TYPES.md` defines the canonical event records that form the append-only event log of the system.  
-All lifecycle evaluation must derive exclusively from the ordered sequence of these events.
+`AUTHORITY-ORDER.md` defines document authority and conflict resolution.
 
-`core/STATE-MACHINE-TABLE.md` is the canonical definition of allowed lifecycle state transitions.  
+`PROTOTYPE-SCOPE.md` defines the active implementation scope for the current deterministic, single-machine browser demo.
 
-`core/AUTHORITY-CONSUMPTION.md` defines irreversible authority boundaries.  
+`PROTOTYPE-SCOPE.md` may constrain what must be implemented in the current prototype, but it must not redefine lifecycle semantics, authority consumption, canonical records, or restart rules.
 
-`inscription/INSCRIPTION-MACHINE.md` defines inscription lifecycle behavior but must not introduce new lifecycle states beyond those permitted by the state machine.  
+`core/INVARIANTS.md` defines system-wide invariants that all lower-authority documents must obey.
 
-`chain/CHAIN-INTERACTION.md` defines external truth recognition only and must not alter lifecycle semantics.  
+`core/TRANSITION-INVARIANTS.md` defines invariant rules that govern valid lifecycle transitions.
 
-`wallet/WALLET-SPEC.md` defines deterministic funding and signing behavior and must not alter lifecycle semantics.  
+`core/EVENT-TYPES.md` defines the canonical event records that form the append-only event log of the system.
+
+All lifecycle evaluation must derive exclusively from the ordered sequence of canonical event records.
+
+`core/STATE-MACHINE-TABLE.md` is the canonical definition of allowed lifecycle state transitions.
+
+`core/AUTHORITY-CONSUMPTION.md` defines irreversible authority boundaries.
+
+`core/STATE-MACHINE.md` describes lifecycle state behavior and must remain consistent with `core/STATE-MACHINE-TABLE.md`.
+
+`core/CORE-SEQUENCE.md` defines canonical sequence progression.
+
+`bidding/SETTLEMENT.md` defines settlement behavior.
+
+`inscription/INSCRIPTION-MACHINE.md` defines inscription lifecycle behavior but must not introduce new lifecycle states beyond those permitted by the state machine.
+
+`inscription/INSCRIPTION-FORMAT.md` defines inscription payload format and must not alter lifecycle semantics.
+
+`chain/CHAIN-INTERACTION.md` defines external chain truth recognition only and must not alter lifecycle semantics.
+
+`wallet/WALLET-SPEC.md` defines deterministic funding and signing behavior and must not alter lifecycle semantics.
+
+`data/DATA-MODEL.md` defines canonical persisted record structure and must remain consistent with canonical event definitions.
+
+`data/PERSISTENCE.md` defines persistence rules for canonical records.
+
+`data/RESTART-RULES.md` defines reconstruction behavior after restart.
+
+`errors/ERROR-TAXONOMY.md` defines error classification and escalation behavior.
+
+`config/CONFIG-REFERENCE.md` defines permitted configuration parameters.
+
+Configuration may tune declared parameters only and must not alter canonical truth, lifecycle semantics, authority consumption, or restart reconstruction.
+
+`bidding/BIDDING-ADMISSION.md` defines bid admission rules.
+
+`api/API-SPEC.md` defines external API behavior.
+
+`api/API-STATE-SHAPES.md` defines frontend-visible API state shapes.
 
 Documents outside `codex-spec` are non-authoritative with respect to execution semantics and must not override documents listed above.
 

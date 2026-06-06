@@ -1,4 +1,4 @@
-# State Machine Table
+# State Machine Table: Numbers
 
 This document defines the authoritative lifecycle tables for Numbers.
 
@@ -6,18 +6,19 @@ It is normative.
 
 All system behavior must conform to these tables.
 
-Authority precedence is defined exclusively in AUTHORITY-ORDER.md.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
 This document defines:
 
-- All valid auction lifecycle states
-- All valid inscription lifecycle states
-- All permitted transitions
-- All forbidden transitions
-- Terminal states
-- Authority boundaries
+- all valid auction lifecycle states
+- all valid inscription lifecycle states
+- all permitted transitions
+- all forbidden transitions
+- terminal states
+- authority boundaries
 
 Auction lifecycle and inscription lifecycle are separate layered machines.
+
 They may operate concurrently but must not interfere with each other’s authority domains.
 
 ---
@@ -27,85 +28,91 @@ They may operate concurrently but must not interfere with each other’s authori
 ## Auction States
 
 | State | Description | Terminal |
-|-------|------------|----------|
-| Scheduled | Auction exists but has not yet received its first valid bid. | No |
-| Open | Auction is actively accepting bids. | No |
-| Closed | Auction is closed to bids. Resolution must exist. | No |
-| AwaitingSettlement | Resolution exists. Settlement outcome pending or being determined. | No |
-| Finalized | Auction destination permanently fixed. | Yes |
+|---|---|---|
+| `Scheduled` | Auction exists but has not yet received its first valid bid. | No |
+| `Open` | Auction is actively accepting bids. | No |
+| `Closed` | Auction is closed to bids. Resolution must exist. | No |
+| `AwaitingSettlement` | Resolution exists. Settlement outcome pending or being determined. | No |
+| `Finalized` | Auction destination permanently fixed. | Yes |
 
-Notes:
+## Notes
 
 - `Finalized` includes successful, no-bid, and failed-settlement outcomes.
 - Auction terminal state is `Finalized`.
 - System control states such as `Paused` are overlays and are not lifecycle states.
+- Auction state is derived from canonical event records.
+- Auction state must never be stored as mutable truth.
 
 ---
 
 ## Auction Allowed Transitions
 
-| From | Trigger | To | Notes |
-|------|--------|----|-------|
-| Scheduled | First valid bid accepted | Open | Atomic: persist BidRecord; persist AuctionOpenRecord with `opened_at = server_time` and `base_end_time = opened_at + auction.duration_seconds`. |
-| Open | `server_time >= current_end_time` or bid cap reached | Closed | Persist AuctionCloseRecord. `current_end_time = base_end_time + (extension_increment_seconds * number_of_extension_events)`. |
-| Closed | ResolutionRecord persisted | AwaitingSettlement | Presence of ResolutionRecord defines entry into AwaitingSettlement. Resolution must occur exactly once and must not be recomputed. |
-| AwaitingSettlement | Settlement confirmed before deadline | Finalized | Persist SettlementRecord and FinalizationRecord. Destination = winning address. |
-| AwaitingSettlement | Settlement deadline expired | Finalized | Persist SettlementRecord and FinalizationRecord. Destination = NullSteward. |
-| AwaitingSettlement | ResolutionRecord indicates no valid bids | Finalized | Persist SettlementRecord (status = not_required) and FinalizationRecord. Destination = NullSteward. |
+| From | Trigger | To | Required Canonical Event Records | Notes |
+|---|---|---|---|---|
+| `Scheduled` | First valid bid accepted | `Open` | `BidRecord`, `AuctionOpenRecord` | Atomic transition. `BidRecord.validity = valid`. `AuctionOpenRecord.opened_at = server_time`. `AuctionOpenRecord.base_end_time = opened_at + auction.duration_seconds`. |
+| `Open` | `server_time >= current_end_time` or bid cap reached | `Closed` | `AuctionCloseRecord` | `current_end_time = base_end_time + (extension_increment_seconds * number_of_extension_events)`. |
+| `Closed` | `ResolutionRecord` persisted | `AwaitingSettlement` | `ResolutionRecord` | Resolution must occur exactly once and must not be recomputed. |
+| `AwaitingSettlement` | Settlement confirmed before deadline | `Finalized` | `SettlementRecord`, `FinalizationRecord` | Destination = winning destination. |
+| `AwaitingSettlement` | Settlement deadline expired | `Finalized` | `SettlementRecord`, `FinalizationRecord` | Destination = `NullSteward`. |
+| `AwaitingSettlement` | `ResolutionRecord` indicates no valid bids | `Finalized` | `SettlementRecord`, `FinalizationRecord` | `SettlementRecord.status = not_required`. Destination = `NullSteward`. |
 
 No other auction transitions are permitted.
-
-Auction state is derived from persisted records.
-Auction state must never be stored as mutable truth.
 
 ---
 
 ## Auction Forbidden Transitions
 
 | Forbidden | Reason |
-|-----------|--------|
-| Open → Scheduled | Time reversal |
-| Closed → Open | Bidding cannot reopen |
-| AwaitingSettlement → Open | Settlement does not reopen bidding |
-| Finalized → Any | Terminal auction state |
-| Any transition inferred from missing records | Guess-space forbidden |
+|---|---|
+| `Open → Scheduled` | Time reversal. |
+| `Closed → Open` | Bidding cannot reopen. |
+| `AwaitingSettlement → Open` | Settlement does not reopen bidding. |
+| `Finalized → Any` | Terminal auction state. |
+| Any transition inferred from missing records | Guess-space forbidden. |
 
 ---
 
 # II. Inscription Lifecycle Machine
 
-Inscription lifecycle begins only after Auction state = Finalized.
+Inscription lifecycle begins only after auction state = `Finalized`.
 
 Inscription lifecycle does not alter auction state.
+
+Broadcast attempt is an operation, not a canonical lifecycle state.
+
+There is no canonical `Broadcasting` lifecycle state.
+
+---
 
 ## Inscription States
 
 | State | Description | Terminal |
-|-------|------------|----------|
-| NotStarted | No inscription broadcast attempt has occurred. | No |
-| Broadcasting | A broadcast attempt is in progress; authority not yet consumed. | No |
-| Inscribing | A committed broadcast exists; awaiting confirmation. | No |
-| Ambiguous | Outcome cannot be determined with certainty. | Yes |
-| Inscribed | Canonical inscription observed. | Yes |
+|---|---|---|
+| `NotStarted` | No committed inscription broadcast exists and no terminal inscription ambiguity exists. | No |
+| `Inscribing` | A committed inscription broadcast exists and confirmation has not yet been observed. | No |
+| `Ambiguous` | Inscription authority is frozen because the broadcast or inscription outcome cannot be determined. | Yes |
+| `Inscribed` | Canonical inscription confirmation has been observed. | Yes |
 
-Notes:
+## Notes
 
 - Inscription lifecycle authority is independent from auction lifecycle authority.
 - `Ambiguous` and `Inscribed` are terminal inscription states.
 - Authority is consumed at `broadcast_commit`, not at intent persistence.
+- `InscriptionIntentRecord` does not change inscription lifecycle state.
+- `InscriptionBroadcastRecord` determines whether inscription state remains `NotStarted`, becomes `Inscribing`, or becomes `Ambiguous`.
 
 ---
 
 ## Inscription Allowed Transitions
 
-| From | Trigger | To | Notes |
-|------|--------|----|-------|
-| NotStarted | Broadcast attempt initiated | Broadcasting | InscriptionIntentRecord must exist. Authority not yet consumed. |
-| Broadcasting | broadcast_commit | Inscribing | Occurs when broadcast RPC succeeds AND authoritative node reports mempool presence. Authority consumed. |
-| Broadcasting | Broadcast classified as not_committed | NotStarted | Authority not consumed. Retry permitted. |
-| Broadcasting | Broadcast classified as ambiguous | Ambiguous | Persist AmbiguityRecord. Authority frozen. |
-| Inscribing | Canonical inscription observed to confirmation depth | Inscribed | Persist InscriptionConfirmationRecord. Terminal. |
-| Inscribing | Ambiguity detected | Ambiguous | Persist AmbiguityRecord immediately. Terminal. |
+| From | Trigger | To | Required Canonical Event Records | Notes |
+|---|---|---|---|---|
+| `NotStarted` | Inscription intent persisted | `NotStarted` | `InscriptionIntentRecord` | Intent persistence does not consume inscription authority and does not prove broadcast. |
+| `NotStarted` | Broadcast classified as `pre_commit_rejected` | `NotStarted` | `InscriptionBroadcastRecord` | Authority not consumed. `pre_commit_rejected` may be recorded only when the system can determine that `broadcast_commit` did not occur. This table does not create retry behavior. |
+| `NotStarted` | `broadcast_commit` | `Inscribing` | `InscriptionBroadcastRecord` | `InscriptionBroadcastRecord.broadcast_outcome = committed`. Authority consumed. |
+| `NotStarted` | Broadcast classified as `ambiguous` | `Ambiguous` | `InscriptionBroadcastRecord` or `AmbiguityRecord` | Authority frozen permanently. |
+| `Inscribing` | Canonical inscription observed to required confirmation depth | `Inscribed` | `InscriptionConfirmationRecord` | Terminal inscription state. |
+| `Inscribing` | Ambiguity detected | `Ambiguous` | `AmbiguityRecord` | Persist immediately. Terminal inscription state. |
 
 No other inscription transitions are permitted.
 
@@ -114,36 +121,37 @@ No other inscription transitions are permitted.
 ## Inscription Forbidden Transitions
 
 | Forbidden | Reason |
-|-----------|--------|
-| NotStarted → Inscribed | Cannot skip broadcast |
-| NotStarted → Inscribing | Cannot skip commit boundary |
-| Inscribing → NotStarted | Authority cannot be restored |
-| Ambiguous → Any | Terminal ambiguity |
-| Inscribed → Any | Terminal inscription state |
-| Any inscription transition before Auction state = Finalized | Authority violation |
+|---|---|
+| `NotStarted → Inscribed` | Cannot skip committed broadcast and confirmation. |
+| `Inscribing → NotStarted` | Authority cannot be restored after `broadcast_commit`. |
+| `Ambiguous → Any` | Terminal ambiguity. |
+| `Inscribed → Any` | Terminal inscription state. |
+| Any inscription transition before auction state = `Finalized` | Authority violation. |
+| Any transition through `Broadcasting` | `Broadcasting` is not a canonical lifecycle state. |
+| Any transition inferred from missing records | Guess-space forbidden. |
 
 ---
 
-# Authority Rules (Normative)
+# Authority Rules
 
 - Auction resolution occurs exactly once per auction.
 - Settlement does not create inscription authority.
 - Inscription authority is consumed only at `broadcast_commit`.
 - `broadcast_commit` occurs when:
-  - a broadcast RPC succeeds, and
-  - the authoritative node reports the transaction present in its mempool.
-- Inscription authority may be exercised at most once per auction.
+  - a broadcast RPC succeeds
+  - the authoritative node reports the transaction present in its mempool
+- Inscription authority may be consumed at most once per auction.
 - After `broadcast_commit`, no semantically distinct inscription attempt is permitted.
-- Controlled fee replacement (RBF) is permitted only under the equivalence rules defined in `inscription/INSCRIPTION-MACHINE.md`.
+- Controlled fee replacement, if implemented, is permitted only under the equivalence rules defined in `inscription/INSCRIPTION-MACHINE.md`.
 - Ambiguity permanently freezes inscription authority.
 - Authority is never restored by:
-  - time passing,
-  - operator action,
-  - restart,
-  - retry of a semantically distinct action,
-  - observation.
+  - time passing
+  - operator action
+  - restart
+  - retry of a semantically distinct action
+  - observation
 
-Authority semantics are defined exclusively in AUTHORITY-CONSUMPTION.md.
+Authority semantics are defined exclusively in `core/AUTHORITY-CONSUMPTION.md`.
 
 ---
 

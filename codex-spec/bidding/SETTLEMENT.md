@@ -1,119 +1,217 @@
-## Settlement Timing (Normative)
+# Settlement: Numbers
 
-Settlement deadline must be computed as:
-```Text
+This document defines settlement timing, settlement outcome, winner destination binding, and finalization behavior.
+
+It is normative.
+
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
+
+Settlement determines whether a resolved auction finalizes to the winning destination address or to `NullSteward`.
+
+Settlement does not create inscription authority.
+
+Settlement does not consume inscription authority.
+
+Settlement does not alter inscription lifecycle state.
+
+---
+
+# 1. Settlement Principle
+
+Settlement records payment outcome after auction resolution.
+
+Settlement must not:
+
+- rewrite resolution
+- reinterpret bid validity
+- modify winner destination
+- restore authority
+- create inscription authority
+- delay sequence advancement through speculative recovery
+
+Settlement failure is a valid outcome, not an error.
+
+---
+
+# 2. Settlement Deadline
+
+Settlement deadline must be computed at auction resolution as:
+
+```text
 settlement_deadline =
-resolved_at + settlement.deadline_second
+resolution_time + settlement.deadline_seconds
 ```
 
-The computed deadline must be persisted exactly once.
+The computed settlement deadline must be persisted exactly once as part of `ResolutionRecord`.
+
+Settlement deadline must never be recomputed after persistence.
+
+Settlement deadline must never be extended.
+
+Settlement timing constants are defined by `config/CONFIG-REFERENCE.md`.
 
 Settlement semantics do not define timing constants.
 
 ---
 
-## Settlement Mechanics (Normative)
+# 3. Settlement Entry
 
-1. At auction resolution:
-   - the winning bid reference **must** be persisted
-   - the settlement deadline **must** be computed and persisted
-   - the winner destination address **must** be extracted from the signed bid
-   - the winner destination address **must** be validated
-   - the winner destination address **must** be persisted immutably
-   - auction state transitions to `AwaitingSettlement`
+At auction resolution:
 
-2. During the settlement window:
-   - the system observes the blockchain via the authoritative node defined in `chain/CHAIN-INTERACTION.md`
-   - no retries, prompts, reminders, or extensions are permitted
+- `ResolutionRecord` must be persisted
+- winning bid reference must be persisted if a valid winning bid exists
+- winning amount must be persisted if a valid winning bid exists
+- settlement deadline must be computed and persisted
+- winner destination address must be taken from the winning valid `BidRecord`
+- winner destination address must already satisfy bid admission rules
+- auction state becomes `AwaitingSettlement`
 
-3. Settlement is **successful** if:
-   - a valid payment transaction is Known Confirmed
-   - confirmation depth is >= `chain.confirmation_depth`
-   - confirmation occurs **before** the settlement deadline
+If no valid winning bid exists:
 
-4. Settlement **fails** if:
-   - no qualifying Known Confirmed payment exists at the deadline
-   - regardless of whether a transaction was broadcast earlier
-
-Broadcast does not count.
-Confirmation does.
+- `ResolutionRecord.winning_bid_id` must be `null`
+- `ResolutionRecord.winning_amount_sats` must be `null`
+- `SettlementRecord.status` must be `not_required`
+- `FinalizationRecord.destination_address` must be `NullSteward`
 
 ---
 
-## Winner Destination Address (Normative)
+# 4. Settlement Observation
 
-The winner must provide exactly one destination address for inscription delivery.
+During the settlement window:
+
+- the system observes payment status through the authoritative node defined in `chain/CHAIN-INTERACTION.md`
+- no prompts are permitted
+- no reminders are permitted
+- no deadline extensions are permitted
+- no speculative recovery is permitted
+- no late settlement acceptance is permitted
+
+Broadcast does not count as settlement.
+
+Mempool presence does not count as settlement.
+
+Only confirmation to the required depth counts as settlement.
+
+---
+
+# 5. Successful Settlement
+
+Settlement is successful only if all are true:
+
+- a valid payment transaction is Known Confirmed
+- confirmation depth is greater than or equal to `chain.confirmation_depth`
+- confirmation occurs before `settlement_deadline`
+- payment satisfies the settlement rules defined by this specification
+
+If settlement is successful:
+
+- persist exactly one `SettlementRecord`
+- `SettlementRecord.status` must be `settled`
+- `SettlementRecord.confirmation_txid` must be non-null
+- persist exactly one `FinalizationRecord`
+- `FinalizationRecord.destination_address` must equal the winning destination address
+
+---
+
+# 6. Failed Settlement
+
+Settlement fails if no qualifying Known Confirmed payment exists at `settlement_deadline`.
+
+Settlement failure occurs regardless of whether a payment transaction was broadcast earlier.
+
+If settlement fails:
+
+- persist exactly one `SettlementRecord`
+- `SettlementRecord.status` must be `expired`
+- `SettlementRecord.confirmation_txid` must be `null`
+- persist exactly one `FinalizationRecord`
+- `FinalizationRecord.destination_address` must be `NullSteward`
+
+Settlement failure is irreversible.
+
+No retry or compensation is permitted.
+
+---
+
+# 7. No Valid Bids
+
+If resolution determines that no valid winning bid exists:
+
+- persist exactly one `SettlementRecord`
+- `SettlementRecord.status` must be `not_required`
+- `SettlementRecord.confirmation_txid` must be `null`
+- persist exactly one `FinalizationRecord`
+- `FinalizationRecord.destination_address` must be `NullSteward`
+
+No settlement window is required when no valid winning bid exists.
+
+---
+
+# 8. Winner Destination Address
+
+The winner destination address is the destination address persisted in the winning valid `BidRecord`.
 
 Rules:
 
-- The destination address must be included in the signed bid payload.
-- The destination address does not need to match the bidding address.
-- The destination address does not need to match the payment source address.
-- The destination address must be valid under the permitted Bitcoin address types defined by this specification.
-- The destination address must be persisted in canonical records at auction resolution.
-- The destination address must be immutable thereafter.
+- the destination address must be included in the signed bid payload
+- the destination address does not need to match the bidding address
+- the destination address does not need to match the payment source address
+- the destination address must be valid under the permitted Bitcoin address types defined by this specification
+- the destination address must be immutable once the `BidRecord` is persisted
+- the destination address must not be modified during settlement
+- the destination address must not be modified during finalization
+- the destination address must not be modified by the inscription machine
 
-If the destination address is:
+If a bid destination address is missing, malformed, invalid under permitted address types, or cannot be deterministically converted to a scriptPubKey:
 
-- missing,
-- malformed,
-- invalid under permitted address types,
-- or cannot be deterministically converted to a scriptPubKey,
+- the bid must be rejected during bid admission
+- the bid must not become a valid `BidRecord`
+- the bid must not participate in winner resolution
 
-then:
-
-- the bid must be considered invalid at resolution time.
-
-The inscription machine must not select, modify, or reinterpret the destination address.
+Settlement must not invalidate a previously valid winning bid by reinterpreting destination address rules.
 
 ---
 
-## Finalization Binding (Normative)
+# 9. Finalization Binding
 
-Finalization occurs **only after** settlement outcome is determined.
+Finalization occurs only after settlement outcome is determined.
 
-Finalization **must** record exactly one destination:
+Finalization must record exactly one destination:
 
-- settlement succeeds → winner destination address
-- settlement fails → `NullSteward`
-- no valid bids → `NullSteward`
+- settlement succeeds: winning destination address
+- settlement fails: `NullSteward`
+- no valid bids: `NullSteward`
 
 Finalization is irreversible.
 
-Settlement outcome **must not** rewrite or reinterpret
-the resolution record.
-
----
-
-## Settlement Failure Outcomes (Normative)
-
-Settlement failure is a **valid outcome**, not an error.
-
-On settlement failure:
-
-- auction proceeds to finalization
-- destination is set to `NullSteward`
-- no retry or compensation is permitted
+Settlement outcome must not rewrite or reinterpret `ResolutionRecord`.
 
 No settlement state may be re-entered once finalized.
 
 ---
 
-## Authority Protection (Normative)
+# 10. Authority Protection
 
-Once the settlement deadline passes:
+Settlement does not restore inscription authority.
+
+Settlement does not guarantee inscription authority.
+
+Settlement does not consume inscription authority.
+
+Once settlement deadline passes:
 
 - no late payment may be accepted
 - no settlement-related state may be rewritten
-
-Settlement does not restore or guarantee inscription authority.
+- no final destination may be changed
 
 ---
 
-## Final Rule
+# Final Rule
 
-Settlement records **what occurred**, not what was intended.
+Settlement records what occurred.
 
-If payment status is unclear,
-the system **must** assume failure
-and proceed without guessing.
+Settlement does not record what was intended.
+
+If qualifying payment status is unclear at the settlement deadline:
+
+The system must treat settlement as failed and finalize to `NullSteward`.

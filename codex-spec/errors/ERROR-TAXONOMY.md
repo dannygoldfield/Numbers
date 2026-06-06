@@ -1,338 +1,344 @@
-# Error Taxonomy — Numbers
+# Error Taxonomy: Numbers
 
 This document defines how errors are classified and handled in Numbers.
 
 It is normative.
 
-Every error encountered by the system must be classified
-according to this taxonomy.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
-Behavior not explicitly permitted here is forbidden.
+Every error encountered by the system must be classified according to this taxonomy.
 
-If there is a conflict,
-CORE-SEQUENCE.md, STATE-MACHINE-TABLE.md,
-STATE-MACHINE.md, and INVARIANTS.md take precedence.
+This taxonomy does not grant retry permission.
 
----
+Behavior not explicitly permitted here or by the active implementation slice is forbidden.
 
-## Modal Language Rule (Normative)
-
-In this document and all normative specifications:
-
-- must / must not define obligations
-- only / exactly once / at most once define bounds
-- may is permitted only to describe uncertainty of knowledge,
-  never to grant permission or authorize action
-
-The following terms are forbidden in normative contexts:
-
-- possibly
-- likely
-- eventually
-- for now
-- TBD
-
-Any normative statement using forbidden modal language is invalid.
+If an error cannot be confidently classified, it must be classified as `Ambiguous`.
 
 ---
 
-## 1. Purpose
+# 1. Purpose
 
 This taxonomy exists to:
 
 - prevent silent failure
-- prevent unsafe retries
+- prevent unsafe retry
 - prevent authority reuse
 - preserve ambiguity when certainty is lost
 - halt execution when invariants are violated
+- distinguish rejection from corruption
+- distinguish unknown from failure
 
-Errors are treated as states of knowledge,
-not merely runtime exceptions.
+Errors are treated as states of knowledge, not merely runtime exceptions.
 
 ---
 
-## 2. Error Classes
+# 2. Error Classes
 
 All errors must belong to exactly one class:
 
-1. Deterministic
-2. Recoverable
-3. Ambiguous
-4. Fatal
-5. Operator
+1. `Deterministic`
+2. `Operational`
+3. `Ambiguous`
+4. `Fatal`
+5. `Operator`
 
 An error must never belong to more than one class.
 
-If classification is uncertain,
-the error must be classified as Ambiguous.
+If classification is uncertain, the error must be classified as `Ambiguous`.
 
 ---
 
-## 3. Deterministic Errors
+# 3. Retry Rule
 
-### Definition
+Retry is not default behavior.
 
-An error is Deterministic when:
+No automatic retry exists unless explicitly permitted by the active implementation slice.
+
+Configuration must not create retry behavior.
+
+Configuration must not turn an unspecified retry into a permitted retry.
+
+A retry rule, if later permitted, must define:
+
+- eligible operation
+- maximum attempt count
+- stopping condition
+- persistence requirement
+- authority effect
+- error classification on exhaustion
+
+Without those explicit rules, retry is forbidden.
+
+---
+
+# 4. Deterministic Errors
+
+## Definition
+
+An error is `Deterministic` when:
 
 - the cause is known
-- no irreversible action has occurred
-- authority has not been exercised
+- no irreversible external action has occurred
+- no irreversible external action is suspected
+- authority has not been consumed
+- authority has not been frozen
 - no ambiguity exists
 
-### Examples
+## Examples
 
-- Invalid bid format
-- Bid below minimum
-- Auction not open
-- Invalid configuration at startup
-- Transaction construction failure before signing
-- Inscription payload serialization failure
+- invalid bid format
+- bid below minimum
+- bid submitted when auction state forbids admission
+- bid destination address invalid
+- invalid configuration at startup
+- transaction construction failure before broadcast
+- inscription payload serialization failure before broadcast
 
-### Handling Rules (Normative)
+## Handling Rules
 
-- The action must be rejected immediately
-- Canonical state must not be altered
-- The error must be logged
-- Retry is permitted only if explicitly allowed
-  by the current state machine
+The action must be rejected explicitly.
 
-### Authority Impact
+The error must be surfaced through the governing interface.
+
+The error must not consume authority.
+
+The error must not freeze authority.
+
+Canonical state must not be altered unless the governing specification explicitly requires a canonical event record.
+
+For bid admission, if admission evaluation was reached, the deterministic rejection must be recorded as an invalid `BidRecord`.
+
+Silent rejection is forbidden.
+
+## Authority Impact
 
 None.
 
 Deterministic errors do not consume authority.
 
----
-
-## 4. Recoverable Errors
-
-### Definition
-
-An error is Recoverable when:
-
-- the cause is transient
-- no irreversible action has occurred
-- retry is explicitly permitted by the state machine
-
-### Examples
-
-- Temporary RPC timeout
-- Bitcoin node unavailable
-- Network interruption before broadcast
-- Wallet locked but unlockable
-- Pre-broadcast signing failure
-
-### Handling Rules (Normative)
-
-Retry is permitted only if:
-
-- the current lifecycle state permits retry
-- no irreversible action has occurred
-- no ambiguity has been introduced
-
-Retry constraints:
-
-- retries must be bounded
-- retry bounds must be defined in code
-- retry bounds must be finite
-- retry bounds must not be configurable
-- each retry attempt must be logged
-
-If the retry bound is exceeded:
-
-- the error must escalate to Fatal
-- execution must halt
-- no further authority-bearing action is permitted
-
-If at any point an irreversible action cannot be ruled out:
-
-- the error must be reclassified immediately as Ambiguous
-
-### Authority Impact
-
-None, unless ambiguity is introduced.
+Deterministic errors do not freeze authority.
 
 ---
 
-## 5. Ambiguous Errors
+# 5. Operational Errors
 
-### Definition
+## Definition
 
-An error is Ambiguous when:
+An error is `Operational` when:
 
-- an irreversible action has occurred,
-  or cannot be ruled out
-- the outcome cannot be determined with certainty
-- authority must be treated as exercised
+- the cause is runtime or environmental
+- no irreversible external action has occurred
+- no irreversible external action is suspected
+- authority has not been consumed
+- authority has not been frozen
+- the system can classify the failure without ambiguity
+
+## Examples
+
+- Bitcoin node unavailable before any broadcast attempt
+- RPC timeout during read-only observation
+- wallet unavailable before signing or broadcast
+- storage unavailable before admission evaluation begins
+- chain observation disabled in the active implementation slice
+- live inscription unavailable in Demo 1
+
+## Handling Rules
+
+The operation must fail explicitly.
+
+No lifecycle transition may be inferred.
+
+No authority may be consumed.
+
+No authority may be frozen unless uncertainty about an irreversible action is introduced.
+
+Retry is forbidden unless explicitly permitted by the active implementation slice.
+
+If the same operation is later invoked by a user or operator, it must be evaluated as a new operation only if doing so does not violate authority, lifecycle, persistence, or restart rules.
+
+## Authority Impact
+
+None, unless the error escalates to `Ambiguous`.
+
+---
+
+# 6. Ambiguous Errors
+
+## Definition
+
+An error is `Ambiguous` when:
+
+- an irreversible external action has occurred, or
+- an irreversible external action cannot be ruled out, or
+- the system cannot determine whether an authority boundary was crossed, or
+- certainty required for safe continuation has been lost
 
 Ambiguity represents loss of certainty.
 
-### Examples
+## Examples
 
-- Broadcast outcome unknown
-- Crash immediately after broadcast attempt
-- Network partition after broadcast
-- Conflicting mempool observations
-- Persistence failure after irreversible action
+- broadcast outcome unknown
+- crash during or immediately after broadcast attempt
+- RPC timeout after broadcast may have occurred
+- network partition after broadcast attempt
+- conflicting mempool observations after broadcast attempt
+- persistence failure after an irreversible external action may have occurred
+- inability to determine whether `broadcast_commit` occurred
 
-### Handling Rules (Normative)
+## Handling Rules
 
-Retry is permitted only if:
+Retry is forbidden.
 
-- the current lifecycle state permits retry
-- no irreversible action has occurred
-- no ambiguity has been introduced
+Alternate inscription is forbidden.
 
-Retry constraints:
+Semantically distinct inscription is forbidden.
 
-- retries must be deterministic
-- retries must be finite
-- retry bounds must be defined in code
-- retry bounds must not be configurable
-- each retry attempt must be logged
+Affected authority must be frozen.
 
-If the retry bound is exceeded:
+The ambiguity must be persisted if a canonical ambiguity record is required by the governing specification.
 
-- if no irreversible action has occurred,
-  the error must escalate to Fatal only if forward progress is impossible
-- if an irreversible action cannot be ruled out,
-  the error must be reclassified immediately as Ambiguous
+The system must preserve what is known and what is unknown.
 
-Execution must halt only when classified as Fatal.
+The system must not repair ambiguity by:
 
-### Authority Impact
+- time passing
+- restart
+- operator action
+- later observation
+- speculative rebroadcast
 
-Authority consumption under Ambiguous classification
-is limited strictly to the authority scope
-associated with the triggering irreversible action.
+## Authority Impact
 
-In Numbers, this scope is:
+Authority freeze is limited to the authority scope associated with the triggering irreversible action.
 
-- inscription authority for the canonical number involved.
+In Numbers, the authority scope is:
 
-Ambiguity must not affect unrelated auctions
-or unrelated authority scopes.
+- inscription authority for the canonical number involved
+
+Ambiguity must not affect unrelated auctions or unrelated authority scopes.
 
 ---
 
-## 6. Fatal Errors
+# 7. Fatal Errors
 
-### Definition
+## Definition
 
-An error is Fatal when:
+An error is `Fatal` when:
 
 - a core invariant is violated
-- persisted state is contradictory
+- persisted canonical event records are contradictory
+- canonical event record shape is malformed
+- canonical event record order is invalid
 - continued execution risks corrupting history
-- retry bounds have been exceeded
+- implementation behavior would require invention
+- chain interaction contradicts persisted canonical event records
 
-### Examples
+## Examples
 
-- Invalid state transition
-- Attempt to reopen bidding
-- Duplicate authority-bearing record
-- Attempt to consume authority twice
-- Corrupted canonical records
-- Inconsistent restart reconstruction
+- invalid state transition
+- attempt to reopen bidding
+- duplicate authority-consuming record
+- duplicate authority-freezing record
+- attempt to consume authority twice
+- corrupted canonical event record
+- inconsistent restart reconstruction
+- persisted confirmation record contradicted by authoritative chain truth
+- canonical record type not defined in `core/EVENT-TYPES.md` or `data/DATA-MODEL.md`
 
-### Handling Rules (Normative)
+## Handling Rules
 
-- Execution must halt immediately
-- The error must be logged durably
-- No further transitions may be evaluated
-- Operator intervention is required
+Execution must halt immediately.
 
-### Authority Impact
+No further lifecycle transitions may be evaluated.
 
-Authority state remains as persisted.
+No authority may be exercised.
 
-Fatal errors protect history by halting execution.
+No canonical records may be rewritten to repair the condition.
 
-### Canonical Contradiction Rule
+Operator inspection is required.
 
-If persisted canonical records contradict
-authoritative chain truth
-as defined in chain/CHAIN-INTERACTION.md,
-the error must be classified as Fatal.
+The error must be logged durably.
 
-Examples include:
+Logs are non-authoritative.
 
-- Persisted confirmation record for a txid
-  not present in the active best chain.
-- Confirmation depth previously asserted
-  no longer satisfied.
+## Authority Impact
 
-Contradictions must halt execution immediately.
-Canonical records must not be rewritten to repair contradiction.
+Authority state remains as reconstructed from canonical event records.
+
+Fatal errors do not restore authority.
+
+Fatal errors do not consume additional authority unless the governing specification explicitly requires ambiguity classification first.
 
 ---
 
-## 7. Operator Errors
+# 8. Operator Errors
 
-### Definition
+## Definition
 
-An error caused by external human action.
+An error is caused by external human action.
 
-### Examples
+## Examples
 
-- Invalid configuration
-- Incorrect key provisioning
-- Unsafe manual pause attempt
-- Attempted override of lifecycle rules
+- invalid configuration
+- incorrect key provisioning
+- unsafe manual pause attempt
+- attempted override of lifecycle rules
+- attempted modification of canonical records
+- attempted replay of a forbidden operation
 
-### Handling Rules (Normative)
+## Handling Rules
 
-- Operator actions must be validated mechanically
-- Violations of invariants must be rejected
-- The error must be logged with operator context
+Operator actions must be validated mechanically.
 
-If operator action introduces ambiguity:
+Violations of invariants must be rejected.
 
-- error must escalate to Ambiguous
+The error must be logged with operator context.
 
-If operator action violates invariants:
+If operator action introduces uncertainty about an irreversible external action, the error must escalate to `Ambiguous`.
 
-- error must escalate to Fatal
+If operator action violates core invariants or threatens canonical history, the error must escalate to `Fatal`.
 
-### Authority Impact
+## Authority Impact
 
 None, unless escalation occurs.
 
 ---
 
-## 8. Escalation Rules
+# 9. Escalation Rules
 
 Errors may escalate.
+
 Errors must never downgrade.
 
-Permitted escalations:
+Permitted escalations are:
 
-- Deterministic → Fatal
-- Recoverable → Ambiguous
-- Recoverable → Fatal
-- Operator → Ambiguous
-- Operator → Fatal
+- `Deterministic → Fatal`
+- `Operational → Ambiguous`
+- `Operational → Fatal`
+- `Operator → Ambiguous`
+- `Operator → Fatal`
 
-Ambiguous must not downgrade.
+`Ambiguous` must not downgrade.
 
-Fatal must not downgrade.
+`Fatal` must not downgrade.
 
-Once ambiguity or fatal state exists,
-authority does not return.
+Once ambiguity or fatal state exists, authority does not return.
 
 ---
 
-## 9. Logging Requirements
+# 10. Logging Requirements
 
 All errors must log:
 
 - error class
-- auction number (if applicable)
-- lifecycle state
+- auction number if applicable
+- lifecycle state if applicable
 - triggering action
 - timestamp
+- error code
+- human-readable message
 
-Ambiguous and Fatal errors must additionally log:
+`Ambiguous` and `Fatal` errors must additionally log:
 
 - what is known
 - what is unknown
@@ -340,31 +346,52 @@ Ambiguous and Fatal errors must additionally log:
 
 Logs are append-only and non-authoritative.
 
+Logs must not substitute for canonical event records.
+
 ---
 
-## 10. Design Principles
+# 11. API Error Requirements
+
+API errors must expose:
+
+- `error_class`
+- `error_code`
+- `message`
+
+API error codes must be machine-stable.
+
+API error code meaning must not change within an API version.
+
+API errors must not reveal private keys, wallet seed material, or sensitive operator secrets.
+
+---
+
+# 12. Summary Table
+
+| Error Class | Retry Allowed | Authority Impact | Requires Halt |
+|---|---|---|---|
+| `Deterministic` | No, unless explicitly permitted by active implementation slice | None | No |
+| `Operational` | No, unless explicitly permitted by active implementation slice | None unless escalated | No, unless specified |
+| `Ambiguous` | No | Authority frozen within affected scope | No, unless required by governing spec |
+| `Fatal` | No | No restoration, no additional authority by default | Yes |
+| `Operator` | No, unless explicitly permitted by active implementation slice | Escalation-dependent | Escalation-dependent |
+
+---
+
+# 13. Design Principles
 
 - absence of certainty is not permission
 - retry is not default
 - time passing is not evidence
 - safety overrides liveness
 - history must not be rewritten
+- missing records do not create permission
+- external observation does not replace canonical event records
+- ambiguity is preserved, not repaired
 
 ---
 
-## 11. Summary Table
-
-| Error Class   | Retry Allowed | Authority Lost | Requires Halt |
-|--------------|--------------|----------------|----------------|
-| Deterministic | State-gated | No | No |
-| Recoverable   | State-gated and bounded | No | On bound exceed |
-| Ambiguous     | No | Yes (scope-bound) | No |
-| Fatal         | No | No additional loss | Yes |
-| Operator      | State-gated | Escalation-dependent | Escalation-dependent |
-
----
-
-## 12. Non-Goals
+# 14. Non-Goals
 
 This taxonomy does not:
 
@@ -372,13 +399,20 @@ This taxonomy does not:
 - minimize downtime
 - conceal failure
 - heuristically resolve ambiguity
+- create retry behavior
+- define lifecycle transitions
+- define authority consumption boundaries
 
 Its purpose is correctness.
 
 ---
 
-## Final Rule
+# Final Rule
 
 If an error cannot be confidently classified:
 
-It must be classified as Ambiguous.
+It must be classified as `Ambiguous`.
+
+If continuing would require invented behavior:
+
+Execution must halt.

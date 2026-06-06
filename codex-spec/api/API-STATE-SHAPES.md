@@ -1,293 +1,581 @@
-# API State Shapes — Numbers
+# API State Shapes: Numbers
 
 This document defines the canonical JSON shapes exposed by the Numbers API.
 
 It is normative.
 
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
+
 This document assumes familiarity with:
-- API-SPEC.md
-- STATE-MACHINE.md
-- INVARIANTS.md
-- PERSISTENCE.md
-- RESTART-RULES.md
+
+- `api/API-SPEC.md`
+- `core/STATE-MACHINE-TABLE.md`
+- `core/STATE-MACHINE.md`
+- `core/INVARIANTS.md`
+- `core/EVENT-TYPES.md`
+- `data/DATA-MODEL.md`
+- `data/PERSISTENCE.md`
+- `data/RESTART-RULES.md`
 
 All API responses that represent system state must conform exactly to these shapes.
 
 If a field is not defined here, it must not appear in API output.
 
-If there is a conflict,
-CORE-SEQUENCE.md, STATE-MACHINE-TABLE.md,
-STATE-MACHINE.md, and INVARIANTS.md take precedence.
+If there is a conflict, higher-authority documents listed in `AUTHORITY-ORDER.md` prevail.
 
 ---
 
-## 1. Design Principles
+# 1. Design Principles
 
-1. Shapes represent recorded knowledge only.
-2. Absence is explicit and represented as `null`.
-3. Uncertainty is preserved, not resolved.
-4. Time passing does not change meaning.
-5. Shapes are append-compatible and never reinterpretive.
+API state shapes:
+
+- represent canonical event record truth
+- represent mechanically derived state
+- preserve uncertainty
+- expose absence as `null`
+- must not infer missing facts
+- must not create new lifecycle semantics
+- must not expose undocumented fields
+
+The API reflects what is recorded or mechanically derived from what is recorded.
 
 ---
 
-## 2. Global Shape Rules (Normative)
+# 2. Global Shape Rules
 
-- All fields defined in a shape must be present.
-- Optionality is represented by `null`, never omission.
-- No additional fields are permitted.
-- Field meanings must not change across versions.
+All API state responses must obey:
+
+- all fields defined in a shape must be present
+- unknown, unavailable, or not-yet-applicable values must be represented as `null`
+- optionality is represented by `null`, never omission
+- no additional fields are permitted
+- field meanings must not change within the API version
+- enum values are closed sets
+- derived states not defined in `core/STATE-MACHINE-TABLE.md` are forbidden
 
 Violation of these rules is fatal.
 
 ---
 
-## 3. Common Conventions
+# 3. Common Conventions
 
-### 3.1 Primitive Types
+## Primitive Types
 
-- All timestamps are ISO 8601 UTC strings.
-- All numeric values are base-10 integers.
-- All identifiers are opaque strings.
-- All enums are closed sets.
+- timestamps must be ISO 8601 UTC strings or `null`
+- numeric values must be base-10 integers or `null`
+- identifiers must be opaque strings or `null`
+- boolean values must be `true`, `false`, or `null`
+- enums must use the exact values defined in this document
 
-### 3.2 State Fields
+## Auction State Enum
 
-All state objects include a `state` field.
+`auction_state` must be one of:
 
-The value must exactly match a state defined in STATE-MACHINE.md.
+- `Scheduled`
+- `Open`
+- `Closed`
+- `AwaitingSettlement`
+- `Finalized`
 
-Derived, synthesized, or alias states are forbidden.
+## System Control State Enum
+
+`system_control_state` must be one of:
+
+- `Running`
+- `Paused`
+
+## Inscription State Enum
+
+`inscription_state` must be one of:
+
+- `NotStarted`
+- `Inscribing`
+- `Ambiguous`
+- `Inscribed`
+
+## Settlement Status Enum
+
+`settlement_status` must be one of:
+
+- `settled`
+- `expired`
+- `not_required`
+- `null`
+
+`null` means no `SettlementRecord` exists.
+
+## Inscription Adapter Mode Enum
+
+`inscription_adapter_mode` must be one of:
+
+- `deferred_in_this_slice`
+- `testnet_ordinals`
+- `null`
+
+`null` means no `InscriptionIntentRecord` exists.
 
 ---
 
-## 4. Auction State Object
+# 4. Timestamp and Derived Time Rules
 
-Represents the canonical lifecycle state of a single auction.
-
-### Auction Timestamp Invariants (Normative)
-
-The following timestamp fields are authoritative history:
+The following timestamp fields represent canonical history:
 
 - `opened_at`
-  - Null while state = `Scheduled`
-  - Must be set exactly once on transition `Scheduled → Open`
-  - Must be persisted as part of that transition
-  - Must never be overwritten or recalculated
-
 - `base_end_time`
-  - Null while state = `Scheduled`
-  - Must be set exactly once on transition `Scheduled → Open`
-  - Must be computed as `opened_at + auction.duration_seconds`
-  - Must be persisted as part of that transition
-  - Must never be overwritten or recalculated
-
 - `current_end_time`
-  - Null while state = `Scheduled`
-  - Must equal:
-```text
-    current_end_time =
-    base_end_time +
-    (auction.extension_increment_seconds * number_of_extension_events)
-
-  - Must be derived from persisted records
-  - Must not be stored as mutable truth
-
 - `closed_at`
-  - Null while state ∈ {`Scheduled`, `Open`}
-  - Must be set exactly once on transition `Open → Closed`
-  - Must be persisted as part of that transition
-  - Must never be overwritten or recalculated
-
+- `resolution_time`
+- `settlement_deadline`
 - `finalized_at`
-  - Null while state ∈ {`Scheduled`, `Open`, `Closed`, `AwaitingSettlement`}
-  - Must be set exactly once on transition `AwaitingSettlement → Finalized`
-  - Must be persisted as part of that transition
-  - Must never be overwritten or recalculated
 
-If any of these fields are:
-- missing after the corresponding transition is persisted
-- modified after being set
-- recomputed on restart
+## `opened_at`
 
-execution must halt.
+Rules:
 
-### Auction State Shape
+- must be `null` while auction state is `Scheduled`
+- must be set exactly once by `AuctionOpenRecord`
+- must never be overwritten
+- must never be recalculated as stored truth
+
+## `base_end_time`
+
+Rules:
+
+- must be `null` while auction state is `Scheduled`
+- must be set exactly once by `AuctionOpenRecord`
+- must equal `opened_at + auction.duration_seconds`
+- must never be overwritten
+- must never be recalculated as stored truth
+
+## `current_end_time`
+
+Rules:
+
+- must be `null` while auction state is `Scheduled`
+- must be mechanically derived from canonical event records
+- must not be stored as mutable truth
+
+Derived formula:
+
+```text
+current_end_time =
+base_end_time +
+(extension_increment_seconds * number_of_extension_events)
+```
+
+## `closed_at`
+
+Rules:
+
+- must be `null` while auction state is `Scheduled` or `Open`
+- must be set exactly once by `AuctionCloseRecord`
+- must never be overwritten
+- must never be recalculated as stored truth
+
+## `resolution_time`
+
+Rules:
+
+- must be `null` until `ResolutionRecord` exists
+- must be set exactly once by `ResolutionRecord`
+- must never be overwritten
+
+## `settlement_deadline`
+
+Rules:
+
+- must be `null` if no settlement deadline exists
+- must be derived from settlement rules and canonical event records
+- must not be modified after the governing settlement boundary is persisted
+
+## `finalized_at`
+
+Rules:
+
+- must be `null` until `FinalizationRecord` exists
+- must be set exactly once by `FinalizationRecord`
+- must never be overwritten
+
+If any required timestamp is missing after its corresponding canonical event record exists, execution must halt.
+
+---
+
+# 5. `GET /state` Shape
+
+`GET /state` returns the current global system state.
+
+## Shape
 
 ```json
 {
-  "auction_id": "string",
-  "number": "integer",
-  "state": "Scheduled | Open | Closed | AwaitingSettlement | Finalized",
+  "current_number": "integer",
+  "auction_state": "Scheduled | Open | Closed | AwaitingSettlement | Finalized",
+  "system_control_state": "Running | Paused",
 
   "opened_at": "ISO-8601 or null",
   "base_end_time": "ISO-8601 or null",
+  "number_of_extension_events": "integer",
   "current_end_time": "ISO-8601 or null",
   "closed_at": "ISO-8601 or null",
+  "resolution_time": "ISO-8601 or null",
+  "settlement_status": "settled | expired | not_required | null",
   "finalized_at": "ISO-8601 or null",
+  "final_destination": "string or null",
 
-  "number_of_extension_events": "integer",
-
-  "current_high_bid_sats": "integer or null",
+  "current_high_bid": "BidSummaryObject or null",
   "bid_count": "integer",
-  "cap_reached": "boolean"
+
+  "inscription_state": "NotStarted | Inscribing | Ambiguous | Inscribed",
+  "inscription_adapter_mode": "deferred_in_this_slice | testnet_ordinals | null",
+  "inscription_txid": "string or null",
+
+  "last_record_sequence_index": "integer or null"
 }
 ```
-### Field Semantics (Normative)
 
-- current_high_bid_sats must be null when no accepted valid bids exist.
-- bid_count must equal the total number of Bid State Objects for this auction, including those with validity = invalid.
-- number_of_extension_events must equal the count of ExtensionEventRecords for this auction.
+## Field Rules
 
-## 5. Bid State Object
+- `current_number` must identify the current auction number.
+- `auction_state` must be reconstructed from canonical event records.
+- `system_control_state` must be reconstructed from `PauseEventRecord` entries.
+- `number_of_extension_events` must equal the count of `ExtensionEventRecord` entries for the current auction.
+- `current_high_bid` must be derived only from valid `BidRecord` entries.
+- `bid_count` must equal the count of `BidRecord` entries for the current auction, including invalid bids.
+- `inscription_state` must be reconstructed from inscription canonical event records.
+- `last_record_sequence_index` must equal the highest persisted canonical event record sequence index.
 
-Represents a single bid submission attempt as evaluated at time of submission.
+The backend must not expose speculative time-remaining projections.
 
-### Bid Timestamp Invariants (Normative)
+The frontend may compute countdown display from `current_end_time`.
 
-- server_time must be set exactly once.
-- server_time must never change.
-- server_time must equal authoritative server acceptance time.
+---
 
-### Bid State Shape
+# 6. `GET /auction/history` Shape
+
+`GET /auction/history` returns finalized auction outcomes in strict sequence order.
+
+## Shape
+
+```json
+{
+  "entries": [
+    {
+      "number": "integer",
+      "auction_state": "Finalized",
+      "winning_bid_id": "string or null",
+      "winning_amount_sats": "integer or null",
+      "settlement_status": "settled | expired | not_required",
+      "final_destination": "string",
+      "finalization_time": "ISO-8601",
+      "inscription_state": "NotStarted | Inscribing | Ambiguous | Inscribed",
+      "inscription_adapter_mode": "deferred_in_this_slice | testnet_ordinals | null",
+      "inscription_txid": "string or null",
+      "inscription_satpoint": "string or null"
+    }
+  ],
+  "pagination": {
+    "limit": "integer",
+    "offset": "integer",
+    "next_offset": "integer or null"
+  }
+}
+```
+
+## Field Rules
+
+- each entry must correspond to exactly one finalized auction number
+- entries must be ordered by canonical number
+- non-finalized auctions must not appear
+- `auction_state` must always be `Finalized`
+- `final_destination` must expose `NullSteward` when `NullSteward` is the persisted final destination
+- unknown inscription fields must be `null`
+
+---
+
+# 7. `GET /auction/{N}` Shape
+
+`GET /auction/{N}` returns recorded and mechanically derived state for one auction number.
+
+## Shape
+
+```json
+{
+  "number": "integer",
+  "auction_state": "Scheduled | Open | Closed | AwaitingSettlement | Finalized",
+  "system_control_state": "Running | Paused",
+
+  "opened_at": "ISO-8601 or null",
+  "base_end_time": "ISO-8601 or null",
+  "number_of_extension_events": "integer",
+  "current_end_time": "ISO-8601 or null",
+  "closed_at": "ISO-8601 or null",
+
+  "resolution_time": "ISO-8601 or null",
+  "winning_bid_id": "string or null",
+  "winning_amount_sats": "integer or null",
+
+  "settlement_status": "settled | expired | not_required | null",
+  "settlement_deadline": "ISO-8601 or null",
+
+  "finalized_at": "ISO-8601 or null",
+  "final_destination": "string or null",
+
+  "bid_count": "integer",
+  "current_high_bid": "BidSummaryObject or null",
+
+  "inscription_state": "NotStarted | Inscribing | Ambiguous | Inscribed",
+  "inscription_adapter_mode": "deferred_in_this_slice | testnet_ordinals | null",
+  "inscription_txid": "string or null",
+
+  "ambiguity": "AmbiguityObject or null"
+}
+```
+
+## Field Rules
+
+- all values must be derived from canonical event records
+- missing records must not be inferred
+- unknown, unavailable, or not-yet-applicable fields must be `null`
+- ambiguity must be exposed when an `AmbiguityRecord` applies to the auction
+
+---
+
+# 8. Bid Summary Object
+
+`BidSummaryObject` represents the current high valid bid.
+
+## Shape
+
+```json
+{
+  "bid_id": "string",
+  "amount_sats": "integer",
+  "bidder_address": "string",
+  "destination_address": "string",
+  "server_time": "ISO-8601"
+}
+```
+
+## Field Rules
+
+- must be derived only from valid `BidRecord` entries
+- must be `null` when no valid bid exists
+- must not include invalid bids
+- must not imply winning before `ResolutionRecord`
+
+---
+
+# 9. Bid State Object
+
+`BidStateObject` represents a single bid submission attempt as evaluated at authoritative server receipt time.
+
+## Shape
 
 ```json
 {
   "bid_id": "string",
   "auction_id": "string",
   "amount_sats": "integer",
+  "bidder_address": "string",
+  "destination_address": "string",
   "server_time": "ISO-8601",
-  "validity": "valid | invalid"
+  "validity": "valid | invalid",
+  "rejection_reason": "string or null"
 }
 ```
-## 6. Resolution State Object
 
-Represents the outcome of auction resolution.
+## Field Rules
 
-### Resolution Immutability (Normative)
+- `server_time` must be set exactly once
+- `server_time` must never change
+- `server_time` must equal authoritative server receipt time
+- `validity` must never change after persistence
+- `rejection_reason` must be `null` when `validity = valid`
+- `rejection_reason` must be non-null when `validity = invalid`
 
-- resolved_at must be set exactly once and must never change.
+---
 
-- winning_bid_id and winning_amount_sats must be set exactly once.
+# 10. Resolution Object
 
-- If winning_bid_id is null, winning_amount_sats must be null.
+`ResolutionObject` represents auction resolution.
 
-- If winning_bid_id is non-null, winning_amount_sats must be non-null.
+## Shape
 
-### Resolution State Shape
-
-```JSON
+```json
 {
   "auction_id": "string",
-  "resolved_at": "ISO-8601",
+  "resolution_time": "ISO-8601",
   "winning_bid_id": "string or null",
   "winning_amount_sats": "integer or null"
 }
 ```
-## 7. Settlement State Object
 
-Represents settlement knowledge after resolution.
+## Field Rules
 
-### Settlement Immutability and Monotonicity (Normative)
+- `resolution_time` must be set exactly once
+- `resolution_time` must never change
+- if `winning_bid_id` is `null`, `winning_amount_sats` must be `null`
+- if `winning_bid_id` is non-null, `winning_amount_sats` must be non-null
 
-- deadline must be set exactly once at resolution if settlement is applicable.
-- deadline must never change.
-- finalized_at must be set exactly once when settlement becomes terminal.
-- Once status is terminal, it must never change.
+---
 
-Constraints:
+# 11. Settlement Object
 
-- If status = not_required, then deadline must be null and finalized_at must be non-null.
-- If status = pending, then finalized_at must be null.
+`SettlementObject` represents settlement determination.
 
-## Settlement State Shape
-``` JSON
+## Shape
+
+```json
 {
   "auction_id": "string",
-  "status": "pending | settled | expired | not_required",
-  "finalized_at": "ISO-8601 or null",
-  "deadline": "ISO-8601 or null"
+  "settlement_status": "settled | expired | not_required",
+  "settlement_deadline": "ISO-8601 or null",
+  "settlement_time": "ISO-8601"
 }
 ```
-## 8. Inscription State Object
 
-Represents inscription knowledge only.
+## Field Rules
 
-### Inscription Immutability and Authority Safety (Normative)
+- this object must exist only when `SettlementRecord` exists
+- `settlement_status` must match `SettlementRecord.status`
+- `settlement_deadline` must be `null` when `settlement_status = not_required`
+- `settlement_time` must be set exactly once
 
-- attempted_at must be set exactly once when an inscription attempt begins.
-- attempted_at must never change.
-- If state = NotStarted, then attempted_at and txid and observed_at must be null.
-- If txid is non-null, it must never change.
-- If state is terminal, it must never change.
+---
 
-## Inscription State Shape
-``` JSON
+# 12. Inscription Object
+
+`InscriptionObject` represents inscription knowledge only.
+
+## Shape
+
+```json
 {
   "auction_id": "string",
-  "state": "NotStarted | Inscribing | Ambiguous | Inscribed",
-  "txid": "string or null",
-  "attempted_at": "ISO-8601 or null",
-  "observed_at": "ISO-8601 or null"
+  "inscription_state": "NotStarted | Inscribing | Ambiguous | Inscribed",
+  "inscription_adapter_mode": "deferred_in_this_slice | testnet_ordinals | null",
+  "inscription_txid": "string or null",
+  "inscription_satpoint": "string or null",
+  "intent_time": "ISO-8601 or null",
+  "broadcast_time": "ISO-8601 or null",
+  "confirmation_time": "ISO-8601 or null"
 }
 ```
-- Ambiguous is terminal.
-- This shape must not imply that ambiguity will resolve.
 
-## 9. Pause State Object
+## Field Rules
 
-Represents system-level pause knowledge.
+- `InscriptionIntentRecord` alone does not move inscription state out of `NotStarted`
+- if `inscription_adapter_mode = deferred_in_this_slice`, then `broadcast_time` must be `null`
+- if `inscription_adapter_mode = deferred_in_this_slice`, then `confirmation_time` must be `null`
+- if `inscription_adapter_mode = deferred_in_this_slice`, then `inscription_txid` must be `null`
+- if inscription state is `Ambiguous`, the shape must not imply that ambiguity will resolve
+- terminal inscription states must not change
 
-### Pause Immutability (Normative)
+---
 
-- If system_state = Paused, then paused_at must be non-null.
-- If system_state = Running, then paused_at must be null.
-- paused_at must never be overwritten.
-- pause_reason is nullable; if non-null for a given pause event, it must not change for that pause event.
+# 13. Ambiguity Object
 
-### Pause State Shape
+`AmbiguityObject` represents recorded ambiguity.
 
-```
+## Shape
+
+```json
 {
-  "system_state": "Running | Paused",
+  "authority_scope": "auction | settlement | inscription | system",
+  "reason": "string",
+  "related_record_id": "string or null",
+  "ambiguity_time": "ISO-8601"
+}
+```
+
+## Field Rules
+
+- must be derived from `AmbiguityRecord`
+- must not be inferred from missing data alone
+- must not imply repair or future resolution
+
+---
+
+# 14. Pause State Object
+
+`PauseStateObject` represents system-level pause knowledge.
+
+## Shape
+
+```json
+{
+  "system_control_state": "Running | Paused",
   "paused_at": "ISO-8601 or null",
   "pause_reason": "string or null"
 }
 ```
-When paused, the system must reject bid acceptance.
-Auction lifecycle truth does not change solely due to pause.
 
-## 10. Composite Auction View
+## Field Rules
+
+- if `system_control_state = Paused`, then `paused_at` must be non-null
+- if `system_control_state = Running`, then `paused_at` must be `null`
+- pause does not alter auction lifecycle state
+- pause does not alter inscription lifecycle state
+- pause does not restore authority
+- when paused, the system must reject bid acceptance
+
+---
+
+# 15. Composite Auction View
 
 A read-only aggregation for clients.
-This is a packaging convenience only. It introduces no new semantics.
-```
+
+This introduces no new semantics.
+
+## Shape
+
+```json
 {
-  "auction": { "Auction State Object" },
-  "resolution": { "Resolution State Object" },
-  "settlement": { "Settlement State Object" },
-  "inscription": { "Inscription State Object" }
+  "auction": "AuctionStateObject",
+  "resolution": "ResolutionObject or null",
+  "settlement": "SettlementObject or null",
+  "inscription": "InscriptionObject",
+  "ambiguity": "AmbiguityObject or null"
 }
 ```
-## 11. Forbidden Representations
+
+---
+
+# 16. Forbidden Representations
 
 The API must not expose:
+
 - ownership claims
-- valuation or ranking
+- valuation
+- ranking
 - probabilistic outcomes
-- time-based inference
+- speculative time remaining
 - eventual certainty
-- derived states not defined in STATE-MACHINE.md
+- derived states not defined in `core/STATE-MACHINE-TABLE.md`
+- fields not defined in this document
 
-## 12. Backward Compatibility Rules
+---
 
-- New fields must be nullable.
-- Existing field meanings must never change.
-- Existing enum values must never be redefined.
-- New states require changes to STATE-MACHINE.md first.
-- Removing fields requires a new API version.
+# 17. Backward Compatibility Rules
 
-## 13. Final Rule
+The API version for this prototype is `v1`.
 
-If the system does not know something with certainty,
-it must represent that lack of knowledge explicitly.
+Rules:
+
+- new fields require a new API version unless already declared nullable
+- existing field meanings must never change within `v1`
+- existing enum values must never be redefined
+- new states require changes to `core/STATE-MACHINE-TABLE.md` first
+- removing fields requires a new API version
+
+---
+
+# Final Rule
+
+If the system does not know something with certainty:
+
+It must represent that lack of knowledge explicitly as `null`.
+
+If a field is defined by a shape:
+
+It must be present.

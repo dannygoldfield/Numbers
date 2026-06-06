@@ -1,32 +1,37 @@
-# State Machine — Numbers
+# State Machine: Numbers
 
 This document defines the executable state machines for Numbers.
 
 It is normative.
 
-Authority precedence is defined exclusively in AUTHORITY-ORDER.md.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
 If behavior is not explicitly permitted here, it is forbidden.
 
 This document assumes familiarity with:
-- STATE-MACHINE-TABLE.md
-- CORE-SEQUENCE.md
-- AUTHORITY-CONSUMPTION.md
-- PERSISTENCE.md
-- DATA-MODEL.md
+
+- `core/STATE-MACHINE-TABLE.md`
+- `core/CORE-SEQUENCE.md`
+- `core/AUTHORITY-CONSUMPTION.md`
+- `data/PERSISTENCE.md`
+- `data/DATA-MODEL.md`
+- `data/RESTART-RULES.md`
 
 It specifies:
-1. All valid states
-2. Allowed transitions
-3. Transition triggers
-4. Restart semantics
-5. Pause semantics
-6. Illegal transitions
-7. State legality boundaries
 
-State is always derived from persisted records.
+1. all valid states
+2. allowed transitions
+3. transition triggers
+4. restart constraints
+5. pause semantics
+6. illegal transitions
+7. state legality boundaries
+
+State is always derived from canonical event records.
+
 State must never be stored as mutable truth.
-Canonical record ordering defines all lifecycle precedence.
+
+Canonical event record ordering defines lifecycle precedence.
 
 ---
 
@@ -34,15 +39,16 @@ Canonical record ordering defines all lifecycle precedence.
 
 This document governs:
 
-- The auction lifecycle for a single number `N`
-- The inscription lifecycle that begins after auction finalization
-- The system-level control machine
+- the auction lifecycle for a single number `N`
+- the inscription lifecycle that begins after auction finalization
+- the system-level control machine
 
 This document does not govern:
 
 - UI presentation
-- Wallet internals
+- wallet internals
 - Bitcoin confirmation mechanics beyond defined thresholds
+- live Ordinals broadcast unless included in the active implementation slice
 
 ---
 
@@ -50,24 +56,25 @@ This document does not govern:
 
 The system consists of three distinct state machines:
 
-1. Auction State Machine (per number)
-2. Inscription State Machine (per number, post-finalization)
-3. System Control State Machine (global)
+1. Auction State Machine, per number
+2. Inscription State Machine, per number after finalization
+3. System Control State Machine, global
 
-These state machines interact only at explicitly defined authority boundaries.
+These state machines interact only at explicitly defined boundaries.
 
-Authority semantics are defined exclusively in AUTHORITY-CONSUMPTION.md.
+Authority semantics are defined exclusively in `core/AUTHORITY-CONSUMPTION.md`.
 
-Timing guarantees are defined exclusively in CORE-SEQUENCE.md.
+Timing and sequence progression are defined by `core/CORE-SEQUENCE.md`.
 
-Persistence guarantees are defined exclusively in PERSISTENCE.md.
+Persistence guarantees are defined by `data/PERSISTENCE.md`.
+
+Restart reconstruction is defined by `data/RESTART-RULES.md`.
 
 ---
 
 # 3. Auction State Machine
 
-Each auction number `N` progresses through the following states
-exactly once and strictly in order:
+Each auction number `N` progresses through the following auction states:
 
 1. `Scheduled`
 2. `Open`
@@ -77,229 +84,273 @@ exactly once and strictly in order:
 
 No other auction states are valid.
 
-Once an auction reaches `Finalized`,
-its lifecycle is complete.
+Once an auction reaches `Finalized`, its auction lifecycle is complete.
 
-Auction state is derived from persisted records as defined in DATA-MODEL.md.
+Auction state is reconstructed from canonical event records defined in `data/DATA-MODEL.md`.
 
 ---
 
 ## 3.1 Scheduled
 
-Meaning:  
-Auction `N` exists but is not accepting bids.
+Meaning:
+
+Auction `N` exists but has not yet opened.
 
 Entry condition:
-- AuctionRecord for `N` exists
-- No AuctionOpenRecord exists
+
+- `AuctionRecord` for `N` exists
+- no `AuctionOpenRecord` exists
 
 Invariants:
-- `opened_at` is null
-- `base_end_time` is null
+
+- `opened_at` is `null` in API projection
+- `base_end_time` is `null` in API projection
+- no auction countdown exists
 
 Allowed actions:
-- Reject all bids
+
+- evaluate bid submissions through `bidding/BIDDING-ADMISSION.md`
+- persist invalid `BidRecord` entries when admission evaluation is reached
+- atomically open the auction on the first valid bid
 
 Exit trigger:
-- First valid bid accepted while system state = `Running`
+
+- first valid bid accepted while system control state = `Running`
+
+Atomic effects on exit:
+
+1. persist `BidRecord` with `validity = valid`
+2. persist `AuctionOpenRecord`
+3. derive auction state as `Open`
+
+No intermediate lifecycle state is permitted.
 
 ---
 
 ## 3.2 Open
 
-Meaning:  
-Auction `N` is actively accepting bids.
+Meaning:
 
-Entry trigger:
-- First valid bid accepted while in `Scheduled`
+Auction `N` is actively accepting bid submissions.
 
-Atomic effects on entry:
-- Persist BidRecord
-- Persist AuctionOpenRecord with:
-  - `opened_at = server_time`
-  - `base_end_time = opened_at + auction.duration_seconds`
+Entry condition:
 
-`server_time` is the authoritative system clock at the moment of bid acceptance.  
-No client-provided timestamp may influence lifecycle timing.
+- `AuctionOpenRecord` exists
+- no `AuctionCloseRecord` exists
+
+Entry effects:
+
+- `opened_at` is fixed by `AuctionOpenRecord`
+- `base_end_time` is fixed by `AuctionOpenRecord`
+- `current_end_time` is derived from `base_end_time` and `ExtensionEventRecord` count
 
 Allowed actions:
-- Accept valid bids
-- Reject invalid bids
-- Apply extension logic
+
+- evaluate bid submissions through `bidding/BIDDING-ADMISSION.md`
+- persist valid `BidRecord` entries
+- persist invalid `BidRecord` entries when admission evaluation is reached
+- apply extension logic if explicitly required
+- close auction when close condition is satisfied
 
 ---
 
-### Bid Ordering Rule (Normative)
+## 3.2.1 Bid Ordering Rule
 
-When multiple valid bids are accepted during the `Open` state:
+When multiple valid bids are accepted during `Open`:
 
 - each bid must be persisted as exactly one `BidRecord`
-- `BidRecord`s are appended to persistent storage in the order accepted by the system
-- this order defines bid precedence
+- `BidRecord` entries are ordered by canonical event record order
+- canonical event record order defines bid precedence
 
-Resolution must determine the winning bid using only persisted `BidRecord`s.
+Resolution must determine the winning bid using only persisted valid `BidRecord` entries.
 
-Network arrival order, mempool propagation order, and block inclusion order
-must not influence bid precedence once records are persisted.
+Network arrival order, mempool propagation order, and block inclusion order must not influence bid precedence.
 
 ---
 
-### Extension Rule (Normative)
+## 3.2.2 Extension Rule
 
-While state = `Open`:
+While auction state = `Open`:
 
 Let:
 
-- `number_of_extension_events` = count of ExtensionEventRecords
-- `current_end_time` =
-  `base_end_time + (auction.extension_increment_seconds * number_of_extension_events)`
+```text
+number_of_extension_events = count of ExtensionEventRecord entries
+```
 
-Time source rule:
-All time comparisons must use `server_time`.
+and:
+
+```text
+current_end_time =
+base_end_time +
+(auction.extension_increment_seconds * number_of_extension_events)
+```
+
+All time comparisons must use authoritative `server_time`.
 
 If a valid bid is accepted and:
 
 - `server_time >= current_end_time - auction.extension_window_seconds`
-- and `number_of_extension_events < auction.max_extensions`
+- `number_of_extension_events < auction.max_extensions`
 
-Then atomically:
+then the system must persist exactly one `ExtensionEventRecord`.
 
-- Persist exactly one ExtensionEventRecord
-- Do not modify prior records
-- Do not modify `base_end_time`
+Extension records:
 
-Extensions:
-- Do not consume authority
-- Do not create new lifecycle states
-- Are bounded by `auction.max_extensions`
-
-Exit trigger (exactly one):
-
-- `server_time >= current_end_time`
-- or configured bid cap reached
+- must be append-only
+- must not modify prior records
+- must not modify `base_end_time`
+- must not consume authority
+- must not create new lifecycle states
 
 ---
 
-### Close Boundary Rule (Normative)
+## 3.2.3 Close Rule
 
-Bid acceptance and auction closing must compete through the same
-serialized canonical record commit path.
+Auction close is permitted when:
 
-If a BidRecord commits before an AuctionCloseRecord,
-the bid is valid.
+- `server_time >= current_end_time`
+- or configured bid cap is reached
 
-If an AuctionCloseRecord commits before a BidRecord,
-the bid must be rejected.
+When close occurs:
 
-Evaluation of `server_time` alone must never determine bid validity
-once commit ordering is known.
+- persist exactly one `AuctionCloseRecord`
+- derive auction state as `Closed`
+- no further valid bids are permitted
 
-Canonical record ordering is authoritative.
+If `AuctionCloseRecord` exists before a bid is evaluated, the bid must be invalid.
+
+If the system detects that `server_time >= current_end_time` before accepting a bid, the system must close the auction before accepting any further valid bid.
+
+Bid admission and auction close must be serialized through canonical event record persistence.
 
 ---
 
 ## 3.3 Closed
 
-Meaning:  
-Auction `N` is closed to new bids.
+Meaning:
 
-Entry trigger:
-- AuctionCloseRecord persisted
+Auction `N` is closed to new valid bids.
+
+Entry condition:
+
+- `AuctionCloseRecord` exists
+- no `ResolutionRecord` exists
 
 Allowed actions:
-- Compute resolution deterministically
-- Persist ResolutionRecord as defined in DATA-MODEL.md
 
-Resolution must occur exactly once.
+- compute resolution deterministically
+- persist exactly one `ResolutionRecord`
 
-Resolution must never be recomputed after ResolutionRecord exists.
+Resolution must:
+
+- occur exactly once
+- use only persisted valid `BidRecord` entries
+- exclude invalid `BidRecord` entries
+- never be recomputed after `ResolutionRecord` exists
 
 Exit condition:
-- ResolutionRecord exists
 
-State is derived as Closed if:
-- AuctionCloseRecord exists
-- ResolutionRecord does not exist
+- `ResolutionRecord` exists
+
+Derived next state:
+
+- `AwaitingSettlement`
 
 ---
 
 ## 3.4 AwaitingSettlement
 
-Meaning:  
-Resolution exists. Settlement outcome pending.
+Meaning:
+
+Resolution exists and terminal settlement outcome has not yet been recorded.
 
 Entry condition:
-- ResolutionRecord exists
-- FinalizationRecord does not exist
+
+- `ResolutionRecord` exists
+- no `SettlementRecord` exists
+- no `FinalizationRecord` exists
 
 Allowed actions:
-- Observe settlement
-- Determine settlement outcome
-- Persist SettlementRecord as defined in DATA-MODEL.md
 
-Exit trigger (exactly one):
+- determine settlement outcome according to `bidding/SETTLEMENT.md`
+- persist exactly one `SettlementRecord`
+- persist exactly one `FinalizationRecord`
 
-- Settlement confirmed before deadline
-- Settlement deadline expired
-- ResolutionRecord indicates no valid bids
+Exit triggers:
+
+- settlement confirmed before deadline
+- settlement deadline expired
+- `ResolutionRecord` indicates no valid winning bid
+
+Settlement state must not be represented by a pending `SettlementRecord`.
+
+`SettlementRecord` records terminal settlement outcome only.
 
 ---
 
 ## 3.5 Finalized
 
-Meaning:  
-Auction `N` has a final destination.
+Meaning:
+
+Auction `N` has a permanently fixed final destination.
 
 Entry condition:
-- FinalizationRecord exists
 
-Destination:
-- Winning address
-- NullSteward
+- `FinalizationRecord` exists
+
+Destination must be one of:
+
+- winning destination address
+- `NullSteward`
 
 Finalization is irreversible.
 
-No auction action is permitted beyond this state.
+No auction lifecycle action is permitted after `Finalized`.
+
+Sequence advancement to `N + 1` is permitted only after `FinalizationRecord`.
 
 ---
 
-## 3.6 Auction Restart Semantics
+# 4. Auction Restart Constraints
+
+Restart behavior is governed by `data/RESTART-RULES.md`.
 
 On restart:
 
-If AuctionOpenRecord exists:
-- Reconstruct `base_end_time`
-- Load all ExtensionEventRecords
-- Compute `current_end_time`
-- If `server_time < current_end_time`, state = Open
-- If `server_time >= current_end_time`, persist AuctionCloseRecord if missing
+- auction state must be reconstructed from canonical event records only
+- mutable stored lifecycle state must be ignored
+- missing required records must halt execution
+- malformed records must halt execution
+- contradictory records must halt execution
+- existing outcome records must not be recomputed
 
-If AuctionCloseRecord exists and ResolutionRecord does not exist:
-- Compute resolution deterministically from BidRecords
-- Persist exactly one ResolutionRecord
+Restart must not:
 
-If ResolutionRecord exists and FinalizationRecord does not exist:
-- Observe settlement only
-
-If FinalizationRecord exists:
-- No auction action permitted
-
-If required canonical records are missing:
-- Execution must halt
-
-Restart must not consume authority.
+- open a scheduled auction
+- create a bid
+- alter `base_end_time`
+- recompute resolution after `ResolutionRecord`
+- recompute settlement after `SettlementRecord`
+- recompute final destination after `FinalizationRecord`
+- consume authority
+- restore authority
 
 ---
 
-# 4. Inscription State Machine
+# 5. Inscription State Machine
 
 The inscription machine begins only after auction state = `Finalized`.
 
 Inscription state does not alter auction state.
 
+Auction correctness must not depend on inscription progress, broadcast, confirmation, or failure.
+
 ---
 
-## 4.1 Inscription States
+## 5.1 Inscription States
+
+The valid inscription states are:
 
 1. `NotStarted`
 2. `Inscribing`
@@ -308,101 +359,248 @@ Inscription state does not alter auction state.
 
 No other inscription states are valid.
 
----
+There is no canonical `Broadcasting` lifecycle state.
 
-## 4.2 Inscription Transition Guards
-
-Inscription initiation is permitted only if:
-
-- Auction state = `Finalized`
-- No InscriptionRecord exists
-- No AmbiguityRecord exists
+Broadcast attempt is an operation, not a lifecycle state.
 
 ---
 
-## 4.3 Inscription Transitions
+## 5.2 NotStarted
 
-| From | To | Trigger |
-|------|----|---------|
-| NotStarted | Inscribing | InscriptionRecord persisted |
-| Inscribing | Inscribed | Canonical inscription observed |
-| Inscribing | Ambiguous | Ambiguity detected |
+Meaning:
+
+No committed inscription broadcast exists and no terminal inscription ambiguity exists.
+
+`InscriptionIntentRecord` alone does not move inscription state out of `NotStarted`.
+
+Allowed actions:
+
+- persist `InscriptionIntentRecord` after auction state = `Finalized`
+- perform no live broadcast when adapter mode = `deferred_in_this_slice`
+- perform broadcast only when adapter mode = `testnet_ordinals` and the active implementation slice explicitly permits live broadcast
+
+---
+
+## 5.3 Inscribing
+
+Meaning:
+
+A committed inscription broadcast exists and confirmation has not yet been observed.
+
+Entry condition:
+
+- `InscriptionBroadcastRecord.broadcast_outcome = committed`
+
+Authority effect:
+
+- inscription authority is consumed at `broadcast_commit`
+
+Allowed actions:
+
+- observe confirmation if the active implementation slice permits confirmation observation
+- persist `InscriptionConfirmationRecord` if confirmation rules are satisfied
+- persist `AmbiguityRecord` if ambiguity is detected
+
+No semantically distinct inscription attempt is permitted.
+
+---
+
+## 5.4 Ambiguous
+
+Meaning:
+
+Inscription authority is frozen because the broadcast or inscription outcome cannot be determined.
+
+Entry condition:
+
+- `InscriptionBroadcastRecord.broadcast_outcome = ambiguous`
+- or `AmbiguityRecord.authority_scope = inscription`
+
+Rules:
+
+- terminal inscription state
+- authority remains frozen
+- retry is forbidden
+- alternate inscription is forbidden
+- semantically distinct inscription is forbidden
+
+Ambiguity must not be repaired by:
+
+- restart
+- operator action
+- time passing
+- later observation
+- speculative rebroadcast
+
+---
+
+## 5.5 Inscribed
+
+Meaning:
+
+Canonical inscription confirmation has been observed and recorded.
+
+Entry condition:
+
+- `InscriptionConfirmationRecord` exists
+
+Rules:
+
+- terminal inscription state
+- no further inscription action is permitted
+- confirmation does not consume additional authority
+
+---
+
+## 5.6 Inscription Transitions
+
+| From | Trigger | To | Required Canonical Event Records |
+|---|---|---|---|
+| `NotStarted` | Inscription intent persisted | `NotStarted` | `InscriptionIntentRecord` |
+| `NotStarted` | Broadcast classified as `pre_commit_rejected` | `NotStarted` | `InscriptionBroadcastRecord` |
+| `NotStarted` | `broadcast_commit` | `Inscribing` | `InscriptionBroadcastRecord` with `broadcast_outcome = committed` |
+| `NotStarted` | Broadcast classified as `ambiguous` | `Ambiguous` | `InscriptionBroadcastRecord` with `broadcast_outcome = ambiguous` or `AmbiguityRecord` |
+| `Inscribing` | Known confirmation observed | `Inscribed` | `InscriptionConfirmationRecord` |
+| `Inscribing` | Ambiguity detected | `Ambiguous` | `AmbiguityRecord` |
 
 No other inscription transitions are permitted.
 
 ---
 
-## 4.4 Inscription Semantics
+## 5.7 Inscription Authority Rule
 
-Inscription authority is consumed at transition:
+Inscription authority is consumed only at `broadcast_commit`.
 
-`NotStarted → Inscribing`
+Intent persistence does not consume authority.
 
-If AmbiguityRecord exists:
-- Retry is forbidden
-- Observation only permitted
+Transaction construction does not consume authority.
 
-If Inscribed:
-- Terminal
-- No further action permitted
+Confirmation observation does not consume authority.
+
+`pre_commit_rejected` does not consume authority.
+
+`ambiguous` freezes authority permanently.
+
+Authority semantics are governed by `core/AUTHORITY-CONSUMPTION.md`.
 
 ---
 
-## 4.5 Inscription Restart Semantics
+## 5.8 Demo 1 Inscription Rule
+
+For Demo 1:
+
+- live inscription broadcast is not required
+- `InscriptionIntentRecord` may be persisted
+- `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
+- no `InscriptionBroadcastRecord` is required
+- no `InscriptionConfirmationRecord` is required
+- no live inscription success may be simulated
+- no confirmation may be simulated
+
+Auction lifecycle and sequence advancement must remain demonstrable without live inscription execution.
+
+---
+
+# 6. Inscription Restart Constraints
+
+Restart behavior is governed by `data/RESTART-RULES.md`.
 
 On restart:
 
-If InscriptionRecord exists and neither Ambiguous nor Inscribed:
-- Observation only
-- Retry forbidden
+- inscription state must be reconstructed from canonical event records only
+- `InscriptionIntentRecord` alone reconstructs to `NotStarted`
+- committed broadcast reconstructs to `Inscribing`
+- ambiguous broadcast reconstructs to `Ambiguous`
+- inscription ambiguity reconstructs to `Ambiguous`
+- confirmation reconstructs to `Inscribed`
 
-If AmbiguityRecord exists:
-- Terminal
-- Observation only
+Restart must not:
 
-If Inscribed:
-- Terminal
-- No action permitted
-
-Restart must not restore inscription authority.
+- trigger live broadcast
+- simulate broadcast
+- simulate confirmation
+- retry after committed broadcast
+- retry after ambiguity
+- restore authority
+- repair ambiguity
 
 ---
 
-# 5. System Control State Machine
+# 7. System Control State Machine
 
-## 5.1 States
+## 7.1 States
+
+The valid system control states are:
 
 1. `Running`
 2. `Paused`
 
+No other system control states are valid.
+
+System control state is derived from `PauseEventRecord` entries.
+
 ---
 
-## 5.2 Pause Rules
+## 7.2 Running
 
-The system may enter `Paused` at any time.
+Meaning:
+
+The system is permitted to evaluate actions allowed by the current lifecycle state.
+
+Allowed actions:
+
+- evaluate bid submissions
+- evaluate deterministic transitions
+- perform implementation-slice-permitted operations
+
+Running does not override lifecycle restrictions.
+
+---
+
+## 7.3 Paused
+
+Meaning:
+
+The system rejects new externally initiated lifecycle actions.
 
 While `Paused`:
 
-- No new authority-bearing action may begin
-- No new bids may be accepted
-- Time continues to advance
-- Deadlines and end times are not modified
+- no new bid may be accepted as valid
+- no new authority-bearing action may begin
+- time continues to advance
+- deadlines and end times are not modified
+- deterministic restart reconstruction remains governed by `data/RESTART-RULES.md`
 
-Pause does not alter lifecycle truth.
+Pause does not alter auction lifecycle truth.
 
-Pause events must be persisted as defined in DATA-MODEL.md.
+Pause does not alter inscription lifecycle truth.
+
+Pause does not restore authority.
+
+Pause does not freeze authority by itself.
 
 ---
 
-## 5.3 Resume Rules
+## 7.4 Pause and Resume Records
 
-Resume requires explicit operator action.
+Pause and resume are represented by `PauseEventRecord`.
+
+A pause event must not:
+
+- alter auction state
+- alter inscription state
+- alter authority
+- modify deadlines
+- rewrite canonical event records
+
+A resume event must not:
+
+- alter auction state
+- alter inscription state
+- restore authority
+- rewrite canonical event records
 
 Resume is permitted only when persisted state is internally consistent.
-
-Resume transitions system to `Running`.
-
-Resume does not restore authority.
 
 ---
 

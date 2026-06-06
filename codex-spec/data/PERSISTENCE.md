@@ -1,10 +1,10 @@
-# Persistence — Numbers
+# Persistence: Numbers
 
 This document defines persistence requirements for the Numbers system.
 
 It is normative.
 
-Authority precedence is defined exclusively in AUTHORITY-ORDER.md.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
 Persistence prevents:
 
@@ -12,279 +12,423 @@ Persistence prevents:
 - reinterpretation
 - accidental authority reuse
 - mutation of recorded history
+- restart-driven invention
+- silent repair of missing truth
 
-If a required state is not durably persisted,
-the system must treat that state as unknown
-and must not consume authority.
+Persistence defines canonical system truth.
+
+If a required canonical event record is not durably persisted, the system must treat the corresponding fact as unknown and must not infer it.
 
 ---
 
-## 1. Purpose
+# 1. Purpose
 
 Persistence ensures that:
 
-- every authority consumption is durably recorded
-- restarts do not change outcomes
+- canonical event records survive restart
+- lifecycle state is reconstructible from durable history
+- outcomes do not change after persistence
 - ambiguity is preserved rather than erased
+- authority consumption and authority freeze remain visible after restart
 - time passing does not recreate permission
-- authority consumption is provable after the fact
 
 Persistence is a safety boundary.
 
 ---
 
-## 2. Relationship to Authority (Normative)
+# 2. Persistence Model
 
-Authority is defined exclusively in AUTHORITY-CONSUMPTION.md.
+Numbers uses an append-only ordered log of canonical event records.
 
-An authority-bearing transition does not exist
-unless its canonical boundary record
-is durably persisted.
+A canonical event record is the same persisted object as a canonical record.
 
----
+The terms `event`, `event record`, `canonical record`, and `persisted record` refer to the same append-only object when used for system truth.
 
-## 3. Persistence Principles (Normative)
+There is no separate event model and record model.
 
-### P-01. Persist Before Authority
+Persistence applies only to canonical event record types defined in:
 
-Any authority-bearing transition must:
+- `core/EVENT-TYPES.md`
+- `data/DATA-MODEL.md`
 
-1. durably persist its canonical boundary record, and
-2. complete atomically with respect to that record.
-
-If persistence fails:
-
-- the authority-bearing action must not occur
-- execution must halt
-
-Authority without durable record is forbidden.
+No other record type may be persisted as canonical system truth.
 
 ---
 
-### P-02. Append-Only Persistence
+# 3. Common Persistence Envelope
 
-Persisted records must never be:
+Every canonical event record must contain the common envelope defined in `data/DATA-MODEL.md`:
+
+- `record_id`
+- `record_type`
+- `auction_id`
+- `number`
+- `sequence_index`
+- `server_time`
+- `payload_json`
+- `payload_hash`
+
+## Rules
+
+- `record_id` must uniquely identify one canonical event record
+- `record_type` must equal a defined canonical event record type
+- `sequence_index` must define total order
+- `sequence_index` must never be reused
+- `server_time` must be authoritative server time
+- `payload_json` must contain the record-specific payload
+- `payload_hash` must commit to the canonical serialized payload
+- persisted records must never be modified after persistence
+
+---
+
+# 4. Append-Only Rule
+
+Persisted canonical event records must never be:
 
 - edited
 - rewritten
 - deleted
+- reordered
+- reinterpreted
 - compacted in a way that loses semantic meaning
 
 History is strictly additive.
 
-Corrections must be expressed as new records.
+Corrections must be expressed only as new canonical event records when such correction records are explicitly defined.
+
+If no correction record is defined, correction is forbidden.
 
 ---
 
-### P-03. Persisted State Is Canonical
+# 5. Persisted Truth Rule
 
 At runtime:
 
-- persisted state defines reality
+- persisted canonical event records define reality
 - in-memory state is a cache only
+- API state is a projection only
+- logs are non-authoritative
+- operator belief is non-authoritative
+- external chain observation is non-authoritative until recorded through a permitted canonical event record
 
 On restart:
 
 - all in-memory state must be discarded
-- state must be reconstructed exclusively from persisted canonical records
+- state must be reconstructed exclusively from persisted canonical event records
 
-If persisted state contradicts memory,
-memory is incorrect.
+If persisted canonical event records contradict memory, memory is incorrect.
 
----
-
-## 4. Canonical Record Dependency (Normative)
-
-Persistence applies only to canonical record types
-defined in DATA-MODEL.md.
-
-Persistence must not introduce:
-
-- implicit state
-- inferred records
-- undocumented record types
-
-If a required canonical record is missing,
-execution must halt.
+If persisted canonical event records contradict operator belief, operator belief is incorrect.
 
 ---
 
-## 5. Authority Boundary Persistence (Normative)
+# 6. Relationship to Authority
 
-The following records represent authority boundaries
-and must be durably persisted exactly once:
+Authority is defined exclusively in `core/AUTHORITY-CONSUMPTION.md`.
 
-- InscriptionRecord (`Finalized → Inscribing`)
-- AmbiguityRecord (`Inscribing → Ambiguous`)
+Persistence does not create authority.
 
-Once such a record is persisted,
-inscription authority is irreversibly consumed
-as defined in AUTHORITY-CONSUMPTION.md.
+Persistence does not restore authority.
 
-Subsequent attempts to consume the same authority
-must be refused.
+Persistence does not repair ambiguity.
+
+For inscription authority:
+
+- `InscriptionIntentRecord` must be durably persisted before any inscription broadcast attempt
+- `InscriptionIntentRecord` does not consume authority
+- `InscriptionBroadcastRecord.broadcast_outcome = committed` records authority consumption
+- `InscriptionBroadcastRecord.broadcast_outcome = ambiguous` records authority freeze
+- `AmbiguityRecord` with `authority_scope = inscription` records authority freeze
+- `InscriptionConfirmationRecord` does not consume additional authority
+
+Authority without required durable pre-broadcast records is forbidden.
 
 ---
 
-## 6. Auction Lifecycle Persistence (Normative)
+# 7. Demo 1 Persistence Boundary
 
-For each auction number `N`, the system must persist:
+Demo 1 must not require live Bitcoin or Ordinals execution.
 
-- AuctionRecord
-- BidRecord(s)
-- AuctionOpenRecord (exactly one if auction opens), containing:
-  - `opened_at`
-  - `base_end_time`
-- ExtensionEventRecord(s), if any
-- AuctionCloseRecord (exactly one if auction closes)
-- ResolutionRecord (exactly one)
-- SettlementRecord (exactly one)
-- FinalizationRecord (exactly one)
+For Demo 1:
 
-AuctionRecord:
+- `InscriptionIntentRecord` may be persisted
+- `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
+- no `InscriptionBroadcastRecord` is required
+- no `InscriptionConfirmationRecord` is required
+- no live broadcast may be silently simulated
+- no confirmation may be silently simulated
 
-- must occur only after the previous auction reaches `Finalized`
+Auction correctness must remain demonstrable without:
+
+- Bitcoin Core RPC
+- `ord`
+- wallet interaction
+- mempool recognition
+- confirmation observation
+- external SSD availability
+
+---
+
+# 8. Auction Lifecycle Persistence
+
+For each auction number `N`, the system must persist canonical event records as required by lifecycle progression.
+
+## Required Auction Records
+
+The auction lifecycle may include:
+
+- `AuctionRecord`
+- `BidRecord`
+- `AuctionOpenRecord`
+- `ExtensionEventRecord`
+- `AuctionCloseRecord`
+- `ResolutionRecord`
+- `SettlementRecord`
+- `FinalizationRecord`
+
+## `AuctionRecord`
+
+Rules:
+
+- exactly one `AuctionRecord` must exist per number
+- must occur only after the previous auction reaches `Finalized`, except for the first auction
 - must not include a scheduled start time
 - must not include a precomputed end time
 - must not imply automatic opening
 
-While state = `Scheduled`:
+## `BidRecord`
 
-- `opened_at` must remain null
-- `base_end_time` must remain null
+Rules:
 
-`base_end_time` must be persisted exactly once,
-when the first valid bid is accepted.
+- every bid submission attempt that reaches admission evaluation must produce exactly one `BidRecord`
+- valid and invalid bids are both canonical event records
+- invalid bids must not alter auction lifecycle state
+- invalid bids must not participate in winner resolution
 
-`current_end_time` must never be persisted.
+## `AuctionOpenRecord`
+
+Rules:
+
+- exactly one `AuctionOpenRecord` may exist per auction
+- must be persisted atomically with the first valid `BidRecord`
+- must contain `opened_at`
+- must contain `base_end_time`
+- `base_end_time` must be persisted exactly once
+- `base_end_time` must never be changed
+
+While auction state is `Scheduled`:
+
+- `opened_at` must be `null` in API projection
+- `base_end_time` must be `null` in API projection
+
+## `ExtensionEventRecord`
+
+Rules:
+
+- one `ExtensionEventRecord` must exist per extension increment
+- extension records must be append-only
+- extension records must not modify `base_end_time`
+
+`current_end_time` must never be persisted as mutable truth.
+
 It must always be derived as:
-```Text
+
+```text
 current_end_time =
 base_end_time +
-(extension_increment_seconds * number_of_extension_events
+(extension_increment_seconds * number_of_extension_events)
 ```
 
-Presence of ResolutionRecord prohibits recomputation.
+## `AuctionCloseRecord`
 
-Presence of FinalizationRecord prohibits recomputation of destination.
+Rules:
+
+- exactly one `AuctionCloseRecord` must exist per opened auction
+- no valid bids may be accepted after `AuctionCloseRecord`
+
+## `ResolutionRecord`
+
+Rules:
+
+- exactly one `ResolutionRecord` must exist per closed auction
+- presence of `ResolutionRecord` prohibits recomputation of resolution
+- `settlement_deadline` must be persisted in `ResolutionRecord`
+- `settlement_deadline` must be computed exactly once at resolution
+
+## `SettlementRecord`
+
+Rules:
+
+- exactly one `SettlementRecord` must exist per resolved auction
+- `SettlementRecord` must record terminal settlement outcome only
+- `SettlementRecord` must not represent pending settlement
+- presence of `SettlementRecord` prohibits recomputation of settlement outcome
+
+## `FinalizationRecord`
+
+Rules:
+
+- exactly one `FinalizationRecord` must exist per auction
+- presence of `FinalizationRecord` prohibits recomputation of destination
+- destination is immutable once finalized
+- sequence advancement to `N + 1` is permitted only after `FinalizationRecord`
 
 ---
 
-## 7. Settlement Persistence (Normative)
+# 9. Settlement Persistence
 
-If settlement applies, the system must persist:
+Settlement persistence must follow `bidding/SETTLEMENT.md`.
 
-- settlement deadline
-- settlement outcome
-- settlement evidence:
-  - confirmed txid, or
-  - explicit failure indicator
+The settlement deadline must be persisted exactly once in `ResolutionRecord`.
 
-Settlement persistence must occur
-before `AwaitingSettlement → Finalized`.
+`SettlementRecord` records terminal settlement outcome only.
+
+`SettlementRecord.status` must be one of:
+
+- `settled`
+- `expired`
+- `not_required`
+
+Settlement persistence must occur before `FinalizationRecord`.
 
 Settlement does not create inscription authority.
 
+Settlement does not consume inscription authority.
+
 Settlement failure must be explicit and durable.
+
+If settlement fails, final destination must be `NullSteward`.
+
+If no valid bids exist, final destination must be `NullSteward`.
 
 ---
 
-## 8. Inscription Persistence (Normative)
+# 10. Inscription Persistence
 
-For each auction `N`, the system must persist:
+Inscription persistence must follow `inscription/INSCRIPTION-MACHINE.md`.
 
-- InscriptionRecord (`Finalized → Inscribing`)
-- inscription attempt metadata
-- known txid, if available
-- AmbiguityRecord, if applicable
-- InscriptionConfirmationRecord, if applicable
+The inscription-related canonical event records are:
 
-If AmbiguityRecord exists:
+- `InscriptionIntentRecord`
+- `InscriptionBroadcastRecord`
+- `InscriptionConfirmationRecord`
+- `AmbiguityRecord`
 
-- InscriptionConfirmationRecord must not be written
-- no further inscription actions are permitted
+## `InscriptionIntentRecord`
+
+Rules:
+
+- must exist before any inscription broadcast attempt
+- must follow `FinalizationRecord`
+- does not consume inscription authority
+- does not prove broadcast
+- does not prove confirmation
+- must not alter auction lifecycle state
+
+## `InscriptionBroadcastRecord`
+
+Rules:
+
+- must not exist when inscription adapter mode is `deferred_in_this_slice`
+- records classified broadcast outcome when live inscription broadcast is included in the active implementation slice
+- `broadcast_outcome = committed` records `broadcast_commit`
+- `broadcast_outcome = pre_commit_rejected` does not consume authority
+- `broadcast_outcome = ambiguous` freezes authority permanently
+
+## `InscriptionConfirmationRecord`
+
+Rules:
+
+- may exist only after an `InscriptionBroadcastRecord` with `broadcast_outcome = committed`
+- does not consume additional authority
+- must not remove, repair, or overwrite prior records
+- terminal for inscription lifecycle
+
+## `AmbiguityRecord`
+
+Rules:
+
+- must be persisted immediately when ambiguity is detected
+- permanently freezes affected authority
+- must not be deleted to unblock progress
+- must not be repaired by restart or observation
 
 If ambiguity is detected:
 
-- AmbiguityRecord must be persisted immediately
-- inscription authority is permanently exhausted
-
-Inscription confirmation must not remove or overwrite prior records.
+- authority is frozen
+- no semantically distinct inscription attempt is permitted
+- restart must preserve ambiguity
 
 ---
 
-## 9. System Control Persistence (Normative)
+# 11. System Control Persistence
 
-The system must persist system-level control events:
+The system may persist system-level control events only through canonical event record types defined in `data/DATA-MODEL.md`.
 
-- pause events
-- resume events
-- fatal execution halts
-- configuration snapshot active at time of each event
+For the current model, system pause and resume are persisted through:
+
+- `PauseEventRecord`
 
 System control records:
 
 - must not grant authority
 - must not restore authority
-- must not alter lifecycle truth
+- must not alter auction lifecycle state
+- must not alter inscription lifecycle state
+- must not modify deadlines
+- must not rewrite canonical event records
+
+If additional system control records are needed, they must first be defined in `core/EVENT-TYPES.md` and `data/DATA-MODEL.md`.
 
 ---
 
-## 10. Restart Semantics (Normative)
+# 12. Restart Semantics
 
 On process startup, the system must:
 
-1. Load all persisted canonical records
-2. Reconstruct state exclusively from persisted history
-3. Resume only transitions explicitly permitted by reconstructed state
-4. Never infer missing records
+1. load all persisted canonical event records
+2. validate record shape and ordering
+3. reconstruct state exclusively from persisted canonical event records
+4. resume only transitions explicitly permitted by reconstructed state
+5. never infer missing records
 
-If required records are missing or contradictory:
+If required records are missing, malformed, contradictory, or outside the canonical record set:
 
 - execution must halt
-- authority must not be consumed
+- authority must not be exercised
 
 Restart is reconstruction, not recovery.
 
 ---
 
-## 11. Forbidden Persistence Patterns (Normative)
+# 13. Idempotence Rules
 
-The following are forbidden:
+Non-authority deterministic evaluations may be completed after restart only when explicitly permitted by `data/RESTART-RULES.md`.
 
-- recomputing outcomes after canonical records exist
-- treating logs as authoritative state
-- inferring resolution from absence of data
-- repairing missing records by assumption
-- deleting ambiguity to unblock progress
-- re-consuming authority due to crash or timeout
+Existing outcome records must not be recomputed.
 
-If a required record is missing,
-execution must halt.
+Authority-consuming records must not be duplicated.
 
----
+Authority-freezing records must not be removed or bypassed.
 
-## 12. Idempotence Rules (Normative)
+Duplicate authority consumption is forbidden.
 
-Non-authority records may be idempotently re-applied
-without changing lifecycle meaning.
-
-Authority-bearing records must be written exactly once.
-
-Duplicate authority-bearing records are forbidden.
+Duplicate authority freeze is forbidden unless an explicit later record type permits additional scope-specific ambiguity recording.
 
 ---
 
-## 13. Storage Requirements
+# 14. Storage Requirements
 
-This document does not mandate a storage technology.
+This document does not mandate a production storage technology.
 
-Permitted systems include:
+Permitted storage systems for the prototype include:
 
 - SQLite
 - append-only files
 - write-ahead logs
 - embedded databases
+
+For Demo 1, SQLite is permitted and preferred when it reduces implementation ambiguity and supports deterministic restart reconstruction.
 
 Not permitted:
 
@@ -294,17 +438,40 @@ Not permitted:
 
 Durability must survive:
 
-- process crashes
-- machine restarts
-- power loss
+- process crash
+- machine restart
+- ordinary application restart
 
 ---
 
-## Final Rule
+# 15. Forbidden Persistence Patterns
+
+The following are forbidden:
+
+- recomputing outcomes after canonical event records exist
+- treating logs as authoritative state
+- treating API responses as authoritative state
+- inferring resolution from absence of data
+- repairing missing records by assumption
+- deleting ambiguity to unblock progress
+- re-consuming authority due to crash or timeout
+- storing mutable lifecycle state as canonical truth
+- silently simulating inscription broadcast
+- silently simulating confirmation
+- persisting canonical record types not defined in `core/EVENT-TYPES.md` and `data/DATA-MODEL.md`
+
+If a required record is missing, execution must halt.
+
+---
+
+# Final Rule
 
 Persistence defines canonical truth.
 
-If the system cannot prove
-that an authority-bearing action did not occur:
+If the system cannot prove that an authority-bearing action did not occur:
 
-It must assume it did and refuse to repeat it.
+It must behave according to `core/AUTHORITY-CONSUMPTION.md`.
+
+Missing records do not create permission.
+
+Restart does not create permission.

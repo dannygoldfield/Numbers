@@ -1,23 +1,24 @@
-# Authority Consumption — Numbers
+# Authority Consumption: Numbers
 
 This document defines authority consumption rules for the Numbers system.
 
 It is normative.
 
-Authority precedence is defined exclusively in AUTHORITY-ORDER.md.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
-Authority governs when permission to perform an irreversible action
-is exercised and when it is permanently lost.
+Authority governs when permission to perform an irreversible external action is exercised, frozen, or permanently lost.
 
 Authority is not intent.
-Authority is not success.
-Authority is the right to attempt an irreversible action exactly once.
 
-Authority is consumed by committed attempt or by uncertainty.
+Authority is not success.
+
+Authority is not confirmation.
+
+Authority is the right to reach a defined irreversible boundary at most once.
 
 ---
 
-## 1. Purpose
+# 1. Purpose
 
 Authority ensures that:
 
@@ -25,42 +26,70 @@ Authority ensures that:
 - outcomes are never duplicated
 - retries do not recreate permission
 - uncertainty reduces power rather than increasing it
+- restart does not restore authority
+- operator action does not restore authority
 
 ---
 
-## 2. Definitions
+# 2. Definitions
 
-- **Authority**  
-  The system’s permission to perform a defined irreversible external action.
+## Authority
 
-- **Authority Consumption**  
-  The irreversible use or loss of authority.
+The system’s permission to perform a defined irreversible external action.
 
-- **Authority Exhaustion**  
-  A terminal condition where authority can no longer be exercised,
-  regardless of outcome or intent.
+## Authority Consumption
 
-Authority is consumed by committed attempt or by uncertainty,
-not by confirmation of success.
+The irreversible use of authority at a defined consumption boundary.
+
+For inscription authority, the consumption boundary is `broadcast_commit`.
+
+## Authority Exhaustion
+
+A terminal condition where authority can no longer be exercised, regardless of whether the intended external action succeeded.
+
+## Authority Freeze
+
+A terminal authority condition caused by ambiguity.
+
+Frozen authority must be treated as exhausted.
+
+## broadcast_commit
+
+The inscription authority consumption boundary.
+
+`broadcast_commit` occurs only when both are true:
+
+1. a candidate inscription transaction is broadcast via the authoritative node
+2. the authoritative node reports the transaction present in its mempool
 
 ---
 
-## 3. Authority Scope (Normative)
+# 3. Authority Scope
 
 Numbers defines authority in exactly one scope:
 
-1. Inscription authority
+1. inscription authority
 
 No other authority exists.
 
-Deterministic lifecycle evaluation (e.g., resolution, settlement)
-does not constitute authority.
+Deterministic lifecycle evaluation does not constitute authority.
+
+The following do not consume authority:
+
+- auction opening
+- bid admission
+- auction close
+- resolution
+- settlement determination
+- finalization
+- inscription intent persistence
+- confirmation observation
 
 ---
 
-## 4. General Authority Rules (Normative)
+# 4. General Authority Rules
 
-### A-01. Authority Is Finite
+## A-01: Authority Is Finite
 
 For each auction number `N`:
 
@@ -70,141 +99,205 @@ For each auction number `N`:
 
 ---
 
-### A-02. Authority Is Consumed at Explicit Boundaries
+## A-02: Authority Is Consumed Only at Explicit Boundary
 
 Inscription authority is consumed only at:
 
-`broadcast_commit`
-
-as defined in `inscription/INSCRIPTION-MACHINE.md`.
-
-`broadcast_commit` occurs when:
-
-1. A candidate inscription transaction is broadcast via the authoritative node, and  
-2. The authoritative node reports the transaction present in its mempool.
+```text
+broadcast_commit
+```
 
 Authority must never be consumed implicitly.
 
+Intent persistence does not consume authority.
+
+Transaction construction does not consume authority.
+
+Confirmation observation does not consume authority.
+
 ---
 
-### A-03. Persistence Precedes Authority
+## A-03: Persistence Precedes Authority
 
-All canonical records required by `inscription/INSCRIPTION-MACHINE.md`
-must be durably persisted before any broadcast attempt.
+`InscriptionIntentRecord` and all required pre-broadcast canonical records must be durably persisted before any broadcast attempt.
 
 If required persistence fails:
 
 - authority must not be exercised
-- execution must halt
+- broadcast must not proceed
+- execution must halt or reject according to the governing error specification
 
-Authority without durable record is forbidden.
+Authority without durable pre-broadcast record is forbidden.
 
 ---
 
-### A-04. Uncertainty Consumes Authority
+## A-04: Ambiguity Freezes Authority
 
-If the system cannot prove
-that a committed inscription broadcast did not occur:
+If the system cannot determine whether `broadcast_commit` occurred:
 
-- inscription authority must be treated as consumed
+- inscription authority must be frozen
+- frozen authority must be treated as exhausted
 - retry is forbidden
 - alternate inscription is forbidden
+- semantically distinct inscription is forbidden
 
-Uncertainty reduces authority.
-It never restores it.
+Ambiguity reduces authority.
+
+Ambiguity never restores authority.
 
 ---
 
-## 5. Inscription Authority
+# 5. Inscription Authority
 
 Inscription authority:
 
 - exists at most once per auction
-- permits exactly one committed broadcast
-- may allow semantically equivalent fee replacement under controlled RBF
-- is permanently exhausted by ambiguity
+- permits at most one `broadcast_commit`
+- is consumed by `broadcast_commit`
+- is frozen by ambiguity
+- is never restored after consumption or freeze
 
 ---
 
-### 5.1 Pre-Commit Failure
+## 5.1 Pre-Commit Rejection
 
-If inscription construction or broadcast fails
-before `broadcast_commit`:
+A pre-commit rejection occurs only when the system can determine that `broadcast_commit` did not occur.
 
-- inscription authority has not yet been consumed
-- retry is permitted
+The canonical broadcast outcome is:
 
-This is the only retry condition.
+```text
+pre_commit_rejected
+```
 
----
+If broadcast outcome is `pre_commit_rejected`:
 
-### 5.2 Post-Commit Behavior
+- inscription authority is not consumed
+- inscription authority is not frozen
+- inscription state remains `NotStarted`
+- no confirmation may be inferred
+- no success may be inferred
 
-After `broadcast_commit`:
+`pre_commit_rejected` does not by itself permit retry.
 
-- authority is consumed
-- a new semantically distinct inscription is forbidden
-- replacement is permitted only under the equivalence rules defined in `inscription/INSCRIPTION-MACHINE.md`
+A later implementation slice may explicitly define bounded retry behavior.
 
----
-
-### 5.3 Post-Commit Ambiguity
-
-If after authority consumption the system:
-
-- cannot determine mempool presence, or
-- cannot determine confirmation state, or
-- encounters contradictory authoritative node responses
-
-Then:
-
-- inscription state must transition to Ambiguous
-- inscription authority is permanently exhausted
-- no new inscription attempt is permitted
-- only observation is permitted
-
-Time passing does not restore authority.
+If bounded retry behavior is not explicitly defined, no automatic retry is permitted.
 
 ---
 
-## 6. Authority and Restart (Normative)
+## 5.2 Committed Broadcast
+
+If broadcast outcome is:
+
+```text
+committed
+```
+
+then:
+
+- `broadcast_commit` occurred
+- inscription authority is consumed
+- inscription state becomes `Inscribing`
+- no semantically distinct inscription attempt is permitted
+
+After `broadcast_commit`, only behavior explicitly permitted by the inscription specification may occur.
+
+---
+
+## 5.3 Ambiguous Broadcast
+
+If broadcast outcome is:
+
+```text
+ambiguous
+```
+
+then:
+
+- inscription authority is frozen
+- frozen authority must be treated as exhausted
+- inscription state becomes `Ambiguous`
+- no further inscription attempt is permitted
+- no semantically distinct inscription is permitted
+
+Ambiguity must be recorded as canonical event record truth.
+
+---
+
+## 5.4 Controlled Fee Replacement
+
+Controlled fee replacement is not required for Demo 1.
+
+Controlled fee replacement is not active unless explicitly included in the active implementation slice.
+
+If controlled fee replacement is active, it is permitted only under the equivalence rules defined in `inscription/INSCRIPTION-MACHINE.md`.
+
+A replacement transaction must not create a semantically distinct inscription.
+
+If equivalence cannot be proven, replacement is forbidden.
+
+---
+
+# 6. Authority and Restart
 
 On restart:
 
-- authority state must be reconstructed exclusively from persisted records
-- absence of required persistence must halt execution
-- ambiguous states remain ambiguous
+- authority state must be reconstructed exclusively from canonical event records
+- consumed authority remains consumed
+- frozen authority remains frozen
+- ambiguous state remains ambiguous
+- missing required persistence must halt execution
 
 Restart must never be used to:
 
 - retry a committed broadcast
 - escape ambiguity
 - recreate permission
+- infer success
+- infer failure
+- replace canonical records with external observation
 
-Restart restores memory.
-It does not grant authority.
+Restart restores runtime memory.
+
+Restart does not grant authority.
 
 ---
 
-## 7. Forbidden Authority Patterns
+# 7. Authority and Observation
+
+Observation does not create authority.
+
+Observation does not restore authority.
+
+Observation does not consume additional authority.
+
+Observation may only produce canonical records when explicitly permitted by the governing specification.
+
+A later observation must not erase or repair ambiguity.
+
+---
+
+# 8. Forbidden Authority Patterns
 
 The following are forbidden:
 
 - retrying after ambiguity
-- retrying after restart
-- retrying after operator intervention
+- retrying after restart unless explicitly permitted by a later implementation slice
+- retrying after operator intervention unless explicitly permitted by a later implementation slice
 - retrying to create a semantically distinct inscription
 - modifying destination after authority consumption
 - modifying payload after authority consumption
+- treating inscription intent as authority consumption
+- treating confirmation as authority consumption
+- treating missing records as permission
+- treating external chain observation as a substitute for canonical event records
 
-If authority status is unclear,
-authority must be treated as exhausted.
+If authority status is unclear, authority must be treated as frozen.
 
 ---
 
-## Final Rule
+# Final Rule
 
-If the system cannot prove
-that a committed broadcast did not occur:
+If the system cannot prove that `broadcast_commit` did not occur:
 
-It must behave as though it did.
+It must behave as though authority is frozen and exhausted.

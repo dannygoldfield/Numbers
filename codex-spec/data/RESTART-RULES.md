@@ -1,10 +1,10 @@
-# Restart Rules — Numbers
+# Restart Rules: Numbers
 
 This document defines mandatory behavior when the Numbers system restarts.
 
 It is normative.
 
-Authority precedence is defined exclusively in AUTHORITY-ORDER.md.
+Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
 Restart handling ensures that:
 
@@ -12,216 +12,315 @@ Restart handling ensures that:
 - outcomes are never recomputed after persistence
 - ambiguity is never resolved by forgetting
 - progress is never made without certainty
+- runtime memory is reconstructed from canonical event records only
 
 ---
 
-## 1. Principle
+# 1. Principle
 
 A restart is not a new execution.
 
-A restart is continuation of the same execution,
-with memory restored exclusively from persisted state.
+A restart is continuation of the same execution, with runtime memory restored exclusively from persisted canonical event records.
 
 Restart:
 
 - does not introduce new states
 - does not create authority
+- does not restore authority
 - does not resolve uncertainty
 - does not alter lifecycle truth
+- does not repair missing records
+- does not substitute external observation for canonical event records
 
-If persisted state is incomplete, missing, or contradictory,
-execution must halt.
+If persisted canonical event records are incomplete, missing, malformed, or contradictory, execution must halt.
 
 ---
 
-## 2. Absolute Rules
+# 2. Absolute Rules
 
-### R-01. Persisted State Is Canonical
+## R-01: Persisted Canonical Event Records Define Reality
 
 On restart:
 
-- persisted records define reality
+- persisted canonical event records define system truth
 - all in-memory state is discarded
 - logs are non-authoritative
+- operator belief is non-authoritative
+- external chain observation is non-authoritative until recorded through a permitted canonical event record
 
-If persisted state conflicts with expectation or operator belief,
-persisted state prevails.
+If persisted canonical event records conflict with expectation or operator belief, persisted canonical event records prevail.
 
 ---
 
-### R-02. No Recomputing After Persistence
+## R-02: No Recomputing After Persistence
 
-On restart, the system must never recompute an outcome
-if its canonical record already exists.
+On restart, the system must never recompute an outcome if its canonical event record already exists.
 
 Specifically:
 
-- if ResolutionRecord exists, resolution must not be recomputed
-- if SettlementRecord exists, settlement must not be recomputed
-- if FinalizationRecord exists, destination must not be recomputed
-- if any InscriptionBroadcastRecord has classified_outcome = committed,
-  inscription initiation must not be repeated
-- if InscriptionConfirmationRecord exists,
-  confirmation must not be recomputed
+- if `ResolutionRecord` exists, resolution must not be recomputed
+- if `SettlementRecord` exists, settlement must not be recomputed
+- if `FinalizationRecord` exists, destination must not be recomputed
+- if any `InscriptionBroadcastRecord` has `broadcast_outcome = committed`, inscription broadcast must not be repeated
+- if `InscriptionConfirmationRecord` exists, confirmation must not be recomputed
 
-If an outcome record does not exist
-but its prerequisite transition has occurred,
-deterministic evaluation must complete and persist the missing record.
+If an outcome record does not exist but its prerequisite transition has occurred, deterministic evaluation may complete only when explicitly permitted by this document and the governing lifecycle table.
 
 Unknown does not grant authority.
 
+Missing records do not grant authority.
+
+Restart does not create permission.
+
 ---
 
-### R-03. Authority Is Never Recreated
+## R-03: Authority Is Never Recreated
 
 Restart must not:
 
 - restore consumed authority
-- permit retries that were previously unsafe
+- restore frozen authority
+- permit retry after ambiguity
+- permit retry after committed broadcast
 - allow alternate irreversible actions
 - change authority scope for an auction
 
-Authority, once consumed, remains consumed permanently.
+Authority, once consumed or frozen, remains unavailable permanently.
 
 ---
 
-## 3. Restart Procedure (Normative)
+# 3. Restart Procedure
 
-On startup, the system must execute the following steps
-in order.
+On startup, the system must execute the following steps in order.
 
 ---
 
-### Step 1. Load Canonical Records
+## Step 1: Load Canonical Event Records
 
-The system must load all canonical record types
-defined in DATA-MODEL.md.
+The system must load all canonical event records defined in `data/DATA-MODEL.md`.
 
-If any required canonical record is:
+If any required canonical event record is:
 
 - missing
 - unreadable
 - malformed
 - internally contradictory
+- outside the canonical record set
 
-Then execution must halt.
+then execution must halt.
+
 No authority may be exercised.
 
 ---
 
-### Step 2. Reconstruct State Machines
+## Step 2: Validate Record Order and Shape
 
-For each auction number `N`:
+The system must validate that:
 
-- reconstruct auction state strictly from persisted records
-- reconstruct inscription state strictly from persisted records
-- reconstruct system control state strictly from persisted records
+- every record type is defined in `data/DATA-MODEL.md`
+- every record type is defined in `core/EVENT-TYPES.md`
+- `sequence_index` values define a total order
+- no `sequence_index` is reused
+- no canonical event record violates its required schema
+- no duplicate authority-bearing record exists
+- records appear in an order consistent with `core/STATE-MACHINE-TABLE.md`
 
-Inference is forbidden.
-
-For auctions in state `Open`:
-
-- load `base_end_time` from AuctionOpenRecord
-- count ExtensionEventRecords
-- derive:
-
-current_end_time =
-base_end_time +
-(extension_increment_seconds * number_of_extension_events)
-
-All time comparison must use authoritative `server_time`.
-
-If reconstruction yields a state or transition
-not permitted by STATE-MACHINE-TABLE.md:
-
-Execution must halt.
+If validation fails, execution must halt.
 
 ---
 
-### Step 3. Complete Deterministic Transitions
+## Step 3: Reconstruct Auction State
 
-Only transitions explicitly permitted by reconstructed state
-may be evaluated.
+For each auction number `N`, reconstruct auction state strictly from canonical event records.
 
-Permitted deterministic evaluations:
+Auction state must never be read from mutable stored state.
 
-- `Open → Closed` if `server_time >= current_end_time`
-- If AuctionCloseRecord exists and ResolutionRecord does not exist:
-  - compute resolution deterministically
-  - persist exactly one ResolutionRecord
-- `AwaitingSettlement → Finalized` if settlement deadline expired
+Auction reconstruction rules:
 
-No other automatic transition is permitted.
+1. If `FinalizationRecord` exists:
+   - auction state is `Finalized`.
+
+2. Else if `SettlementRecord` exists without `FinalizationRecord`:
+   - execution must halt.
+
+3. Else if `ResolutionRecord` exists:
+   - auction state is `AwaitingSettlement`.
+
+4. Else if `AuctionCloseRecord` exists:
+   - auction state is `Closed`.
+
+5. Else if `AuctionOpenRecord` exists:
+   - auction state is `Open`.
+
+6. Else if `AuctionRecord` exists:
+   - auction state is `Scheduled`.
+
+7. Else:
+   - auction does not exist.
+
+If reconstruction yields a state or transition not permitted by `core/STATE-MACHINE-TABLE.md`, execution must halt.
+
+---
+
+## Step 4: Reconstruct Open Auction Time
+
+For auctions reconstructed as `Open`:
+
+- load `base_end_time` from `AuctionOpenRecord`
+- count `ExtensionEventRecord` records for the auction
+- derive `current_end_time`
+
+```text
+current_end_time =
+base_end_time +
+(extension_increment_seconds * number_of_extension_events)
+```
+
+All time comparison must use authoritative `server_time`.
+
+`current_end_time` must not be stored as mutable truth.
+
+If required time inputs are missing, malformed, or contradictory, execution must halt.
+
+---
+
+## Step 5: Complete Permitted Deterministic Auction Transitions
+
+Only transitions explicitly permitted by reconstructed state may be evaluated.
+
+Permitted deterministic evaluations after restart are:
+
+1. If auction state is `Open` and `server_time >= current_end_time`:
+   - persist exactly one `AuctionCloseRecord`.
+
+2. If auction state is `Closed` and no `ResolutionRecord` exists:
+   - compute resolution deterministically.
+   - persist exactly one `ResolutionRecord`.
+
+3. If auction state is `AwaitingSettlement` and settlement deadline expired:
+   - persist exactly one `SettlementRecord`.
+   - persist exactly one `FinalizationRecord`.
+
+4. If auction state is `AwaitingSettlement` and `ResolutionRecord` indicates no valid bids:
+   - persist exactly one `SettlementRecord` with `status = not_required`.
+   - persist exactly one `FinalizationRecord` with destination `NullSteward`.
+
+No other automatic auction transition is permitted.
 
 Time must not:
 
 - cause `Scheduled → Open`
 - resolve ambiguity
-- trigger inscription
+- trigger inscription broadcast
 - restore authority
+- create missing bid records
+- alter final destination
 
 ---
 
-### Step 4. Inscription Lifecycle Reconstruction
+# 4. Inscription Lifecycle Reconstruction
 
-Inscription state must be reconstructed strictly from persisted records.
+Inscription state must be reconstructed strictly from canonical event records.
 
-For a given canonical_number:
+For a given auction:
 
-1. If InscriptionConfirmationRecord exists:
-   - State is Inscribed.
-   - No further action permitted.
+1. If `InscriptionConfirmationRecord` exists:
+   - inscription state is `Inscribed`.
+   - no further inscription action is permitted.
 
-2. Else if any InscriptionBroadcastRecord has classified_outcome = ambiguous:
-   - State is Ambiguous.
-   - No retry permitted.
-   - Observation only.
+2. Else if any `AmbiguityRecord` with `authority_scope = inscription` exists:
+   - inscription state is `Ambiguous`.
+   - inscription authority is frozen.
+   - no further inscription attempt is permitted.
 
-3. Else if any InscriptionBroadcastRecord has classified_outcome = committed:
-   - State is Inscribing.
-   - Authority is already consumed.
-   - Active candidate set consists only of:
-     - The committed txid, and
-     - Any replacement txids recorded in subsequent InscriptionBroadcastRecords.
-   - Only confirmation observation is permitted.
+3. Else if any `InscriptionBroadcastRecord` has `broadcast_outcome = ambiguous`:
+   - inscription state is `Ambiguous`.
+   - inscription authority is frozen.
+   - no further inscription attempt is permitted.
 
-4. Else:
-   - State is NotStarted.
-   - Authority has not yet been consumed.
-   - Inscription initiation may proceed only if auction state = Finalized.
+4. Else if any `InscriptionBroadcastRecord` has `broadcast_outcome = committed`:
+   - inscription state is `Inscribing`.
+   - inscription authority is consumed.
+   - only confirmation observation explicitly permitted by the active implementation slice may occur.
+
+5. Else:
+   - inscription state is `NotStarted`.
+
+`InscriptionIntentRecord` alone does not move inscription state out of `NotStarted`.
+
+`InscriptionIntentRecord` alone does not consume inscription authority.
+
+`InscriptionIntentRecord` alone does not permit broadcast after restart unless the active implementation slice explicitly includes broadcast behavior.
 
 ---
 
-### Step 5. Resume or Halt
+# 5. Demo 1 Restart Rule
+
+For Demo 1:
+
+- live inscription broadcast is not required
+- `InscriptionIntentRecord` may exist
+- `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
+- no `InscriptionBroadcastRecord` is required
+- no `InscriptionConfirmationRecord` is required
+- restart must preserve the deferred inscription status
+- restart must not silently simulate inscription broadcast or confirmation
+
+Demo 1 auction correctness must remain demonstrable without live inscription execution.
+
+---
+
+# 6. Post-Restart Chain Checks
+
+Post-restart chain checks are included only in implementation slices that enable `testnet_ordinals`.
+
+If inscription state reconstructs to `Inscribing` and the active implementation slice enables confirmation observation:
+
+- the system may query the authoritative node for confirmation status of permitted candidate txids
+- if a candidate txid is Known Confirmed to the configured confirmation depth, the system must persist `InscriptionConfirmationRecord`
+- if node responses are contradictory relative to persisted canonical event records, the condition must be classified via `errors/ERROR-TAXONOMY.md`
+
+The system must not attempt a new broadcast after restart unless a later implementation slice explicitly permits that behavior.
+
+External chain observation must not erase, overwrite, or repair canonical event records.
+
+---
+
+# 7. Ambiguity Handling on Restart
+
+Ambiguity survives restart.
+
+If inscription state reconstructs as `Ambiguous`:
+
+- ambiguity remains
+- inscription authority remains frozen
+- retries remain forbidden
+- alternate inscription remains forbidden
+- semantically distinct inscription remains forbidden
+
+Restart must never be used to escape ambiguity.
+
+A later observation must not repair ambiguity unless an explicit higher-authority specification revision permits that behavior.
+
+---
+
+# 8. Resume or Halt
 
 If all reconstructed states are valid and consistent:
 
 - resume execution only for transitions explicitly permitted
 - authority-bearing transitions must satisfy all preconditions
+- implementation must remain within the active prototype scope
 
-If any state is invalid, contradictory, or incomplete:
+If any state is invalid, contradictory, malformed, or incomplete:
 
 - execution must halt
 - operator inspection is required
+- no authority may be exercised
 
 ---
 
-## 4. Ambiguity Handling on Restart
-
-Ambiguity survives restart.
-
-If an auction is in `Ambiguous`:
-
-- ambiguity remains
-- inscription authority remains frozen
-- retries remain forbidden
-- observation remains the only permitted activity
-
-Restart must never be used to escape ambiguity.
-
----
-
-## 5. Forbidden Restart Behaviors
+# 9. Forbidden Restart Behaviors
 
 The following are forbidden:
 
@@ -230,29 +329,35 @@ The following are forbidden:
 - restarting to resolve ambiguity
 - restarting to skip stalled auctions
 - restarting to alter previously persisted outcomes
+- restarting to infer missing records
+- restarting to silently simulate inscription success
+- restarting to substitute chain observation for canonical records
+- restarting to permit broadcast not included in the active implementation slice
 
 Restart is reconstruction, not repair.
 
 ---
 
-## 6. Operator Obligations
+# 10. Operator Obligations
 
 If restart halts due to inconsistency:
 
 - operator must not modify canonical records
-- operator must not delete or fabricate history
+- operator must not delete history
+- operator must not fabricate history
 - operator must not infer missing events
+- operator must not restart repeatedly to seek a different result
 
-If authoritative history cannot be reconstructed,
-the system must remain halted.
+If authoritative history cannot be reconstructed from canonical event records, the system must remain halted.
 
 ---
 
-## Final Rule
+# Final Rule
 
-If any InscriptionBroadcastRecord exists with
-classified_outcome = committed or ambiguous,
-inscription authority must be treated as permanently consumed.
+If any `InscriptionBroadcastRecord` exists with `broadcast_outcome = committed`, inscription authority must be treated as consumed.
 
-Restart restores memory.
-It does not grant permission.
+If any `InscriptionBroadcastRecord` exists with `broadcast_outcome = ambiguous`, inscription authority must be treated as frozen and exhausted.
+
+Restart restores runtime memory.
+
+Restart does not grant permission.
