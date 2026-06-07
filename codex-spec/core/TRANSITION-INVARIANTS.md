@@ -73,7 +73,7 @@ History is append-only.
 If a state is defined as terminal in the authoritative state machine:
 
 - no outgoing transitions are permitted
-- no background process may advance lifecycle state
+- no background process may advance that lifecycle state
 - no compensating action may reopen lifecycle state
 
 Terminal states include:
@@ -134,9 +134,12 @@ Ambiguity:
 
 When ambiguity is entered:
 
-- inscription authority is permanently consumed
+- affected inscription authority is permanently frozen
+- frozen authority must be treated as exhausted for execution
 - lifecycle position is frozen
 - only observation is permitted
+
+Ambiguity does not consume authority by `broadcast_commit` unless `broadcast_commit` has already occurred.
 
 ---
 
@@ -148,8 +151,9 @@ Once `Inscribing → Ambiguous` occurs:
 - no retry is permitted
 - no substitute inscription is permitted
 
-Ambiguity consumes only the authority bound to that inscription attempt.  
-It must not implicitly consume unrelated authority domains.
+Ambiguity freezes only the authority bound to that inscription attempt.
+
+It must not implicitly freeze, consume, or alter unrelated authority domains.
 
 ---
 
