@@ -8,6 +8,12 @@ Authority precedence is defined exclusively in `AUTHORITY-ORDER.md`.
 
 Settlement determines whether a resolved auction finalizes to the winning destination address or to `NullSteward`.
 
+`NullSteward` is a protocol-visible final destination.
+
+It is not a universal recovery mechanism.
+
+It must not be used to repair inscription ambiguity after inscription authority is consumed or frozen.
+
 Settlement does not create inscription authority.
 
 Settlement does not consume inscription authority.
@@ -59,19 +65,18 @@ Settlement semantics do not define timing constants.
 At auction resolution:
 
 - `ResolutionRecord` must be persisted
-- winning bid reference must be persisted if a valid winning bid exists
-- winning amount must be persisted if a valid winning bid exists
+- winning bid reference must be persisted
+- winning amount must be persisted
 - settlement deadline must be computed and persisted
 - winner destination address must be taken from the winning valid `BidRecord`
 - winner destination address must already satisfy bid admission rules
 - auction state becomes `AwaitingSettlement`
 
-If no valid winning bid exists:
+Under the current first-valid-bid opening rule, a normally opened auction has at least one valid bid.
 
-- `ResolutionRecord.winning_bid_id` must be `null`
-- `ResolutionRecord.winning_amount_sats` must be `null`
-- `SettlementRecord.status` must be `not_required`
-- `FinalizationRecord.destination_address` must be `NullSteward`
+A no-valid-bid condition does not enter settlement.
+
+If no valid bid is accepted, the auction remains `Scheduled`.
 
 ---
 
@@ -133,17 +138,20 @@ No retry or compensation is permitted.
 
 ---
 
-# 7. No Valid Bids
+# 7. No Valid Bid Condition
 
-If resolution determines that no valid winning bid exists:
+No valid bid is not a settlement path in the current first-valid-bid opening model.
 
-- persist exactly one `SettlementRecord`
-- `SettlementRecord.status` must be `not_required`
-- `SettlementRecord.confirmation_txid` must be `null`
-- persist exactly one `FinalizationRecord`
-- `FinalizationRecord.destination_address` must be `NullSteward`
+If no valid bid is accepted:
 
-No settlement window is required when no valid winning bid exists.
+- auction state remains `Scheduled`
+- no countdown starts
+- no auction close occurs
+- no resolution occurs
+- no settlement outcome is recorded
+- no finalization occurs
+- no inscription process begins
+- no `NullSteward` outcome is produced
 
 ---
 
@@ -180,7 +188,8 @@ Finalization must record exactly one destination:
 
 - settlement succeeds: winning destination address
 - settlement fails: `NullSteward`
-- no valid bids: `NullSteward`
+
+No valid bid does not finalize in the current first-valid-bid opening model.
 
 Finalization is irreversible.
 

@@ -42,9 +42,20 @@ Rules:
 - auction numbers are never skipped
 - auction numbers are never reordered
 
-Sequence advancement to `N + 1` is permitted only after `FinalizationRecord` exists for number `N`.
+`AuctionRecord` for `N + 1` must not be persisted until `FinalizationRecord` exists for number `N` and `auction.inter_auction_gap_seconds` has elapsed.
 
-Sequence advancement must not depend on live inscription broadcast, live inscription confirmation, or inscription success.
+The `auction.inter_auction_gap_seconds` interval is a rhythm gap only.
+
+It must not be treated as:
+
+- a recovery window
+- a settlement window
+- an inscription window
+- an automatic auction-start trigger
+
+Auction `N + 1` opens only when the first valid bid for `N + 1` is accepted.
+
+Sequence advancement must not depend on live inscription broadcast, live inscription confirmation, inscription success, or inscription ambiguity.
 
 ---
 
@@ -134,11 +145,12 @@ Once `ResolutionRecord` exists:
 
 Once `SettlementRecord` exists, settlement outcome is terminal.
 
-Settlement status must be one of:
+Settlement status in the current first-valid-bid opening model must be one of:
 
 - `settled`
 - `expired`
-- `not_required`
+
+`not_required` must not be emitted unless an active implementation slice explicitly defines a no-winner settlement path.
 
 After settlement outcome is persisted:
 
@@ -158,11 +170,13 @@ Routing to `NullSteward` is a valid and complete outcome.
 
 `NullSteward`:
 
+- is a protocol-visible final destination
 - is not a system failure
 - does not imply error
 - does not reduce system correctness
 - is not a configurable destination
-- is a protocol outcome
+- is not a universal recovery mechanism
+- must not be used to repair inscription ambiguity after inscription authority is consumed or frozen
 
 ---
 
@@ -215,6 +229,8 @@ If inscription authority becomes ambiguous:
 - replacement is forbidden unless already explicitly permitted and not made ambiguous
 - override is forbidden
 - semantically distinct inscription is forbidden
+- the Numbers count must not be interrupted
+- auction availability for later numbers must not be blocked after finalization and rhythm-gap requirements are satisfied
 
 Time passing does not restore certainty or permission.
 
@@ -293,8 +309,10 @@ After auction state becomes `Finalized`:
 
 - no further auction lifecycle transition is permitted
 - final destination must not change
-- sequence advancement to `N + 1` is permitted
+- `AuctionRecord` for `N + 1` must not be persisted until `auction.inter_auction_gap_seconds` has elapsed
 - inscription lifecycle may begin if permitted by the active implementation slice
+
+Inscription progress, inscription success, inscription failure, or inscription ambiguity for `N` must not block auction availability for `N + 1` after the finalization and rhythm-gap requirements are satisfied.
 
 After inscription state becomes `Inscribed`:
 
@@ -390,6 +408,10 @@ For Demo 1:
 - confirmation must not be simulated
 
 Auction lifecycle, finalization, sequence advancement, API state, and restart reconstruction must remain demonstrable without live inscription execution.
+
+If no valid bid is accepted, the auction remains `Scheduled`.
+
+No countdown, auction close, resolution, settlement, finalization, inscription process, or `NullSteward` outcome is produced solely because no valid bid has been accepted.
 
 ---
 

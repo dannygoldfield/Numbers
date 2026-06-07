@@ -8,6 +8,8 @@ The current implementation target is a deterministic, single-machine browser dem
 
 The prototype must demonstrate the auction lifecycle, append-only records, restart reconstruction, and frontend-visible state.
 
+The prototype must also preserve the rhythm-gap, NullSteward, ambiguity, and no-valid-bid semantics defined by the core specification.
+
 The prototype is not required to implement distributed operation, production-scale infrastructure, generalized fault tolerance, or public launch readiness.
 
 ---
@@ -73,6 +75,7 @@ Demo 1 must demonstrate:
 12. Browser-visible current state.
 13. Browser-visible auction history.
 14. Inscription intent or inscription-deferred status.
+15. Rhythm-gap behavior before auction N + 1 becomes available.
 
 Demo 1 must not require:
 
@@ -83,8 +86,17 @@ Demo 1 must not require:
 - mempool recognition
 - confirmation observation
 - external SSD availability
+- public deployment
 
 Auction correctness must remain demonstrable even when inscription execution is disabled, unavailable, or deferred.
+
+Demo 1 must treat `auction.inter_auction_gap_seconds` as a rhythm gap only.
+
+It is not a recovery window, settlement window, inscription window, or automatic auction-start trigger.
+
+`AuctionRecord` for `N + 1` must not be persisted until `FinalizationRecord` for `N` exists and `auction.inter_auction_gap_seconds` has elapsed.
+
+Auction `N + 1` opens only when the first valid bid for `N + 1` is accepted.
 
 If inscription execution is not active in Demo 1, the system must expose that status explicitly as `deferred_in_this_slice`, `not_broadcast`, or another explicitly specified non-authority-consuming status.
 
@@ -168,9 +180,45 @@ The prototype is not required to implement:
 
 Auction correctness must not depend on live inscription success.
 
-The auction lifecycle, bid records, winner resolution, finalization, and restart reconstruction must remain demonstrable even if live inscription broadcast is disabled, unavailable, or deferred.
+The auction lifecycle, bid records, winner resolution, finalization, and restart reconstruction must remain demonstrable even if live inscription broadcast is disabled, unavailable, deferred, or ambiguous.
+
+Inscription progress for auction `N` must not block auction availability for `N + 1` after the finalization and rhythm-gap requirements are satisfied.
 
 If inscription behavior is unavailable in the current implementation slice, the system must expose that status explicitly rather than silently simulating production behavior.
+
+---
+
+## NullSteward and Ambiguity Boundary
+
+`NullSteward` is a protocol-visible final destination for a number that remains in the sequence but does not enter ordinary winner-controlled circulation.
+
+`NullSteward` is not:
+
+- a universal recovery mechanism
+- an error state
+- a retry mechanism
+- a repair mechanism for inscription ambiguity
+
+Ambiguity must not interrupt the Numbers count.
+
+Ambiguity must not authorize a second semantically distinct inscription.
+
+`NullSteward` must not be used to repair inscription ambiguity after inscription authority is consumed or frozen.
+
+---
+
+## No Valid Bid Boundary
+
+If no valid bid is accepted:
+
+- auction state remains `Scheduled`
+- no countdown starts
+- no auction close occurs
+- no resolution occurs
+- no settlement outcome is recorded
+- no finalization occurs
+- no inscription process begins
+- no `NullSteward` outcome is produced
 
 ---
 

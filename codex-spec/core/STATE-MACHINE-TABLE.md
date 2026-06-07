@@ -37,7 +37,8 @@ They may operate concurrently but must not interfere with each other’s authori
 
 ## Notes
 
-- `Finalized` includes successful, no-bid, and failed-settlement outcomes.
+- `Finalized` includes successful and failed-settlement outcomes.
+- No valid bid means the auction remains `Scheduled`; it is not a no-bid finalization path.
 - Auction terminal state is `Finalized`.
 - System control states such as `Paused` are overlays and are not lifecycle states.
 - Auction state is derived from canonical event records.
@@ -54,7 +55,6 @@ They may operate concurrently but must not interfere with each other’s authori
 | `Closed` | `ResolutionRecord` persisted | `AwaitingSettlement` | `ResolutionRecord` | Resolution must occur exactly once and must not be recomputed. |
 | `AwaitingSettlement` | Settlement confirmed before deadline | `Finalized` | `SettlementRecord`, `FinalizationRecord` | Destination = winning destination. |
 | `AwaitingSettlement` | Settlement deadline expired | `Finalized` | `SettlementRecord`, `FinalizationRecord` | Destination = `NullSteward`. |
-| `AwaitingSettlement` | `ResolutionRecord` indicates no valid bids | `Finalized` | `SettlementRecord`, `FinalizationRecord` | `SettlementRecord.status = not_required`. Destination = `NullSteward`. |
 
 No other auction transitions are permitted.
 
@@ -68,6 +68,7 @@ No other auction transitions are permitted.
 | `Closed → Open` | Bidding cannot reopen. |
 | `AwaitingSettlement → Open` | Settlement does not reopen bidding. |
 | `Finalized → Any` | Terminal auction state. |
+| `Scheduled → Finalized` because no valid bid was accepted | No valid bid leaves the auction `Scheduled`. |
 | Any transition inferred from missing records | Guess-space forbidden. |
 
 ---
@@ -96,6 +97,7 @@ There is no canonical `Broadcasting` lifecycle state.
 ## Notes
 
 - Inscription lifecycle authority is independent from auction lifecycle authority.
+- Inscription progress for auction `N` must not block auction availability for `N + 1` after finalization and rhythm-gap requirements are satisfied.
 - `Ambiguous` and `Inscribed` are terminal inscription states.
 - Authority is consumed at `broadcast_commit`, not at intent persistence.
 - `InscriptionIntentRecord` does not change inscription lifecycle state.
@@ -144,6 +146,9 @@ No other inscription transitions are permitted.
 - After `broadcast_commit`, no semantically distinct inscription attempt is permitted.
 - Controlled fee replacement, if implemented, is permitted only under the equivalence rules defined in `inscription/INSCRIPTION-MACHINE.md`.
 - Ambiguity permanently freezes inscription authority.
+- Ambiguity must not interrupt the Numbers count.
+- Ambiguity must not authorize a second semantically distinct inscription.
+- `NullSteward` must not be used to repair inscription ambiguity after inscription authority is consumed or frozen.
 - Authority is never restored by:
   - time passing
   - operator action

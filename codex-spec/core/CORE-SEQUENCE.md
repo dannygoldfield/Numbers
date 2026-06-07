@@ -33,12 +33,23 @@ The sequence:
 
 - never rewinds
 - never overlaps two active auctions
-- never auto-advances based solely on time
-- advances only after `FinalizationRecord` exists for the current number
+- never auto-opens an auction based solely on time
+- never persists `AuctionRecord` for `N + 1` until `FinalizationRecord` exists for `N` and `auction.inter_auction_gap_seconds` has elapsed
 
 If an auction remains in `Scheduled`, the sequence remains at `N`.
 
-Sequence advancement is event-driven, not time-driven.
+The `auction.inter_auction_gap_seconds` interval is a rhythm gap only.
+
+It is not:
+
+- a recovery window
+- a settlement window
+- an inscription window
+- an automatic auction-start trigger
+
+Persisting `AuctionRecord` for `N + 1` makes auction `N + 1` `Scheduled`.
+
+Auction `N + 1` opens only when the first valid bid for `N + 1` is accepted.
 
 Canonical event records must be appended through a single serialized commit path that guarantees total ordering.
 
@@ -83,9 +94,16 @@ For each number `N`:
 - the auction opens only when the first valid bid is accepted
 - no bid may be accepted as valid unless system control state = `Running`
 
+For `N > 1`, `AuctionRecord` for `N` must not be persisted until:
+
+1. `FinalizationRecord` exists for `N - 1`
+2. `auction.inter_auction_gap_seconds` has elapsed after `FinalizationRecord.finalization_time`
+
 If no valid bid is ever accepted, the auction remains `Scheduled`.
 
 No countdown exists while auction state is `Scheduled`.
+
+No auction close, resolution, settlement, finalization, inscription intent, or NullSteward outcome is produced solely because no valid bid has been accepted.
 
 ---
 
@@ -212,11 +230,11 @@ After `ResolutionRecord` exists:
 
 - auction state is derived as `AwaitingSettlement`
 
-If no valid winning bid exists:
+Under the current first-valid-bid opening rule, a normally opened auction has at least one valid bid.
 
-- `ResolutionRecord.winning_bid_id` must be `null`
-- `ResolutionRecord.winning_amount_sats` must be `null`
-- `ResolutionRecord.settlement_deadline` must be `null`
+A no-valid-bid condition does not close, resolve, settle, finalize, or route to `NullSteward`.
+
+If no valid bid is accepted, the auction remains `Scheduled`.
 
 ---
 
@@ -230,7 +248,10 @@ Permitted settlement outcomes are:
 
 - `settled`
 - `expired`
-- `not_required`
+
+`not_required` is not produced by the current first-valid-bid opening model.
+
+A future implementation slice that creates a no-winner settlement path must specify that path explicitly before `not_required` is emitted.
 
 Settlement outcome must be persisted exactly once in `SettlementRecord`.
 
@@ -250,10 +271,16 @@ If settlement deadline expires:
 - `SettlementRecord.status = expired`
 - final destination is `NullSteward`
 
-If no valid bids exist:
+If no valid bid has been accepted:
 
-- `SettlementRecord.status = not_required`
-- final destination is `NullSteward`
+- auction state remains `Scheduled`
+- no countdown starts
+- no `AuctionCloseRecord` is persisted
+- no `ResolutionRecord` is persisted
+- no `SettlementRecord` is persisted
+- no `FinalizationRecord` is persisted
+- no inscription process begins
+- no `NullSteward` outcome is produced
 
 Settlement does not create inscription authority.
 
@@ -274,13 +301,24 @@ Destination must be one of:
 - winning destination address
 - `NullSteward`
 
+`NullSteward` is a protocol-visible final destination.
+
+It is not:
+
+- a universal recovery mechanism
+- an error state
+- a retry mechanism
+- a way to repair inscription ambiguity after inscription authority is consumed or frozen
+
 Finalization is irreversible.
 
 No auction lifecycle action is permitted after `FinalizationRecord`.
 
-Sequence advancement to `N + 1` is permitted only after `FinalizationRecord` exists for number `N`.
+`AuctionRecord` for `N + 1` must not be persisted until `FinalizationRecord` exists for number `N` and `auction.inter_auction_gap_seconds` has elapsed.
 
-Sequence advancement does not depend on live inscription broadcast, live inscription confirmation, or inscription success.
+Sequence advancement does not depend on live inscription broadcast, live inscription confirmation, inscription success, or inscription ambiguity.
+
+Inscription progress for auction `N` must not block auction availability for `N + 1` after the finalization and rhythm-gap requirements are satisfied.
 
 ---
 
@@ -334,6 +372,8 @@ If broadcast outcome is `ambiguous`:
 
 - inscription authority is frozen
 - inscription state becomes `Ambiguous`
+- the Numbers count must not be interrupted
+- no second semantically distinct inscription is authorized
 
 If canonical inscription confirmation is observed:
 

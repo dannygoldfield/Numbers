@@ -101,6 +101,8 @@ Entry condition:
 - `AuctionRecord` for `N` exists
 - no `AuctionOpenRecord` exists
 
+For `N > 1`, `AuctionRecord` for `N` must not exist unless `FinalizationRecord` exists for `N - 1` and `auction.inter_auction_gap_seconds` has elapsed.
+
 Invariants:
 
 - `opened_at` is `null` in API projection
@@ -112,6 +114,10 @@ Allowed actions:
 - evaluate bid submissions through `bidding/BIDDING-ADMISSION.md`
 - persist invalid `BidRecord` entries when admission evaluation is reached
 - atomically open the auction on the first valid bid
+
+No valid bid accepted means the auction remains `Scheduled`.
+
+No countdown, close, resolution, settlement, finalization, inscription process, or `NullSteward` outcome is produced while the auction remains `Scheduled`.
 
 Exit trigger:
 
@@ -281,7 +287,10 @@ Exit triggers:
 
 - settlement confirmed before deadline
 - settlement deadline expired
-- `ResolutionRecord` indicates no valid winning bid
+
+Under the current first-valid-bid opening rule, a normally opened auction has at least one valid bid.
+
+A no-valid-bid condition does not enter `AwaitingSettlement`; the auction remains `Scheduled`.
 
 Settlement state must not be represented by a pending `SettlementRecord`.
 
@@ -308,7 +317,11 @@ Finalization is irreversible.
 
 No auction lifecycle action is permitted after `Finalized`.
 
-Sequence advancement to `N + 1` is permitted only after `FinalizationRecord`.
+`AuctionRecord` for `N + 1` must not be persisted until `FinalizationRecord` for `N` exists and `auction.inter_auction_gap_seconds` has elapsed.
+
+Persisting `AuctionRecord` for `N + 1` makes auction `N + 1` `Scheduled`.
+
+Auction `N + 1` opens only when the first valid bid for `N + 1` is accepted.
 
 ---
 
@@ -344,7 +357,9 @@ The inscription machine begins only after auction state = `Finalized`.
 
 Inscription state does not alter auction state.
 
-Auction correctness must not depend on inscription progress, broadcast, confirmation, or failure.
+Auction correctness must not depend on inscription progress, broadcast, confirmation, failure, or ambiguity.
+
+Inscription progress for auction `N` must not block auction availability for `N + 1` after the finalization and rhythm-gap requirements are satisfied.
 
 ---
 
@@ -423,6 +438,8 @@ Rules:
 - retry is forbidden
 - alternate inscription is forbidden
 - semantically distinct inscription is forbidden
+- the Numbers count must not be interrupted
+- `NullSteward` must not be used to repair the ambiguity
 
 Ambiguity must not be repaired by:
 

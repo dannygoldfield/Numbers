@@ -57,16 +57,17 @@ Before opening Codex, the clarified rhythm-gap, NullSteward, and ambiguity seman
 
 Required semantic rules:
 
-1. The 83-second inter-auction gap is a rhythm gap only.
+1. The `auction.inter_auction_gap_seconds` interval is a rhythm gap only.
 2. It is not a recovery window, settlement window, inscription window, or automatic auction-start trigger.
-3. AuctionRecord for N + 1 may be created only after FinalizationRecord for N exists and `auction.inter_auction_gap_seconds` has elapsed.
+3. `AuctionRecord` for N + 1 may be persisted only after `FinalizationRecord` for N exists and `auction.inter_auction_gap_seconds` has elapsed.
 4. Auction N + 1 opens only when the first valid bid is accepted.
 5. Inscription progress for auction N must not block auction availability for N + 1.
 6. Ambiguity must not interrupt the Numbers count.
 7. Ambiguity must not authorize a second semantically distinct inscription.
 8. NullSteward is a protocol-visible final destination, not a universal recovery mechanism.
-9. NullSteward must not be used to repair post-authority inscription ambiguity.
-10. No valid bid should normally leave an auction Scheduled, with no countdown, no finalization, and no inscription.
+9. NullSteward must not be used to repair inscription ambiguity after inscription authority is consumed or frozen.
+10. If no valid bid is accepted, the auction remains Scheduled. No countdown starts, no finalization occurs, and no inscription process begins.
+
 
 ## Immediate Work Plan
 
