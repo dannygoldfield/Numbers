@@ -260,7 +260,7 @@ Auction close must persist the canonical record required by the data model.
 
 After auction close:
 
-- no further valid bid may be accepted for that auction
+- no further valid bid must be accepted for that auction
 - later bid submissions for that auction must not alter lifecycle state
 - resolution becomes eligible
 
@@ -475,9 +475,11 @@ Invalid bids that reach admission evaluation must persist invalid `BidRecord` en
 
 ## 19. GET /auction/history
 
-`GET /auction/history` must return canonical event-derived auction history.
+`GET /auction/history` must return canonical event-derived auction history using the exact shape defined in `api/API-STATE-SHAPES.md`.
 
 History must be derived from canonical event records.
+
+History must include entries for auctions with an `AuctionRecord`, including non-finalized auctions.
 
 History must include enough information to inspect:
 
@@ -492,7 +494,13 @@ History must include enough information to inspect:
 - finalization
 - inscription intent or deferred inscription status when present
 
+History must include ordered canonical event record summaries for each auction.
+
 History must not be reconstructed from mutable lifecycle state.
+
+`GET /auction/history` is the Demo 1 inspection endpoint.
+
+It must not be treated as a finalized-outcome-only summary endpoint.
 
 ---
 
@@ -517,6 +525,8 @@ If `outcome = settled`, final destination must be the winner destination.
 If `outcome = expired`, final destination must be `NullSteward`.
 
 `POST /demo/settlement` must persist exactly one `SettlementRecord` and exactly one `FinalizationRecord`.
+
+`POST /demo/settlement` must return the exact response shape defined in `api/API-STATE-SHAPES.md`.
 
 `POST /demo/settlement` must not simulate live payment, mempool observation, or confirmation observation.
 
@@ -556,9 +566,9 @@ After backend restart:
 - finalized auctions must remain finalized
 - final destinations must remain unchanged
 - deferred inscription state must remain deferred or not started
-- no live inscription action may be triggered by restart
-- no authority may be granted by restart
-- no retry may be triggered by restart
+- no live inscription action must be triggered by restart
+- no authority must be granted by restart
+- no retry must be triggered by restart
 
 ---
 

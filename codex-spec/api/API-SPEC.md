@@ -169,7 +169,7 @@ The API must not retry actions on behalf of clients.
 
 Endpoints listed here define the entire permitted API surface.
 
-No undocumented endpoint may exist.
+No undocumented endpoint is permitted.
 
 The permitted endpoints are:
 
@@ -256,31 +256,40 @@ The backend must not expose speculative time-remaining projections.
 
 # 8. `GET /auction/history`
 
-Returns finalized auction outcomes in strict sequence order.
+Returns canonical event-derived auction history for Demo 1 browser inspection.
+
+This endpoint is not limited to finalized auction outcome summaries.
 
 ## Rules
 
 - results must be paginated
-- each entry must correspond to exactly one auction number
-- only finalized auctions may be returned
-- ordering must be canonical and immutable
+- entries must be ordered by canonical auction number
+- each entry must correspond to exactly one auction number with an `AuctionRecord`
+- entries can include non-finalized auctions
+- each entry must include ordered canonical event record summaries for that auction
+- record summaries must be ordered by canonical `sequence_index`
+- history must be derived from canonical event records only
+- history must include invalid `BidRecord` entries that reached admission evaluation
+- history must expose `NullSteward` when `NullSteward` is the persisted final destination
+- history must expose deferred inscription intent when an `InscriptionIntentRecord` exists
 
 ## Required Entry Fields
 
 Each history entry must include:
 
 - `number`
+- `auction_id`
 - `auction_state`
-- `winning_bid_id`
-- `winning_amount_sats`
-- `settlement_status`
-- `settlement_source`
+- `current_high_bid`
+- `bid_count`
+- `resolution`
+- `settlement`
+- `finalized_at`
 - `final_destination`
-- `finalization_time`
-- `inscription_state`
-- `inscription_adapter_mode`
-- `inscription_txid`
-- `inscription_satpoint`
+- `inscription`
+- `records`
+
+Each item in `records` must be a canonical event record summary as defined in `api/API-STATE-SHAPES.md`.
 
 Unknown, unavailable, or not-yet-applicable values must be represented as `null`.
 
@@ -288,12 +297,14 @@ Unknown, unavailable, or not-yet-applicable values must be represented as `null`
 
 `GET /auction/history` must not:
 
-- expose non-finalized auctions
+- infer missing records
 - infer ownership
-- collapse null outcomes
+- collapse invalid bids
+- collapse deferred inscription state
 - hide `NullSteward` results
 - rewrite history
 - reinterpret history
+- reconstruct history from mutable lifecycle state
 
 ---
 
@@ -347,7 +358,9 @@ Unknown, unavailable, or not-yet-applicable values must be represented as `null`
 
 Submits a bid for the current auction.
 
-This is the only write-capable public endpoint.
+This is the only write-capable bidder endpoint.
+
+`POST /demo/settlement` is a separate Demo 1 local control endpoint and is not production public settlement behavior.
 
 `POST /bid` can be submitted only when auction state is:
 
@@ -602,6 +615,10 @@ If `outcome = expired`:
 
 `POST /demo/settlement` must not simulate live payment, mempool observation, or confirmation observation.
 
+`POST /demo/settlement` must return the `POST /demo/settlement` response shape defined in `api/API-STATE-SHAPES.md`.
+
+The response must be derived after `SettlementRecord` and `FinalizationRecord` persistence completes.
+
 ---
 
 # 13. Versioning Rules
@@ -625,7 +642,7 @@ Deprecation:
 
 ---
 
-# 13. Security and Isolation
+# 14. Security and Isolation
 
 The API must not:
 
@@ -645,7 +662,7 @@ They do not steer lifecycle truth.
 
 ---
 
-# 14. Non-Goals
+# 15. Non-Goals
 
 The API does not:
 

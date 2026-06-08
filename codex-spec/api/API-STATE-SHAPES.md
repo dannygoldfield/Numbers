@@ -266,7 +266,9 @@ The frontend can compute countdown display from `current_end_time`.
 
 # 6. `GET /auction/history` Shape
 
-`GET /auction/history` returns finalized auction outcomes in strict sequence order.
+`GET /auction/history` returns canonical event-derived auction history for Demo 1 browser inspection.
+
+It is not limited to finalized auction outcome summaries.
 
 ## Shape
 
@@ -275,16 +277,18 @@ The frontend can compute countdown display from `current_end_time`.
   "entries": [
     {
       "number": "integer",
-      "auction_state": "Finalized",
-      "winning_bid_id": "string or null",
-      "winning_amount_sats": "integer or null",
-      "settlement_status": "settled | expired",
-      "final_destination": "string",
-      "finalization_time": "ISO-8601",
-      "inscription_state": "NotStarted | Inscribing | Ambiguous | Inscribed",
-      "inscription_adapter_mode": "deferred_in_this_slice | testnet_ordinals | null",
-      "inscription_txid": "string or null",
-      "inscription_satpoint": "string or null"
+      "auction_id": "string",
+      "auction_state": "Scheduled | Open | Closed | AwaitingSettlement | Finalized",
+      "current_high_bid": "BidSummaryObject or null",
+      "bid_count": "integer",
+      "resolution": "ResolutionObject or null",
+      "settlement": "SettlementObject or null",
+      "finalized_at": "ISO-8601 or null",
+      "final_destination": "string or null",
+      "inscription": "InscriptionObject",
+      "records": [
+        "CanonicalEventRecordSummaryObject"
+      ]
     }
   ],
   "pagination": {
@@ -297,12 +301,49 @@ The frontend can compute countdown display from `current_end_time`.
 
 ## Field Rules
 
-- each entry must correspond to exactly one finalized auction number
+- each entry must correspond to exactly one auction number with an `AuctionRecord`
 - entries must be ordered by canonical number
-- non-finalized auctions must not appear
-- `auction_state` must always be `Finalized`
+- non-finalized auctions can appear
+- `auction_state` must be reconstructed from canonical event records
+- `current_high_bid` must be derived from valid `BidRecord` entries using the winner-selection ordering rule
+- `bid_count` must include valid and invalid `BidRecord` entries
+- `resolution` must be `null` until `ResolutionRecord` exists
+- `settlement` must be `null` until `SettlementRecord` exists
+- `finalized_at` must be `null` until `FinalizationRecord` exists
 - `final_destination` must expose `NullSteward` when `NullSteward` is the persisted final destination
-- unknown inscription fields must be `null`
+- `inscription` must expose deferred inscription state when `InscriptionIntentRecord` exists
+- `records` must include ordered canonical event record summaries for the auction
+- `records` must include invalid `BidRecord` entries that reached admission evaluation
+- history must not be reconstructed from mutable lifecycle state
+
+---
+
+## 6.1 Canonical Event Record Summary Object
+
+`CanonicalEventRecordSummaryObject` represents one persisted canonical event record for API inspection.
+
+## Shape
+
+```json
+{
+  "record_id": "string",
+  "record_type": "string",
+  "auction_id": "string",
+  "number": "integer",
+  "sequence_index": "integer",
+  "server_time": "ISO-8601",
+  "payload_hash": "string",
+  "payload_json": "object"
+}
+```
+
+## Field Rules
+
+- values must come from the canonical event record envelope
+- `sequence_index` must be the canonical append order
+- `payload_hash` must equal the persisted canonical payload hash
+- `payload_json` must equal the persisted canonical payload object for the record
+- this object must not infer, summarize, or reinterpret record meaning
 
 ---
 
@@ -446,7 +487,39 @@ The frontend can compute countdown display from `current_end_time`.
 
 ---
 
-# 11. Resolution Object
+
+# 11. `POST /demo/settlement` Response Shape
+
+`POST /demo/settlement` returns the deterministic result of Demo 1 local settlement control.
+
+## Shape
+
+```json
+{
+  "auction_id": "string",
+  "outcome": "settled | expired",
+  "settlement": "SettlementObject",
+  "auction_state": "Finalized",
+  "finalized_at": "ISO-8601",
+  "final_destination": "string",
+  "server_time": "ISO-8601"
+}
+```
+
+## Field Rules
+
+- this response is returned only after successful settlement and finalization persistence
+- `outcome` must equal the requested accepted settlement outcome
+- `settlement` must be derived from the persisted `SettlementRecord`
+- `auction_state` must be `Finalized`
+- `finalized_at` must equal `FinalizationRecord.finalization_time`
+- `final_destination` must equal the persisted final destination
+- `server_time` must equal authoritative server response time
+- failed preconditions must use the error envelope, not this success shape
+
+---
+
+# 12. Resolution Object
 
 `ResolutionObject` represents auction resolution.
 
@@ -472,7 +545,7 @@ The frontend can compute countdown display from `current_end_time`.
 
 ---
 
-# 12. Settlement Object
+# 13. Settlement Object
 
 `SettlementObject` represents settlement determination.
 
@@ -482,6 +555,8 @@ The frontend can compute countdown display from `current_end_time`.
 {
   "auction_id": "string",
   "settlement_status": "settled | expired",
+  "settlement_source": "demo_local | chain_confirmed",
+  "confirmation_txid": "string or null",
   "settlement_deadline": "ISO-8601 or null",
   "settlement_time": "ISO-8601"
 }
@@ -492,13 +567,14 @@ The frontend can compute countdown display from `current_end_time`.
 - this object must exist only when `SettlementRecord` exists
 - `settlement_status` must match `SettlementRecord.status`
 - `settlement_source` must match `SettlementRecord.settlement_source`
+- `confirmation_txid` must match `SettlementRecord.confirmation_txid`
 - `confirmation_txid` must be `null` when `settlement_source = demo_local`
 - `confirmation_txid` must be non-null when `settlement_source = chain_confirmed` and `settlement_status = settled`
 - `settlement_time` must be set exactly once
 
 ---
 
-# 13. Inscription Object
+# 14. Inscription Object
 
 `InscriptionObject` represents inscription knowledge only.
 
@@ -528,7 +604,7 @@ The frontend can compute countdown display from `current_end_time`.
 
 ---
 
-# 14. Ambiguity Object
+# 15. Ambiguity Object
 
 `AmbiguityObject` represents recorded ambiguity.
 
@@ -551,7 +627,7 @@ The frontend can compute countdown display from `current_end_time`.
 
 ---
 
-# 14. Pause State Object
+# 16. Pause State Object
 
 `PauseStateObject` represents system-level pause knowledge.
 
@@ -576,7 +652,7 @@ The frontend can compute countdown display from `current_end_time`.
 
 ---
 
-# 15. Composite Auction View
+# 17. Composite Auction View
 
 A read-only aggregation for clients.
 
@@ -586,7 +662,7 @@ This introduces no new semantics.
 
 ```json
 {
-  "auction": "AuctionStateObject",
+  "auction": "GET /auction/{N} object",
   "resolution": "ResolutionObject or null",
   "settlement": "SettlementObject or null",
   "inscription": "InscriptionObject",
@@ -594,9 +670,15 @@ This introduces no new semantics.
 }
 ```
 
+## Field Rules
+
+- `auction` must conform to the `GET /auction/{N}` shape
+- nested objects must conform to their defined shapes
+- this view must not add fields or infer missing records
+
 ---
 
-# 16. Forbidden Representations
+# 18. Forbidden Representations
 
 The API must not expose:
 
@@ -611,7 +693,7 @@ The API must not expose:
 
 ---
 
-# 17. Backward Compatibility Rules
+# 19. Backward Compatibility Rules
 
 The API version for this prototype is `v1`.
 
