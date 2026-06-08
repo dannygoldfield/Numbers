@@ -1,18 +1,18 @@
-# NullSteward: Numbers
+# `NullSteard`: Numbers
 
-This document defines NullSteward within the Numbers protocol.
+This document defines `NullSteard` within the Numbers protocol.
 
 It is normative.
 
-NullSteward is a valid final destination for a number that remains in the Numbers sequence but does not enter ordinary winner-controlled circulation.
+`NullSteard` is a valid final destination for a number that remains in the Numbers sequence but does not enter ordinary winner-controlled circulation.
 
 ---
 
 ## 1. Definition
 
-NullSteward is a protocol-visible final destination.
+`NullSteard` is a protocol-visible final destination.
 
-A number assigned to NullSteward:
+A number assigned to `NullSteard`:
 
 - remains accounted for in the canonical Numbers sequence
 - is not skipped
@@ -22,9 +22,9 @@ A number assigned to NullSteward:
 
 ---
 
-## 2. What NullSteward Is Not
+## 2. What `NullSteard` Is Not
 
-NullSteward is not:
+`NullSteard` is not:
 
 - an error state
 - a recovery mechanism
@@ -35,15 +35,15 @@ NullSteward is not:
 - an inscription authority reset
 - a substitute for ambiguity handling
 
-Routing a number to NullSteward does not imply system failure.
+Routing a number to `NullSteard` does not imply system failure.
 
 ---
 
 ## 3. Ambiguity Boundary
 
-NullSteward must not be used to repair inscription ambiguity after inscription authority is consumed or frozen.
+`NullSteard` must not be used to repair inscription ambiguity after inscription authority is consumed or frozen.
 
-If inscription authority is consumed or frozen, the system must not create a second semantically distinct inscription attempt for the same number by routing that number to NullSteward.
+If inscription authority is consumed or frozen, the system must not create a second semantically distinct inscription attempt for the same number by routing that number to `NullSteard`.
 
 Ambiguity is an inscription status, not a third final destination category.
 
@@ -51,11 +51,11 @@ Ambiguity is an inscription status, not a third final destination category.
 
 ## 4. Demo 1 Scope
 
-For Demo 1, NullSteward is a protocol label only.
+For Demo 1, `NullSteard` is a protocol label only.
 
 Demo 1 does not require:
 
-- live NullSteward inscription
+- live `NullSteard` inscription
 - burn address implementation
 - burn script implementation
 - wallet funding
@@ -67,11 +67,11 @@ Demo 1 does not require:
 
 ## 5. Later Live Inscription Scope
 
-When live inscription is enabled by an active implementation slice, inscription to NullSteward is operator-funded.
+When live inscription is enabled by an active implementation slice, inscription to `NullSteard` is operator-funded.
 
-This document does not define the live NullSteward destination mechanism.
+This document does not define the live `NullSteard` destination mechanism.
 
-For mainnet launch, the NullSteward destination mechanism must be specified before use.
+For mainnet launch, the `NullSteard` destination mechanism must be specified before use.
 
 The intended mainnet design target is a provably unspendable burn mechanism, but the exact mechanism is not defined by this document.
 
@@ -79,6 +79,6 @@ The intended mainnet design target is a provably unspendable burn mechanism, but
 
 ## 6. Final Rule
 
-NullSteward preserves sequence accounting without creating recovery authority.
+`NullSteard` preserves sequence accounting without creating recovery authority.
 
-No behavior may treat NullSteward as permission to retry, repair, replace, or override an inscription outcome.
+No behavior may treat `NullSteard` as permission to retry, repair, replace, or override an inscription outcome.

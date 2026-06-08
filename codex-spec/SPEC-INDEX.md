@@ -8,21 +8,22 @@ may be revised until an explicit freeze declaration is made.
 
 Root-level documents define project-wide authority, scope, and specification structure:
 
-- AUTHORITY-ORDER.md: defines authority order and conflict resolution.
-- PROTOTYPE-SCOPE.md: defines the active implementation scope for the current deterministic, single-machine browser demo.
-- SPEC-INDEX.md: describes the structure of this specification directory.
+- `AUTHORITY-ORDER.md`: defines authority order and conflict resolution.
+- `IMPLEMENTATION-SLICE-01.md`: defines the active Demo 1 implementation slice for the first Codex build pass.
+- `PROTOTYPE-SCOPE.md`: defines the active implementation scope for the current deterministic, single-machine browser demo.
+- `SPEC-INDEX.md`: describes the structure of this specification directory.
 
 The following folders define the system:
 
-- core/: invariants, transition invariants, NullSteward semantics, event types, state machine rules, authority consumption, and core sequencing.
-- data/: canonical records, persistence, and restart semantics.
-- bidding/: bid admission and settlement.
-- errors/: error classification and escalation.
-- config/: complete configuration surface.
-- api/: external interface shapes and rules.
-- chain/: Bitcoin chain interaction rules.
-- wallet/: wallet rules and constraints.
-- inscription/: inscription format and inscription lifecycle rules.
+- `core/`: invariants, transition invariants, NullSteward semantics, event types, state machine rules, authority consumption, and core sequencing.
+- `data/`: canonical records, persistence, and restart semantics.
+- `bidding/`: bid admission and settlement.
+- `errors/`: error classification and escalation.
+- `config/`: complete configuration surface.
+- `api/`: external interface shapes and rules.
+- `chain/`: Bitcoin chain interaction rules.
+- `wallet/`: wallet rules and constraints.
+- `inscription/`: inscription format and inscription lifecycle rules.
 
 All backend behavior must be mechanically derivable from documents within this directory.
 
