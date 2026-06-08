@@ -98,6 +98,12 @@ Demo 1 must use SQLite for local persistence.
 
 SQLite storage must contain an append-only canonical event record table.
 
+Each canonical event record must persist `payload_json` and `payload_hash`.
+
+`payload_hash` must be computed using the canonical payload serialization and SHA-256 rules defined in `data/DATA-MODEL.md`.
+
+Restart validation must recompute `payload_hash` for persisted records and halt on mismatch.
+
 Canonical lifecycle truth must be derived from canonical event records only.
 
 Mutable lifecycle state must not be stored as canonical truth.
@@ -113,6 +119,10 @@ Restart must not repair, alter, infer, skip, or synthesize missing canonical rec
 ## 5. Auction Creation and Sequence
 
 Auction numbers must begin from `auction.starting_number`.
+
+For Demo 1, `auction.starting_number` defaults to `1`.
+
+The first `AuctionRecord.number` must equal `auction.starting_number`.
 
 Auction numbers must increase by exactly `1`.
 

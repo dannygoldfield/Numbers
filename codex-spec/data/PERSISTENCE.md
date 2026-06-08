@@ -77,7 +77,20 @@ Every canonical event record must contain the common envelope defined in `data/D
 - `server_time` must be authoritative server time
 - `payload_json` must contain the record-specific payload
 - `payload_hash` must commit to the canonical serialized payload
+- `payload_hash` must be computed using the canonical payload serialization and SHA-256 rules defined in `data/DATA-MODEL.md`
 - persisted records must never be modified after persistence
+
+## Canonical Payload Hash Validation
+
+For each persisted canonical event record:
+
+- `payload_json` must be serialized according to the canonical payload serialization rules defined in `data/DATA-MODEL.md`
+- `payload_hash` must equal lowercase hexadecimal SHA-256 of the canonical payload JSON bytes
+- restart validation must recompute `payload_hash`
+- a mismatch between persisted `payload_hash` and recomputed `payload_hash` is fatal
+- a record with invalid canonical payload serialization is fatal
+
+The common record envelope fields are not included in `payload_hash`.
 
 ---
 
@@ -431,7 +444,7 @@ Permitted storage systems for the prototype include:
 - write-ahead logs
 - embedded databases
 
-For Demo 1, SQLite is permitted and preferred when it reduces implementation ambiguity and supports deterministic restart reconstruction.
+For Demo 1, SQLite is required by `IMPLEMENTATION-SLICE-01.md`.
 
 Not permitted:
 

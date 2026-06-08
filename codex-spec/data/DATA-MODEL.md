@@ -128,6 +128,12 @@ Canonical JSON serialization rules:
 
 `payload_hash` must equal lowercase hexadecimal SHA-256 of the canonical payload JSON bytes.
 
+`payload_hash` commits to `payload_json` only.
+
+The common record envelope fields are not included in `payload_hash`.
+
+Canonical serialization must produce identical bytes for identical payload values across restart.
+
 ---
 
 # 3. Canonical Record Set
@@ -170,6 +176,8 @@ Represents the existence of an auction for number `N`.
 ## Rules
 
 - exactly one `AuctionRecord` must exist per number
+- the first `AuctionRecord.number` must equal `auction.starting_number`
+- each later `AuctionRecord.number` must equal the previous finalized auction number plus exactly `1`
 - must be written only after the previous auction reaches `Finalized`, except for the first auction
 - does not open the auction
 - does not store lifecycle state
