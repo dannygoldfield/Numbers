@@ -190,6 +190,12 @@ Only transitions explicitly permitted by reconstructed state may be evaluated.
 
 Permitted deterministic evaluations after restart are:
 
+0. If the canonical store contains no `AuctionRecord`:
+   - persist exactly one `AuctionRecord` with `number = auction.starting_number`.
+   - reconstruct that auction as `Scheduled`.
+   - do not persist `AuctionOpenRecord`.
+   - do not start a countdown.
+
 1. If auction state is `Open` and `server_time >= current_end_time`:
    - persist exactly one `AuctionCloseRecord`.
 

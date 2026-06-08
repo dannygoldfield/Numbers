@@ -124,9 +124,31 @@ For Demo 1, `auction.starting_number` defaults to `1`.
 
 The first `AuctionRecord.number` must equal `auction.starting_number`.
 
+On an empty canonical store, after configuration validation, the backend must persist exactly one `AuctionRecord` at the first state-evaluation boundary.
+
+That initial `AuctionRecord` must use `number = auction.starting_number`.
+
+Initial `AuctionRecord` persistence creates `Scheduled` only.
+
+It must not open a countdown, persist `AuctionOpenRecord`, accept a bid by inference, resolve, settle, finalize, or create inscription intent.
+
 Auction numbers must increase by exactly `1`.
 
 Auction numbers must not be skipped, reused, or reordered.
+
+Each `AuctionRecord` must capture the fixed configuration values needed for deterministic replay of that auction:
+
+- `duration_seconds`
+- `extension_window_seconds`
+- `extension_increment_seconds`
+- `max_extensions`
+- `minimum_bid_sats`
+- `minimum_increment_sats`
+- `maximum_bid_sats`
+
+Captured values must be used for later bid admission, extension, close, resolution, and restart reconstruction for that auction.
+
+Later configuration changes must not alter an auction whose `AuctionRecord` already exists.
 
 `AuctionRecord` for `N + 1` must not be persisted until:
 
@@ -155,7 +177,19 @@ Demo 1 state-evaluation boundaries are:
 - backend startup after restart reconstruction completes
 - `GET /state`
 - `POST /bid`
+- `POST /demo/settlement`
 - `GET /auction/history`
+
+At each state-evaluation boundary, the backend must run one serialized deterministic state-evaluation step before forming a response or accepting an action.
+
+The state-evaluation step must persist any required deterministic lifecycle records whose conditions are already satisfied, in this order:
+
+1. initial `AuctionRecord` creation on empty canonical store
+2. time-based `AuctionCloseRecord` for an open auction whose `current_end_time` has passed
+3. `ResolutionRecord` for a closed auction without resolution
+4. settlement-deadline expiration records when chain-confirmed settlement semantics are active
+5. required deferred `InscriptionIntentRecord` after finalization when absent
+6. next `AuctionRecord` after finalization and rhythm gap when no active auction exists
 
 This persistence makes auction `N + 1` `Scheduled` only.
 
@@ -205,6 +239,8 @@ Demo 1 bid validation does not require:
 - cryptographic signature validation
 - nonce replay protection
 - Bitcoin address ownership proof
+
+For Demo 1, `bidder_address`, `nonce`, and `signature` are optional and ignored for validity if supplied.
 
 Bid admission must deterministically classify each evaluated bid as valid or invalid.
 
@@ -336,6 +372,7 @@ If settlement outcome is `expired`:
 - `SettlementRecord.settlement_source` must be `demo_local`
 - `SettlementRecord.confirmation_txid` must be `null`
 - final destination is `NullSteward`
+- no settlement-deadline precondition is required in Demo 1 local settlement control
 
 Settlement outcome must be persisted in exactly one `SettlementRecord`.
 
@@ -510,6 +547,15 @@ History must not be reconstructed from mutable lifecycle state.
 
 `GET /auction/history` is the Demo 1 inspection endpoint.
 
+Pagination request parameters:
+
+- `limit`: optional integer, default `50`, minimum `1`, maximum `100`
+- `offset`: optional integer, default `0`, minimum `0`
+
+History entries must be ordered by auction number ascending.
+
+Invalid pagination parameters must return the API error envelope with `error_code = invalid_pagination`.
+
 It must not be treated as a finalized-outcome-only summary endpoint.
 
 ---
@@ -534,7 +580,7 @@ If `outcome = settled`, final destination must be the winner destination.
 
 If `outcome = expired`, final destination must be `NullSteward`.
 
-`POST /demo/settlement` must persist exactly one `SettlementRecord` and exactly one `FinalizationRecord`.
+`POST /demo/settlement` must persist exactly one `SettlementRecord`, exactly one `FinalizationRecord`, and exactly one deferred `InscriptionIntentRecord` before returning success.
 
 `POST /demo/settlement` must return the exact response shape defined in `api/API-STATE-SHAPES.md`.
 

@@ -200,9 +200,9 @@ After the first `AuctionRecord` is persisted, subsequent auction numbers must ad
 
 Defines base auction duration in seconds.
 
-This value is fixed for an auction when `AuctionOpenRecord` is persisted.
+This value is captured in `AuctionRecord` when the auction is created.
 
-It must not change for that auction after opening.
+It must not change for that auction after `AuctionRecord` persistence.
 
 ---
 
@@ -215,9 +215,9 @@ It must not change for that auction after opening.
 
 Defines the window before `current_end_time` during which a valid bid triggers an extension event.
 
-This value is fixed for an auction when `AuctionOpenRecord` is persisted.
+This value is captured in `AuctionRecord` when the auction is created.
 
-It must not change for that auction after opening.
+It must not change for that auction after `AuctionRecord` persistence.
 
 ---
 
@@ -230,9 +230,9 @@ It must not change for that auction after opening.
 
 Defines seconds added per `ExtensionEventRecord`.
 
-This value is fixed for an auction when `AuctionOpenRecord` is persisted.
+This value is captured in `AuctionRecord` when the auction is created.
 
-It must not change for that auction after opening.
+It must not change for that auction after `AuctionRecord` persistence.
 
 ---
 
@@ -283,9 +283,9 @@ Sequence advancement remains lifecycle-bound.
 
 Defines minimum opening bid.
 
-This value is fixed for an auction before the first valid bid is accepted.
+This value is captured in `AuctionRecord` when the auction is created.
 
-It must not change after the auction enters `Open`.
+It must not change for that auction after `AuctionRecord` persistence.
 
 ---
 
@@ -298,9 +298,9 @@ It must not change after the auction enters `Open`.
 
 Defines minimum increase over the current highest valid bid.
 
-This value is fixed for an auction when the auction enters `Open`.
+This value is captured in `AuctionRecord` when the auction is created.
 
-It must not change during the auction.
+It must not change for that auction after `AuctionRecord` persistence.
 
 ---
 
@@ -314,7 +314,7 @@ Defines optional absolute upper bound.
 
 If `null`, no upper bound exists.
 
-This value is fixed for an auction when the auction enters `Open`.
+This value is captured in `AuctionRecord` when the auction is created.
 
 ---
 
@@ -586,3 +586,12 @@ Configuration must never change:
 If configuration would be required to fix an outcome:
 
 The system must halt.
+
+
+# 15. Captured Configuration Rule
+
+When an `AuctionRecord` is persisted, the implementation must copy into the `AuctionRecord` payload the fixed configuration values required by `data/DATA-MODEL.md` for that auction.
+
+Captured values govern that auction after persistence.
+
+Later configuration changes must not alter bid admission, timing, extension, close, resolution, restart reconstruction, or API derivation for an auction whose `AuctionRecord` already exists.

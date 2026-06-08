@@ -232,6 +232,7 @@ If any required timestamp is missing after its corresponding canonical event rec
   "resolution_time": "ISO-8601 or null",
   "settlement_status": "settled | expired | null",
   "settlement_source": "demo_local | chain_confirmed | null",
+  "settlement_deadline": "ISO-8601 or null",
   "finalized_at": "ISO-8601 or null",
   "final_destination": "string or null",
 
@@ -255,6 +256,7 @@ If any required timestamp is missing after its corresponding canonical event rec
 - `number_of_extension_events` must equal the count of `ExtensionEventRecord` entries for the current auction.
 - `current_high_bid` must be derived only from valid `BidRecord` entries using the winner-selection ordering rule.
 - `bid_count` must equal the count of `BidRecord` entries for the current auction, including invalid bids.
+- `settlement_deadline` must be derived from `ResolutionRecord` when present and must be `null` before resolution.
 - `inscription_state` must be reconstructed from inscription canonical event records.
 - `last_record_sequence_index` must equal the highest persisted canonical event record sequence index.
 
@@ -302,7 +304,7 @@ It is not limited to finalized auction outcome summaries.
 ## Field Rules
 
 - each entry must correspond to exactly one auction number with an `AuctionRecord`
-- entries must be ordered by canonical number
+- entries must be ordered by canonical number ascending
 - non-finalized auctions can appear
 - `auction_state` must be reconstructed from canonical event records
 - `current_high_bid` must be derived from valid `BidRecord` entries using the winner-selection ordering rule
@@ -315,6 +317,11 @@ It is not limited to finalized auction outcome summaries.
 - `records` must include ordered canonical event record summaries for the auction
 - `records` must include invalid `BidRecord` entries that reached admission evaluation
 - history must not be reconstructed from mutable lifecycle state
+- pagination `limit` must default to `50` when omitted
+- pagination `limit` must be at least `1` and at most `100`
+- pagination `offset` must default to `0` when omitted
+- pagination `offset` must be greater than or equal to `0`
+- invalid pagination parameters must produce an API error with `error_code = invalid_pagination`
 
 ---
 
@@ -502,18 +509,20 @@ It is not limited to finalized auction outcome summaries.
   "auction_state": "Finalized",
   "finalized_at": "ISO-8601",
   "final_destination": "string",
+  "inscription_intent_record_id": "string",
   "server_time": "ISO-8601"
 }
 ```
 
 ## Field Rules
 
-- this response is returned only after successful settlement and finalization persistence
+- this response is returned only after successful settlement, finalization, and deferred inscription intent persistence
 - `outcome` must equal the requested accepted settlement outcome
 - `settlement` must be derived from the persisted `SettlementRecord`
 - `auction_state` must be `Finalized`
 - `finalized_at` must equal `FinalizationRecord.finalization_time`
 - `final_destination` must equal the persisted final destination
+- `inscription_intent_record_id` must reference the required deferred `InscriptionIntentRecord` persisted for the finalized auction
 - `server_time` must equal authoritative server response time
 - failed preconditions must use the error envelope, not this success shape
 

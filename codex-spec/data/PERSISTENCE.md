@@ -491,3 +491,27 @@ It must behave according to `core/AUTHORITY-CONSUMPTION.md`.
 Missing records do not create permission.
 
 Restart does not create permission.
+
+# Demo 1 Deterministic Identifier Validation
+
+For Demo 1, persistence must validate deterministic identifiers defined in `data/DATA-MODEL.md`:
+
+- `record_id = rec_` plus zero-padded 12-digit `sequence_index`
+- `auction_id = auc_` plus zero-padded 12-digit auction `number`
+- `bid_id = bid_` plus zero-padded 12-digit `sequence_index` of the `BidRecord`
+
+If a persisted identifier does not match the deterministic rule, restart validation must halt.
+
+# Resolution Input Hash Validation
+
+When `ResolutionRecord` exists, persistence validation must recompute `resolution_inputs_hash` using the rule in `data/DATA-MODEL.md`.
+
+A mismatch is fatal.
+
+# Captured Configuration Validation
+
+`AuctionRecord` must persist the fixed configuration snapshot required by `data/DATA-MODEL.md`.
+
+Restart must use the captured values for bid admission, timing, extension, close, and reconstruction for that auction.
+
+Current configuration values must not override captured auction values.

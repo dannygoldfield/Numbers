@@ -58,7 +58,19 @@ State-evaluation boundaries for Demo 1 are:
 - backend startup after restart reconstruction completes
 - `GET /state`
 - `POST /bid`
+- `POST /demo/settlement`
 - `GET /auction/history`
+
+At each state-evaluation boundary, the backend must run one serialized deterministic state-evaluation step before forming a response or accepting an action.
+
+The state-evaluation step must persist any required deterministic lifecycle records whose conditions are already satisfied, in this order:
+
+1. initial `AuctionRecord` creation on empty canonical store
+2. time-based `AuctionCloseRecord` for an open auction whose `current_end_time` has passed
+3. `ResolutionRecord` for a closed auction without resolution
+4. settlement-deadline expiration records when chain-confirmed settlement semantics are active
+5. required deferred `InscriptionIntentRecord` after finalization when absent
+6. next `AuctionRecord` after finalization and rhythm gap when no active auction exists
 
 This deterministic creation of `AuctionRecord` for `N + 1` does not open auction `N + 1`.
 
@@ -100,6 +112,14 @@ If a required canonical event record is absent, the corresponding event must be 
 # 3. Auction Initialization
 
 The first auction number must be `auction.starting_number`.
+
+On an empty canonical store, after configuration validation, the backend must persist exactly one `AuctionRecord` at the first state-evaluation boundary.
+
+That initial `AuctionRecord` must use `number = auction.starting_number`.
+
+Initial `AuctionRecord` persistence creates `Scheduled` only.
+
+It must not open a countdown, persist `AuctionOpenRecord`, accept a bid by inference, resolve, settle, finalize, or create inscription intent.
 
 For each number `N`:
 

@@ -102,11 +102,17 @@ A Demo 1 bid submission must also include:
 
 - `bidder_id`
 
-For Demo 1, the following fields must be `null` if present and must not be required for bid validity:
+For Demo 1, the following fields are optional and are ignored for validity if supplied:
 
 - `bidder_address`
 - `nonce`
 - `signature`
+
+These fields can be `null` or non-null in Demo 1.
+
+A non-null `bidder_address`, `nonce`, or `signature` must not make an otherwise valid Demo 1 bid invalid.
+
+A non-null `bidder_address`, `nonce`, or `signature` must not make an otherwise invalid Demo 1 bid valid.
 
 Demo 1 bid validity is protocol-demo validity only.
 
@@ -134,8 +140,7 @@ All validation profiles require:
 - the bid amount satisfies the applicable minimum bid rule
 - the bid amount satisfies the applicable increment rule
 - the bid amount does not exceed a configured maximum if such maximum is defined
-- exclusion status is determinable
-- the bidder is not excluded by persisted state
+- exclusion status satisfies the active validation profile
 
 ## 5.2 Demo 1 Local Validation Profile
 
@@ -152,6 +157,7 @@ A Demo 1 bid is valid only if all of the following are true:
 - `destination_address` is present and non-empty
 - `destination_address` satisfies the Demo 1 local destination rule
 - `validation_profile` equals `demo_local`
+- Demo 1 exclusion semantics are satisfied
 
 For Demo 1:
 
@@ -162,6 +168,10 @@ For Demo 1:
 - `signature` does not prove wallet identity
 
 If `bidder_address`, `nonce`, or `signature` is supplied in Demo 1, those fields must not alter bid validity.
+
+For Demo 1, no exclusion record type is active and no bidders are excluded.
+
+Absence of exclusion records is deterministically interpreted as not excluded only when `validation_profile = demo_local`.
 
 ## 5.3 Live Cryptographic Validation
 
@@ -316,14 +326,21 @@ If auction state is `Open` and the bid is invalid:
 
 # 11. Exclusion Semantics
 
-Exclusion status:
+For Demo 1 with `validation_profile = demo_local`:
 
-- must be derived exclusively from persisted canonical event records
-- must be evaluated mechanically
-- must not depend on operator interpretation
-- must not be inferred from absence of data
+- no exclusion record type is active
+- no bidder is excluded
+- absence of exclusion records is sufficient to determine that the bidder is not excluded
+- this absence rule applies only to Demo 1 local validation
 
-If exclusion status cannot be determined with certainty, the bid must be recorded as invalid.
+For any later validation profile that enables exclusions:
+
+- exclusion status must be derived exclusively from persisted canonical event records
+- exclusion status must be evaluated mechanically
+- exclusion status must not depend on operator interpretation
+- absence of data must not be inferred as non-exclusion unless explicitly specified by the active implementation slice
+
+If exclusion status cannot be determined with certainty under the active validation profile, the bid must be recorded as invalid.
 
 ---
 
@@ -352,6 +369,27 @@ Bid acceptance does not imply settlement.
 Bid acceptance does not imply inscription.
 
 ---
+
+# 12.1 Rejection Reason Vocabulary
+
+`rejection_reason` must use one of the following stable codes in Demo 1:
+
+- `system_not_running`
+- `auction_not_accepting_bids`
+- `wrong_auction_number`
+- `missing_required_field`
+- `malformed_field`
+- `invalid_validation_profile`
+- `amount_below_minimum`
+- `amount_below_required_increment`
+- `amount_above_maximum`
+- `invalid_destination`
+- `bidder_excluded`
+- `persistence_unavailable`
+
+If more than one rejection condition applies, the implementation must use the first applicable code in the order listed above.
+
+Free-form rejection strings are forbidden in Demo 1.
 
 # 13. Non-Rules
 

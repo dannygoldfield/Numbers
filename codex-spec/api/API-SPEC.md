@@ -207,6 +207,7 @@ The response must expose only:
 - `resolution_time`
 - `settlement_status`
 - `settlement_source`
+- `settlement_deadline`
 - `finalized_at`
 - `final_destination`
 - `current_high_bid`
@@ -260,10 +261,34 @@ Returns canonical event-derived auction history for Demo 1 browser inspection.
 
 This endpoint is not limited to finalized auction outcome summaries.
 
+## Request Parameters
+
+`GET /auction/history` accepts these query parameters:
+
+- `limit`
+- `offset`
+
+`limit` rules:
+
+- optional
+- integer
+- default `50`
+- minimum `1`
+- maximum `100`
+
+`offset` rules:
+
+- optional
+- integer
+- default `0`
+- minimum `0`
+
+Invalid pagination parameters must return the error envelope with `error_code = invalid_pagination`.
+
 ## Rules
 
 - results must be paginated
-- entries must be ordered by canonical auction number
+- entries must be ordered by canonical auction number ascending
 - each entry must correspond to exactly one auction number with an `AuctionRecord`
 - entries can include non-finalized auctions
 - each entry must include ordered canonical event record summaries for that auction
@@ -609,6 +634,8 @@ If `outcome = expired`:
 - persist exactly one `FinalizationRecord`
 - `FinalizationRecord.destination_address` must equal `NullSteward`
 
+For Demo 1 local settlement control, `outcome = expired` does not require `server_time >= settlement_deadline`.
+
 `POST /demo/settlement` must not create inscription authority.
 
 `POST /demo/settlement` must not consume inscription authority.
@@ -617,7 +644,7 @@ If `outcome = expired`:
 
 `POST /demo/settlement` must return the `POST /demo/settlement` response shape defined in `api/API-STATE-SHAPES.md`.
 
-The response must be derived after `SettlementRecord` and `FinalizationRecord` persistence completes.
+The response must be derived after `SettlementRecord`, `FinalizationRecord`, and the required deferred `InscriptionIntentRecord` persistence completes.
 
 ---
 

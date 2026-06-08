@@ -164,6 +164,10 @@ If chain-confirmed settlement is successful:
 
 For Demo 1 local settlement, `expired` is produced only by the Demo 1 local settlement control.
 
+For Demo 1 local settlement control, `expired` does not require `server_time >= settlement_deadline`.
+
+Demo 1 local `expired` is a deterministic operator/demo control outcome, not observed chain expiry.
+
 For chain-confirmed settlement, settlement expires if no qualifying Known Confirmed payment exists at `settlement_deadline`.
 
 Settlement expiration occurs regardless of whether a payment transaction was broadcast earlier.

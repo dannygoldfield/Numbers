@@ -111,19 +111,39 @@ Every canonical event record must contain:
 - must be stable for the persisted record
 - must not change after persistence
 
+## Demo 1 Identifier Generation
+
+For Demo 1, identifiers must be generated deterministically at the canonical record persistence boundary.
+
+Rules:
+
+- `record_id` must equal `rec_` followed by the zero-padded 12-digit `sequence_index`
+- `auction_id` must equal `auc_` followed by the zero-padded 12-digit auction `number`
+- `bid_id` must equal `bid_` followed by the zero-padded 12-digit `sequence_index` of the `BidRecord`
+
+The `sequence_index` must be allocated before computing any identifier derived from it.
+
+Identifier generation must not depend on randomness, wall-clock time, process memory, database row IDs, or external systems.
+
 ## Canonical Payload Serialization
 
 `payload_json` must be serialized for hashing as canonical UTF-8 JSON.
 
 Canonical JSON serialization rules:
 
-- object keys must be sorted lexicographically
+- object keys must be sorted lexicographically by Unicode code point
 - insignificant whitespace must be omitted
-- strings must be encoded as JSON strings
-- integers must be encoded as JSON numbers
+- strings must be normalized to Unicode NFC before JSON encoding
+- strings must be escaped using standard JSON string escaping
+- quotation mark and reverse solidus must be escaped
+- control characters U+0000 through U+001F must be escaped
+- non-ASCII Unicode characters must be emitted as UTF-8 characters, not `\u` escapes, after NFC normalization
+- solidus `/` must not be escaped
+- integers must be encoded as JSON numbers without leading zeros
 - booleans must be encoded as JSON booleans
 - `null` must be encoded as JSON `null`
-- timestamps must be encoded as UTC ISO-8601 strings with `Z` suffix
+- timestamps must be encoded as UTC ISO-8601 strings with millisecond precision and `Z` suffix
+- timestamp format must be `YYYY-MM-DDTHH:MM:SS.mmmZ`
 - arrays must preserve their explicitly specified order
 
 `payload_hash` must equal lowercase hexadecimal SHA-256 of the canonical payload JSON bytes.
@@ -172,6 +192,13 @@ Represents the existence of an auction for number `N`.
 ## Payload Fields
 
 - `created_at`
+- `duration_seconds`
+- `extension_window_seconds`
+- `extension_increment_seconds`
+- `max_extensions`
+- `minimum_bid_sats`
+- `minimum_increment_sats`
+- `maximum_bid_sats`
 
 ## Rules
 
@@ -181,6 +208,9 @@ Represents the existence of an auction for number `N`.
 - must be written only after the previous auction reaches `Finalized`, except for the first auction
 - does not open the auction
 - does not store lifecycle state
+- must capture the fixed auction and bid configuration values listed in the payload fields
+- captured configuration values must be used for all later bid admission, timing, extension, close, and restart evaluation for that auction
+- captured configuration values must not be replaced by later configuration changes
 
 ---
 
@@ -220,21 +250,21 @@ For live cryptographic validation, `bidder_id` can mirror the verified wallet id
 
 ### `bidder_address`
 
-For Demo 1, `bidder_address` can be `null`.
+For Demo 1, `bidder_address` can be `null` or non-null.
 
-For Demo 1, `bidder_address` must not be used as proof of wallet control.
+For Demo 1, `bidder_address` must not be used as proof of wallet control and must not alter bid validity.
 
 ### `nonce`
 
-For Demo 1, `nonce` can be `null`.
+For Demo 1, `nonce` can be `null` or non-null.
 
-For Demo 1, nonce replay protection is not required.
+For Demo 1, nonce replay protection is not required and `nonce` must not alter bid validity.
 
 ### `signature`
 
-For Demo 1, `signature` can be `null`.
+For Demo 1, `signature` can be `null` or non-null.
 
-For Demo 1, `signature` must not be used as proof of wallet control.
+For Demo 1, `signature` must not be used as proof of wallet control and must not alter bid validity.
 
 ### `validity`
 
@@ -247,6 +277,7 @@ Must be one of:
 
 - must be `null` when `validity = valid`
 - must be non-null when `validity = invalid`
+- must use a stable rejection reason code defined in `bidding/BIDDING-ADMISSION.md` when `validation_profile = demo_local`
 
 ## Rules
 
@@ -396,6 +427,30 @@ Represents deterministic winner resolution.
 - must never be recomputed after persistence
 - must never be extended
 
+### `resolution_inputs_hash`
+
+`resolution_inputs_hash` must equal lowercase hexadecimal SHA-256 of the canonical resolution input bytes.
+
+Canonical resolution input bytes are the canonical UTF-8 JSON serialization of an array containing one object per valid `BidRecord` for the auction.
+
+The array must be ordered by canonical `sequence_index` ascending.
+
+Each object must contain exactly:
+
+- `bid_id`
+- `sequence_index`
+- `amount_sats`
+- `bidder_id`
+- `destination_address`
+- `validation_profile`
+- `server_time`
+
+Invalid `BidRecord` entries must not be included.
+
+No fields outside this list may be included.
+
+The canonical JSON serialization rules in this document govern `resolution_inputs_hash`.
+
 ## Winner Selection Rule
 
 The winning bid is the valid `BidRecord` with the highest `amount_sats` for the auction.
@@ -482,6 +537,7 @@ Represents transition to `Finalized`.
 
 - must equal the winning destination when settlement status is `settled`
 - must equal `NullSteward` when settlement status is `expired`
+
 A no-valid-bid condition does not produce `FinalizationRecord` in Demo 1 because the auction remains `Scheduled`.
 
 ## Rules
