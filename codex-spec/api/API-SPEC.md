@@ -177,6 +177,7 @@ The permitted endpoints are:
 2. `GET /auction/history`
 3. `GET /auction/{N}`
 4. `POST /bid`
+5. `POST /demo/settlement`
 
 ---
 
@@ -194,6 +195,7 @@ The response must expose only:
 
 `GET /state` data must include:
 
+- `server_time`
 - `current_number`
 - `auction_state`
 - `system_control_state`
@@ -204,6 +206,7 @@ The response must expose only:
 - `closed_at`
 - `resolution_time`
 - `settlement_status`
+- `settlement_source`
 - `finalized_at`
 - `final_destination`
 - `current_high_bid`
@@ -223,11 +226,13 @@ base_end_time +
 (extension_increment_seconds * number_of_extension_events)
 ```
 
-`current_high_bid` must be derived only from valid `BidRecord` entries.
+`current_high_bid` must be derived only from valid `BidRecord` entries using highest `amount_sats`, with lowest canonical `sequence_index` as tie-break.
 
 `bid_count` must be derived from `BidRecord` entries.
 
 `inscription_state` must be reconstructed from inscription canonical event records.
+
+`server_time` must equal authoritative server time at response generation.
 
 `last_record_sequence_index` must equal the highest persisted canonical event record sequence index.
 
@@ -243,7 +248,7 @@ base_end_time +
 - hide `NullSteward`
 - expose mutable internal state
 
-The frontend may compute a countdown display from `current_end_time`.
+The frontend can compute a countdown display from `current_end_time`.
 
 The backend must not expose speculative time-remaining projections.
 
@@ -269,6 +274,7 @@ Each history entry must include:
 - `winning_bid_id`
 - `winning_amount_sats`
 - `settlement_status`
+- `settlement_source`
 - `final_destination`
 - `finalization_time`
 - `inscription_state`
@@ -311,6 +317,7 @@ The response must include:
 - `winning_bid_id`
 - `winning_amount_sats`
 - `settlement_status`
+- `settlement_source`
 - `settlement_deadline`
 - `finalized_at`
 - `final_destination`
@@ -342,7 +349,7 @@ Submits a bid for the current auction.
 
 This is the only write-capable public endpoint.
 
-`POST /bid` may be submitted only when auction state is:
+`POST /bid` can be submitted only when auction state is:
 
 - `Scheduled`
 - `Open`
@@ -357,30 +364,42 @@ If auction state is `Closed`, `AwaitingSettlement`, or `Finalized`, the bid must
 
 ## 10.1 Request Fields
 
-A bid request must include:
+A Demo 1 bid request must include:
 
 - `auction_number`
-- `bidder_address`
+- `bidder_id`
 - `amount_sats`
 - `destination_address`
+- `validation_profile`
+
+For Demo 1, `validation_profile` must be `demo_local`.
+
+For Demo 1, the following fields are not required and must not be used to prove wallet control:
+
+- `bidder_address`
 - `nonce`
 - `signature`
 
-No additional request fields may alter bid semantics.
+No additional request field can alter bid semantics.
 
 ---
 
 ## 10.2 Preconditions
 
-A bid request is valid only if all are true:
+A Demo 1 bid request is valid only if all are true:
 
 - system control state is `Running`
 - auction state is `Scheduled` or `Open`
 - the bid targets the current auction number
-- the request proves control of the bidding wallet
+- `validation_profile = demo_local`
+- `bidder_id` is present and non-empty
+- `amount_sats` is a base-10 integer
 - the bid amount satisfies the minimum bid rules
-- the destination address satisfies configured address policy
+- the bid amount satisfies the increment rules
+- `destination_address` satisfies the Demo 1 local destination rule in `bidding/BIDDING-ADMISSION.md`
 - the request is well-formed
+
+Demo 1 bid validation does not prove wallet control.
 
 If any precondition fails, the bid must be rejected explicitly.
 
@@ -444,7 +463,25 @@ If the current auction state is `Open` and the bid is invalid:
 
 ---
 
-## 10.6 Forbidden Bid Behavior
+## 10.6 Response Shape
+
+`POST /bid` must return the `POST /bid` response shape defined in `api/API-STATE-SHAPES.md`.
+
+The response must include:
+
+- `accepted`
+- `bid`
+- `auction_opened`
+- `auction_state`
+- `current_high_bid`
+- `current_end_time`
+- `server_time`
+
+The response must be derived after any required `BidRecord`, `AuctionOpenRecord`, and `ExtensionEventRecord` persistence completes.
+
+---
+
+## 10.7 Forbidden Bid Behavior
 
 Bid submission must not:
 
@@ -481,8 +518,8 @@ A bid is invalid if:
 - below the minimum valid bid
 - below required increment
 - exceeds a configured maximum if such maximum is defined
-- not provably authorized
-- destination address violates configured address policy
+- invalid under the active validation profile
+- destination address violates the active destination rule
 
 The minimum opening bid:
 
@@ -507,7 +544,67 @@ Invalid bids:
 
 ---
 
-# 12. Versioning Rules
+# 12. `POST /demo/settlement`
+
+`POST /demo/settlement` is a Demo 1 local-only endpoint.
+
+It exists only to demonstrate deterministic settlement progression without live payment recognition.
+
+`POST /demo/settlement` must not exist outside Demo 1 unless explicitly permitted by a later active implementation slice.
+
+## 12.1 Request Fields
+
+A Demo 1 settlement request must include:
+
+- `auction_id`
+- `outcome`
+
+`outcome` must be one of:
+
+- `settled`
+- `expired`
+
+## 12.2 Preconditions
+
+`POST /demo/settlement` can be accepted only when:
+
+- `prototype.demo_stage = demo_1`
+- auction lifecycle state is `AwaitingSettlement`
+- `ResolutionRecord` exists
+- no `SettlementRecord` exists for the auction
+- no `FinalizationRecord` exists for the auction
+
+If any precondition fails, the request must be rejected explicitly.
+
+## 12.3 Record Effects
+
+If `outcome = settled`:
+
+- persist exactly one `SettlementRecord`
+- `SettlementRecord.status = settled`
+- `SettlementRecord.settlement_source = demo_local`
+- `SettlementRecord.confirmation_txid = null`
+- persist exactly one `FinalizationRecord`
+- `FinalizationRecord.destination_address` must equal the winning destination address
+
+If `outcome = expired`:
+
+- persist exactly one `SettlementRecord`
+- `SettlementRecord.status = expired`
+- `SettlementRecord.settlement_source = demo_local`
+- `SettlementRecord.confirmation_txid = null`
+- persist exactly one `FinalizationRecord`
+- `FinalizationRecord.destination_address` must equal `NullSteward`
+
+`POST /demo/settlement` must not create inscription authority.
+
+`POST /demo/settlement` must not consume inscription authority.
+
+`POST /demo/settlement` must not simulate live payment, mempool observation, or confirmation observation.
+
+---
+
+# 13. Versioning Rules
 
 The API version for this prototype is:
 

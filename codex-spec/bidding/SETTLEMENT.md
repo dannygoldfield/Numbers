@@ -1,6 +1,6 @@
 # Settlement: Numbers
 
-This document defines settlement timing, settlement outcome, winner destination binding, and finalization behavior.
+This document defines resolution, settlement timing, settlement outcome, winner destination binding, and finalization behavior.
 
 It is normative.
 
@@ -39,7 +39,33 @@ Settlement failure is a valid outcome, not an error.
 
 ---
 
-# 2. Settlement Deadline
+# 2. Winner Resolution Rule
+
+Resolution determines the winning valid `BidRecord`.
+
+For a closed auction, the winning bid is the valid `BidRecord` for that auction with the highest `amount_sats`.
+
+If more than one valid `BidRecord` has the same highest `amount_sats`, the winning bid is the one with the lowest canonical `sequence_index`.
+
+The tie rule is mandatory even though valid equal leading bids should not occur under bid admission increment rules.
+
+Invalid `BidRecord` entries must not participate in resolution.
+
+Resolution must persist:
+
+- `winning_bid_id`
+- `winning_amount_sats`
+- `resolution_time`
+- `settlement_deadline`
+- `resolution_inputs_hash`
+
+Under the current first-valid-bid opening rule, a normally closed auction has at least one valid bid.
+
+A no-winner resolution path must not be implemented for Demo 1.
+
+---
+
+# 3. Settlement Deadline
 
 Settlement deadline must be computed at auction resolution as:
 
@@ -60,7 +86,7 @@ Settlement semantics do not define timing constants.
 
 ---
 
-# 3. Settlement Entry
+# 4. Settlement Entry
 
 At auction resolution:
 
@@ -72,59 +98,77 @@ At auction resolution:
 - winner destination address must already satisfy bid admission rules
 - auction state becomes `AwaitingSettlement`
 
-Under the current first-valid-bid opening rule, a normally opened auction has at least one valid bid.
-
 A no-valid-bid condition does not enter settlement.
 
 If no valid bid is accepted, the auction remains `Scheduled`.
 
 ---
 
-# 4. Settlement Observation
+# 5. Demo 1 Local Settlement
 
-During the settlement window:
+Demo 1 uses local deterministic settlement control.
 
-- the system observes payment status through the authoritative node defined in `chain/CHAIN-INTERACTION.md`
-- no prompts are permitted
-- no reminders are permitted
-- no deadline extensions are permitted
-- no speculative recovery is permitted
-- no late settlement acceptance is permitted
+Demo 1 settlement is not live payment recognition.
 
-Broadcast does not count as settlement.
+Demo 1 settlement must not require:
 
-Mempool presence does not count as settlement.
+- Bitcoin payment detection
+- wallet-derived settlement address
+- Bitcoin Core RPC
+- mempool observation
+- confirmation observation
 
-Only confirmation to the required depth counts as settlement.
+For Demo 1, settlement outcome is produced only by the Demo 1 local settlement control defined in `api/API-SPEC.md`.
+
+The allowed Demo 1 local settlement outcomes are:
+
+- `settled`
+- `expired`
+
+For Demo 1 local settlement:
+
+- `SettlementRecord.settlement_source` must be `demo_local`
+- `SettlementRecord.confirmation_txid` must be `null`
+- `settled` finalizes to the winning destination address
+- `expired` finalizes to `NullSteward`
+
+Demo 1 local settlement does not prove payment.
+
+Demo 1 local settlement exists only to demonstrate deterministic lifecycle progression.
 
 ---
 
-# 5. Successful Settlement
+# 6. Chain-Confirmed Settlement
 
-Settlement is successful only if all are true:
+Chain-confirmed settlement is outside Demo 1.
+
+When chain-confirmed settlement is enabled by a later active implementation slice, settlement is successful only if all are true:
 
 - a valid payment transaction is Known Confirmed
 - confirmation depth is greater than or equal to `chain.confirmation_depth`
 - confirmation occurs before `settlement_deadline`
 - payment satisfies the settlement rules defined by this specification
 
-If settlement is successful:
+If chain-confirmed settlement is successful:
 
 - persist exactly one `SettlementRecord`
 - `SettlementRecord.status` must be `settled`
+- `SettlementRecord.settlement_source` must be `chain_confirmed`
 - `SettlementRecord.confirmation_txid` must be non-null
 - persist exactly one `FinalizationRecord`
 - `FinalizationRecord.destination_address` must equal the winning destination address
 
 ---
 
-# 6. Failed Settlement
+# 7. Failed or Expired Settlement
 
-Settlement fails if no qualifying Known Confirmed payment exists at `settlement_deadline`.
+For Demo 1 local settlement, `expired` is produced only by the Demo 1 local settlement control.
 
-Settlement failure occurs regardless of whether a payment transaction was broadcast earlier.
+For chain-confirmed settlement, settlement expires if no qualifying Known Confirmed payment exists at `settlement_deadline`.
 
-If settlement fails:
+Settlement expiration occurs regardless of whether a payment transaction was broadcast earlier.
+
+If settlement expires:
 
 - persist exactly one `SettlementRecord`
 - `SettlementRecord.status` must be `expired`
@@ -132,13 +176,13 @@ If settlement fails:
 - persist exactly one `FinalizationRecord`
 - `FinalizationRecord.destination_address` must be `NullSteward`
 
-Settlement failure is irreversible.
+Settlement expiration is irreversible.
 
 No retry or compensation is permitted.
 
 ---
 
-# 7. No Valid Bid Condition
+# 8. No Valid Bid Condition
 
 No valid bid is not a settlement path in the current first-valid-bid opening model.
 
@@ -155,39 +199,32 @@ If no valid bid is accepted:
 
 ---
 
-# 8. Winner Destination Address
+# 9. Winner Destination Address
 
 The winner destination address is the destination address persisted in the winning valid `BidRecord`.
 
 Rules:
 
-- the destination address must be included in the signed bid payload
-- the destination address does not need to match the bidding address
+- the destination address must satisfy the active bid admission destination rule
+- the destination address does not need to match the bidding identity
 - the destination address does not need to match the payment source address
-- the destination address must be valid under the permitted Bitcoin address types defined by this specification
 - the destination address must be immutable once the `BidRecord` is persisted
 - the destination address must not be modified during settlement
 - the destination address must not be modified during finalization
 - the destination address must not be modified by the inscription machine
 
-If a bid destination address is missing, malformed, invalid under permitted address types, or cannot be deterministically converted to a scriptPubKey:
-
-- the bid must be rejected during bid admission
-- the bid must not become a valid `BidRecord`
-- the bid must not participate in winner resolution
-
 Settlement must not invalidate a previously valid winning bid by reinterpreting destination address rules.
 
 ---
 
-# 9. Finalization Binding
+# 10. Finalization Binding
 
 Finalization occurs only after settlement outcome is determined.
 
 Finalization must record exactly one destination:
 
-- settlement succeeds: winning destination address
-- settlement fails: `NullSteward`
+- settlement status `settled`: winning destination address
+- settlement status `expired`: `NullSteward`
 
 No valid bid does not finalize in the current first-valid-bid opening model.
 
@@ -199,7 +236,7 @@ No settlement state may be re-entered once finalized.
 
 ---
 
-# 10. Authority Protection
+# 11. Authority Protection
 
 Settlement does not restore inscription authority.
 
@@ -207,7 +244,7 @@ Settlement does not guarantee inscription authority.
 
 Settlement does not consume inscription authority.
 
-Once settlement deadline passes:
+Once settlement deadline passes for chain-confirmed settlement:
 
 - no late payment may be accepted
 - no settlement-related state may be rewritten
@@ -221,6 +258,6 @@ Settlement records what occurred.
 
 Settlement does not record what was intended.
 
-If qualifying payment status is unclear at the settlement deadline:
+If qualifying chain-confirmed payment status is unclear at the settlement deadline in a live chain-confirmed settlement slice:
 
-The system must treat settlement as failed and finalize to `NullSteward`.
+The system must treat settlement as expired and finalize to `NullSteward`.

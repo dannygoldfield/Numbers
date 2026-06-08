@@ -99,7 +99,18 @@ Violation of these rules is fatal.
 
 - `settled`
 - `expired`
-- `not_required`
+- `null`
+
+`null` means no `SettlementRecord` exists.
+
+`not_required` is reserved for a future implementation slice that explicitly defines a no-winner settlement path.
+
+## Settlement Source Enum
+
+`settlement_source` must be one of:
+
+- `demo_local`
+- `chain_confirmed`
 - `null`
 
 `null` means no `SettlementRecord` exists.
@@ -208,6 +219,7 @@ If any required timestamp is missing after its corresponding canonical event rec
 
 ```json
 {
+  "server_time": "ISO-8601",
   "current_number": "integer",
   "auction_state": "Scheduled | Open | Closed | AwaitingSettlement | Finalized",
   "system_control_state": "Running | Paused",
@@ -218,7 +230,8 @@ If any required timestamp is missing after its corresponding canonical event rec
   "current_end_time": "ISO-8601 or null",
   "closed_at": "ISO-8601 or null",
   "resolution_time": "ISO-8601 or null",
-  "settlement_status": "settled | expired | not_required | null",
+  "settlement_status": "settled | expired | null",
+  "settlement_source": "demo_local | chain_confirmed | null",
   "finalized_at": "ISO-8601 or null",
   "final_destination": "string or null",
 
@@ -235,18 +248,19 @@ If any required timestamp is missing after its corresponding canonical event rec
 
 ## Field Rules
 
+- `server_time` must equal authoritative server time at response generation.
 - `current_number` must identify the current auction number.
 - `auction_state` must be reconstructed from canonical event records.
 - `system_control_state` must be reconstructed from `PauseEventRecord` entries.
 - `number_of_extension_events` must equal the count of `ExtensionEventRecord` entries for the current auction.
-- `current_high_bid` must be derived only from valid `BidRecord` entries.
+- `current_high_bid` must be derived only from valid `BidRecord` entries using the winner-selection ordering rule.
 - `bid_count` must equal the count of `BidRecord` entries for the current auction, including invalid bids.
 - `inscription_state` must be reconstructed from inscription canonical event records.
 - `last_record_sequence_index` must equal the highest persisted canonical event record sequence index.
 
 The backend must not expose speculative time-remaining projections.
 
-The frontend may compute countdown display from `current_end_time`.
+The frontend can compute countdown display from `current_end_time`.
 
 ---
 
@@ -264,7 +278,7 @@ The frontend may compute countdown display from `current_end_time`.
       "auction_state": "Finalized",
       "winning_bid_id": "string or null",
       "winning_amount_sats": "integer or null",
-      "settlement_status": "settled | expired | not_required",
+      "settlement_status": "settled | expired",
       "final_destination": "string",
       "finalization_time": "ISO-8601",
       "inscription_state": "NotStarted | Inscribing | Ambiguous | Inscribed",
@@ -314,7 +328,8 @@ The frontend may compute countdown display from `current_end_time`.
   "winning_bid_id": "string or null",
   "winning_amount_sats": "integer or null",
 
-  "settlement_status": "settled | expired | not_required | null",
+  "settlement_status": "settled | expired | null",
+  "settlement_source": "demo_local | chain_confirmed | null",
   "settlement_deadline": "ISO-8601 or null",
 
   "finalized_at": "ISO-8601 or null",
@@ -350,8 +365,10 @@ The frontend may compute countdown display from `current_end_time`.
 {
   "bid_id": "string",
   "amount_sats": "integer",
-  "bidder_address": "string",
+  "bidder_id": "string",
+  "bidder_address": "string or null",
   "destination_address": "string",
+  "validation_profile": "demo_local | cryptographic",
   "server_time": "ISO-8601"
 }
 ```
@@ -359,6 +376,7 @@ The frontend may compute countdown display from `current_end_time`.
 ## Field Rules
 
 - must be derived only from valid `BidRecord` entries
+- must use highest `amount_sats`, with lowest canonical `sequence_index` as tie-break
 - must be `null` when no valid bid exists
 - must not include invalid bids
 - must not imply winning before `ResolutionRecord`
@@ -376,8 +394,10 @@ The frontend may compute countdown display from `current_end_time`.
   "bid_id": "string",
   "auction_id": "string",
   "amount_sats": "integer",
-  "bidder_address": "string",
+  "bidder_id": "string",
+  "bidder_address": "string or null",
   "destination_address": "string",
+  "validation_profile": "demo_local | cryptographic",
   "server_time": "ISO-8601",
   "validity": "valid | invalid",
   "rejection_reason": "string or null"
@@ -395,7 +415,38 @@ The frontend may compute countdown display from `current_end_time`.
 
 ---
 
-# 10. Resolution Object
+# 10. `POST /bid` Response Shape
+
+`POST /bid` returns the deterministic result of bid admission.
+
+## Shape
+
+```json
+{
+  "accepted": "boolean",
+  "bid": "BidStateObject",
+  "auction_opened": "boolean",
+  "auction_state": "Scheduled | Open | Closed | AwaitingSettlement | Finalized",
+  "current_high_bid": "BidSummaryObject or null",
+  "current_end_time": "ISO-8601 or null",
+  "server_time": "ISO-8601"
+}
+```
+
+## Field Rules
+
+- `accepted` must be `true` when `bid.validity = valid`
+- `accepted` must be `false` when `bid.validity = invalid`
+- `auction_opened` must be `true` only when the bid atomically persists `AuctionOpenRecord`
+- `auction_opened` must be `false` otherwise
+- `auction_state` must be derived after bid admission persistence completes
+- `current_high_bid` must be derived after bid admission persistence completes
+- `server_time` must equal authoritative server response time
+
+
+---
+
+# 11. Resolution Object
 
 `ResolutionObject` represents auction resolution.
 
@@ -416,10 +467,12 @@ The frontend may compute countdown display from `current_end_time`.
 - `resolution_time` must never change
 - if `winning_bid_id` is `null`, `winning_amount_sats` must be `null`
 - if `winning_bid_id` is non-null, `winning_amount_sats` must be non-null
+- in Demo 1, `winning_bid_id` and `winning_amount_sats` must be non-null after resolution
+- winner selection must use highest valid `amount_sats`, with lowest canonical `sequence_index` as tie-break
 
 ---
 
-# 11. Settlement Object
+# 12. Settlement Object
 
 `SettlementObject` represents settlement determination.
 
@@ -428,7 +481,7 @@ The frontend may compute countdown display from `current_end_time`.
 ```json
 {
   "auction_id": "string",
-  "settlement_status": "settled | expired | not_required",
+  "settlement_status": "settled | expired",
   "settlement_deadline": "ISO-8601 or null",
   "settlement_time": "ISO-8601"
 }
@@ -438,12 +491,14 @@ The frontend may compute countdown display from `current_end_time`.
 
 - this object must exist only when `SettlementRecord` exists
 - `settlement_status` must match `SettlementRecord.status`
-- `settlement_deadline` must be `null` when `settlement_status = not_required`
+- `settlement_source` must match `SettlementRecord.settlement_source`
+- `confirmation_txid` must be `null` when `settlement_source = demo_local`
+- `confirmation_txid` must be non-null when `settlement_source = chain_confirmed` and `settlement_status = settled`
 - `settlement_time` must be set exactly once
 
 ---
 
-# 12. Inscription Object
+# 13. Inscription Object
 
 `InscriptionObject` represents inscription knowledge only.
 
@@ -473,7 +528,7 @@ The frontend may compute countdown display from `current_end_time`.
 
 ---
 
-# 13. Ambiguity Object
+# 14. Ambiguity Object
 
 `AmbiguityObject` represents recorded ambiguity.
 

@@ -111,6 +111,23 @@ Every canonical event record must contain:
 - must be stable for the persisted record
 - must not change after persistence
 
+## Canonical Payload Serialization
+
+`payload_json` must be serialized for hashing as canonical UTF-8 JSON.
+
+Canonical JSON serialization rules:
+
+- object keys must be sorted lexicographically
+- insignificant whitespace must be omitted
+- strings must be encoded as JSON strings
+- integers must be encoded as JSON numbers
+- booleans must be encoded as JSON booleans
+- `null` must be encoded as JSON `null`
+- timestamps must be encoded as UTC ISO-8601 strings with `Z` suffix
+- arrays must preserve their explicitly specified order
+
+`payload_hash` must equal lowercase hexadecimal SHA-256 of the canonical payload JSON bytes.
+
 ---
 
 # 3. Canonical Record Set
@@ -166,15 +183,50 @@ Represents a bid submission attempt as evaluated at authoritative server receipt
 ## Payload Fields
 
 - `bid_id`
+- `bidder_id`
 - `bidder_address`
 - `amount_sats`
 - `destination_address`
+- `validation_profile`
 - `nonce`
 - `signature`
 - `validity`
 - `rejection_reason`
 
 ## Field Rules
+
+### `validation_profile`
+
+Must be one of:
+
+- `demo_local`
+- `cryptographic`
+
+For Demo 1, `validation_profile` must be `demo_local`.
+
+### `bidder_id`
+
+For Demo 1, `bidder_id` must be non-null.
+
+For live cryptographic validation, `bidder_id` can mirror the verified wallet identity only when that behavior is defined by an active implementation slice.
+
+### `bidder_address`
+
+For Demo 1, `bidder_address` can be `null`.
+
+For Demo 1, `bidder_address` must not be used as proof of wallet control.
+
+### `nonce`
+
+For Demo 1, `nonce` can be `null`.
+
+For Demo 1, nonce replay protection is not required.
+
+### `signature`
+
+For Demo 1, `signature` can be `null`.
+
+For Demo 1, `signature` must not be used as proof of wallet control.
 
 ### `validity`
 
@@ -209,6 +261,10 @@ A `BidRecord` with `validity = invalid`:
 - must not trigger an extension
 - must not participate in winner resolution
 - must not alter lifecycle state except as append-only audit truth
+
+`current_high_bid` is the valid `BidRecord` with the highest `amount_sats` for the auction.
+
+If more than one valid `BidRecord` has the same highest `amount_sats`, `current_high_bid` is the one with the lowest canonical `sequence_index`.
 
 ---
 
@@ -314,20 +370,31 @@ Represents deterministic winner resolution.
 ### `winning_bid_id`
 
 - must reference the winning valid `BidRecord`
-- must be `null` only if no valid winning bid exists
+- must not be `null` in Demo 1
+- `null` is reserved for a future implementation slice that explicitly defines a no-winner resolution path
 
 ### `winning_amount_sats`
 
 - must equal the amount of the winning valid bid
-- must be `null` if `winning_bid_id = null`
+- must not be `null` in Demo 1
+- must be `null` only if `winning_bid_id = null` under a future explicit no-winner slice
 
 ### `settlement_deadline`
 
 - must be computed exactly once at resolution
 - must equal `resolution_time + settlement.deadline_seconds`
-- must be `null` if `winning_bid_id = null`
+- must not be `null` in Demo 1
+- must be `null` only if `winning_bid_id = null` under a future explicit no-winner slice
 - must never be recomputed after persistence
 - must never be extended
+
+## Winner Selection Rule
+
+The winning bid is the valid `BidRecord` with the highest `amount_sats` for the auction.
+
+If more than one valid `BidRecord` has the same highest `amount_sats`, the winning bid is the one with the lowest canonical `sequence_index`.
+
+The tie rule is mandatory even though valid equal leading bids should not occur under bid admission increment rules.
 
 ## Rules
 
@@ -348,6 +415,7 @@ Represents terminal settlement determination.
 ## Payload Fields
 
 - `status`
+- `settlement_source`
 - `confirmation_txid`
 - `settlement_time`
 
@@ -359,18 +427,23 @@ Must be one of:
 
 - `settled`
 - `expired`
-For Demo 1, `status` must be one of:
-
-- `settled`
-- `expired`
 
 `not_required` is reserved for a future implementation slice that explicitly defines a no-winner settlement path.
 
+### `settlement_source`
+
+Must be one of:
+
+- `demo_local`
+- `chain_confirmed`
+
+For Demo 1, `settlement_source` must be `demo_local`.
+
 ### `confirmation_txid`
 
-- must be non-null when `status = settled`
+- must be `null` when `settlement_source = demo_local`
+- must be non-null when `settlement_source = chain_confirmed` and `status = settled`
 - must be `null` when `status = expired`
-- must be `null` when `status = not_required`
 
 ## Rules
 
@@ -381,6 +454,7 @@ For Demo 1, `status` must be one of:
 - does not create inscription authority
 - does not consume inscription authority
 - settlement outcome determines whether final destination is the winning destination or `NullSteward`
+- Demo 1 settlement records must use `settlement_source = demo_local`
 
 ---
 

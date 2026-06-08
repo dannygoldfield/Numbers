@@ -59,6 +59,7 @@ Demo 1 includes:
 - `GET /state`
 - `POST /bid`
 - `GET /auction/history`
+- `POST /demo/settlement`
 - restart demonstration
 
 ---
@@ -186,6 +187,15 @@ If no valid bid is accepted:
 - system control state is `Running`
 - auction lifecycle state is `Scheduled` or `Open`
 
+Demo 1 uses `validation_profile = demo_local`.
+
+Demo 1 bid validation does not require:
+
+- wallet proof-of-control
+- cryptographic signature validation
+- nonce replay protection
+- Bitcoin address ownership proof
+
 Bid admission must deterministically classify each evaluated bid as valid or invalid.
 
 A bid accepted as valid must be persisted as a valid `BidRecord`.
@@ -196,7 +206,7 @@ Invalid bids must not alter auction lifecycle state.
 
 Invalid bids must not participate in resolution.
 
-Bid acceptance means only that the bid is valid and persisted.
+Bid acceptance means only that the bid is valid and persisted under the Demo 1 local validation profile.
 
 Bid acceptance must not imply:
 
@@ -232,7 +242,7 @@ While auction lifecycle state is `Open`:
 
 - valid bids can be accepted
 - invalid bids can be recorded
-- current leading bid must be derived from persisted valid `BidRecord` entries
+- current leading bid must be derived from persisted valid `BidRecord` entries using highest `amount_sats`, with lowest canonical `sequence_index` as tie-break
 - auction end time must be derived according to the specified timing rules
 - bid display state must be reconstructible from canonical records
 
@@ -268,6 +278,10 @@ Resolution must use only persisted valid `BidRecord` entries.
 
 Invalid `BidRecord` entries must not participate in resolution.
 
+The winning bid is the valid `BidRecord` with the highest `amount_sats`.
+
+If more than one valid `BidRecord` has the same highest `amount_sats`, the winning bid is the one with the lowest canonical `sequence_index`.
+
 Resolution must produce exactly one `ResolutionRecord`.
 
 Resolution must not be recomputed after `ResolutionRecord` exists.
@@ -292,7 +306,7 @@ Demo 1 must not require:
 - mempool observation
 - confirmation observation
 
-For Demo 1, the implementation must provide a deterministic local way to produce a terminal settlement outcome after resolution.
+For Demo 1, terminal settlement outcome is produced through `POST /demo/settlement`.
 
 The allowed Demo 1 terminal settlement outcomes are:
 
@@ -301,10 +315,16 @@ The allowed Demo 1 terminal settlement outcomes are:
 
 If settlement outcome is `settled`:
 
+- `SettlementRecord.status` must be `settled`
+- `SettlementRecord.settlement_source` must be `demo_local`
+- `SettlementRecord.confirmation_txid` must be `null`
 - final destination is the winner destination recorded through bid admission
 
 If settlement outcome is `expired`:
 
+- `SettlementRecord.status` must be `expired`
+- `SettlementRecord.settlement_source` must be `demo_local`
+- `SettlementRecord.confirmation_txid` must be `null`
 - final destination is `NullSteward`
 
 Settlement outcome must be persisted in exactly one `SettlementRecord`.
@@ -395,8 +415,9 @@ Demo 1 must implement:
 - `GET /state`
 - `POST /bid`
 - `GET /auction/history`
+- `POST /demo/settlement`
 
-Additional endpoints are excluded unless required to demonstrate restart or local settlement control.
+Additional endpoints are excluded except `POST /demo/settlement`, which is required for Demo 1 local settlement control.
 
 API responses must use fixed response shapes where specified.
 
@@ -446,7 +467,7 @@ When auction state is `Open`, a valid bid must persist a valid `BidRecord`.
 
 Invalid bids that reach admission evaluation must persist invalid `BidRecord` entries.
 
-`POST /bid` must return deterministic response fields sufficient for frontend display.
+`POST /bid` must return the exact response shape defined in `api/API-STATE-SHAPES.md`.
 
 `POST /bid` must not imply winning, settlement, finalization, inscription, or transfer.
 
@@ -472,6 +493,32 @@ History must include enough information to inspect:
 - inscription intent or deferred inscription status when present
 
 History must not be reconstructed from mutable lifecycle state.
+
+---
+
+## 19.1 POST /demo/settlement
+
+`POST /demo/settlement` is Demo 1 local-only settlement control.
+
+It must be accepted only when auction lifecycle state is `AwaitingSettlement`.
+
+It accepts:
+
+- `auction_id`
+- `outcome`
+
+`outcome` must be one of:
+
+- `settled`
+- `expired`
+
+If `outcome = settled`, final destination must be the winner destination.
+
+If `outcome = expired`, final destination must be `NullSteward`.
+
+`POST /demo/settlement` must persist exactly one `SettlementRecord` and exactly one `FinalizationRecord`.
+
+`POST /demo/settlement` must not simulate live payment, mempool observation, or confirmation observation.
 
 ---
 
