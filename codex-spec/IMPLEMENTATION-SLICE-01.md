@@ -188,12 +188,15 @@ The state-evaluation step must persist any required deterministic lifecycle reco
 2. time-based `AuctionCloseRecord` for an open auction whose `current_end_time` has passed
 3. `ResolutionRecord` for a closed auction without resolution
 4. chain-confirmed settlement-deadline expiration records only when a later active implementation slice enables chain-confirmed settlement semantics
-5. required deferred `InscriptionIntentRecord` after finalization when absent
-6. next `AuctionRecord` after finalization and rhythm gap when no active auction exists
+5. next `AuctionRecord` after finalization and rhythm gap when no active auction exists
 
 Demo 1 local settlement must not auto-expire on `settlement_deadline`.
 
 Demo 1 `expired` settlement can be produced only by `POST /demo/settlement`.
+
+The Demo 1 state-evaluation step must not complete a missing deferred `InscriptionIntentRecord` after `FinalizationRecord` exists.
+
+For Demo 1, `SettlementRecord`, `FinalizationRecord`, and the required deferred `InscriptionIntentRecord` are persisted only through the atomic `POST /demo/settlement` commit group defined in Section 19.1.
 
 This persistence makes auction `N + 1` `Scheduled` only.
 
@@ -416,7 +419,11 @@ After finalization:
 - sequence advancement toward `N + 1` becomes eligible only after `auction.inter_auction_gap_seconds` has elapsed
 - inscription lifecycle can proceed only as permitted by this implementation slice
 
-For Demo 1, `FinalizationRecord` and the required deferred `InscriptionIntentRecord` must be persisted through the same serialized canonical commit path or immediately adjacent serialized commits before any later auction availability evaluation.
+For Demo 1, `FinalizationRecord` and the required deferred `InscriptionIntentRecord` must be persisted only as part of the atomic `POST /demo/settlement` canonical commit group.
+
+A finalized Demo 1 auction without its required deferred `InscriptionIntentRecord` is invalid persisted state.
+
+Restart reconstruction must halt if `FinalizationRecord` exists for a Demo 1 auction and the required deferred `InscriptionIntentRecord` is absent.
 
 ---
 
@@ -507,7 +514,17 @@ The state must be derived from canonical event records.
 - final destination when known
 - inscription status
 - sequence availability state
+- next auction availability time
+- rhythm-gap elapsed status
 - server time
+
+`GET /state` must expose sequence availability using the fixed shape defined in `api/API-STATE-SHAPES.md`.
+
+`sequence_availability_state` must be derived from canonical records and the rhythm-gap rule.
+
+`next_auction_available_at` must equal `FinalizationRecord.finalization_time + auction.inter_auction_gap_seconds` when the current auction is finalized and no later `AuctionRecord` exists; otherwise it must be `null`.
+
+`rhythm_gap_elapsed` must be `true` only when `next_auction_available_at` is non-null and `server_time >= next_auction_available_at`; it must be `false` when `next_auction_available_at` is non-null and the gap has not elapsed; it must be `null` otherwise.
 
 `GET /state` must not depend on live Bitcoin, wallet state, mempool observation, or confirmation observation.
 
@@ -596,7 +613,11 @@ If `outcome = settled`, final destination must be the winner destination.
 
 If `outcome = expired`, final destination must be `NullSteward`.
 
-`POST /demo/settlement` must persist exactly one `SettlementRecord`, exactly one `FinalizationRecord`, and exactly one deferred `InscriptionIntentRecord` before returning success.
+`POST /demo/settlement` must persist exactly one `SettlementRecord`, exactly one `FinalizationRecord`, and exactly one deferred `InscriptionIntentRecord` in one atomic canonical commit group before returning success.
+
+If any of the three records cannot be persisted, none of the three records must be persisted and the request must fail explicitly.
+
+No later state-evaluation step may repair or complete a partial Demo 1 settlement/finalization/intent commit.
 
 `POST /demo/settlement` must return the exact response shape defined in `api/API-STATE-SHAPES.md`.
 

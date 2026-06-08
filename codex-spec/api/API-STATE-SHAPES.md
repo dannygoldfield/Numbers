@@ -253,6 +253,9 @@ If any required timestamp is missing after its corresponding canonical event rec
   "settlement_deadline": "ISO-8601 or null",
   "finalized_at": "ISO-8601 or null",
   "final_destination": "string or null",
+  "sequence_availability_state": "not_finalized | waiting_for_rhythm_gap | ready_to_create_next | current_auction_exists",
+  "next_auction_available_at": "ISO-8601 or null",
+  "rhythm_gap_elapsed": "boolean or null",
 
   "current_high_bid": "BidSummaryObject or null",
   "bid_count": "integer",
@@ -275,6 +278,13 @@ If any required timestamp is missing after its corresponding canonical event rec
 - `current_high_bid` must be derived only from valid `BidRecord` entries using the winner-selection ordering rule.
 - `bid_count` must equal the count of `BidRecord` entries for the current auction, including invalid bids.
 - `settlement_deadline` must be derived from `ResolutionRecord` when present and must be `null` before resolution.
+- `sequence_availability_state` must be mechanically derived from canonical auction records, finalization state, rhythm-gap eligibility, and the existence or absence of a later `AuctionRecord`.
+- `sequence_availability_state = not_finalized` when the current auction has no `FinalizationRecord`.
+- `sequence_availability_state = waiting_for_rhythm_gap` when the current auction is finalized, no later `AuctionRecord` exists, and `server_time < next_auction_available_at`.
+- `sequence_availability_state = ready_to_create_next` when the current auction is finalized, no later `AuctionRecord` exists, and `server_time >= next_auction_available_at`.
+- `sequence_availability_state = current_auction_exists` when an `AuctionRecord` exists for the next number after the latest finalized auction.
+- `next_auction_available_at` must equal `FinalizationRecord.finalization_time + auction.inter_auction_gap_seconds` only when the current auction is finalized and no later `AuctionRecord` exists; otherwise it must be `null`.
+- `rhythm_gap_elapsed` must be `true` only when `next_auction_available_at` is non-null and `server_time >= next_auction_available_at`; it must be `false` when `next_auction_available_at` is non-null and `server_time < next_auction_available_at`; it must be `null` when `next_auction_available_at` is `null`.
 - `inscription_state` must be reconstructed from inscription canonical event records.
 - `last_record_sequence_index` must equal the highest persisted canonical event record sequence index.
 

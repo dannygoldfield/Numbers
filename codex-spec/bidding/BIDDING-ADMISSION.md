@@ -52,6 +52,8 @@ If system control state is not `Running`, the bid must be rejected explicitly.
 
 If auction state is `Closed`, `AwaitingSettlement`, or `Finalized`, the bid must be rejected explicitly.
 
+Requests rejected because auction state is `Closed`, `AwaitingSettlement`, or `Finalized` do not reach admission evaluation and do not produce `BidRecord`, unless a later implementation slice explicitly defines audit recording for precondition failures.
+
 ---
 
 # 3. Bid Recording Rule
