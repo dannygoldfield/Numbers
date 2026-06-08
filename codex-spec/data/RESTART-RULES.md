@@ -201,9 +201,13 @@ Permitted deterministic evaluations after restart are:
    - persist exactly one `SettlementRecord`.
    - persist exactly one `FinalizationRecord`.
 
-4. If auction state is `AwaitingSettlement` and `ResolutionRecord` indicates no valid bids:
-   - persist exactly one `SettlementRecord` with `status = not_required`.
-   - persist exactly one `FinalizationRecord` with destination `NullSteward`.
+4. No-valid-bid restart path:
+
+   No restart transition exists for a no-valid-bid condition in the current first-valid-bid opening model.
+
+   If no valid bid has been accepted, the auction remains `Scheduled`.
+
+   Restart must not create `AuctionCloseRecord`, `ResolutionRecord`, `SettlementRecord`, `FinalizationRecord`, inscription intent, or `NullSteward` outcome solely because no valid bid exists.
 
 No other automatic auction transition is permitted.
 

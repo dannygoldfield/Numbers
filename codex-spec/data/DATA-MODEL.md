@@ -359,7 +359,12 @@ Must be one of:
 
 - `settled`
 - `expired`
-- `not_required`
+For Demo 1, `status` must be one of:
+
+- `settled`
+- `expired`
+
+`not_required` is reserved for a future implementation slice that explicitly defines a no-winner settlement path.
 
 ### `confirmation_txid`
 
@@ -395,7 +400,7 @@ Represents transition to `Finalized`.
 
 - must equal the winning destination when settlement status is `settled`
 - must equal `NullSteward` when settlement status is `expired`
-- must equal `NullSteward` when no valid winner exists
+A no-valid-bid condition does not produce `FinalizationRecord` in Demo 1 because the auction remains `Scheduled`.
 
 ## Rules
 

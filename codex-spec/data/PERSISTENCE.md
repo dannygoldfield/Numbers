@@ -287,7 +287,8 @@ The settlement deadline must be persisted exactly once in `ResolutionRecord`.
 
 - `settled`
 - `expired`
-- `not_required`
+
+`not_required` must not be emitted in Demo 1 unless an active implementation slice explicitly defines a no-winner settlement path.
 
 Settlement persistence must occur before `FinalizationRecord`.
 
@@ -299,7 +300,9 @@ Settlement failure must be explicit and durable.
 
 If settlement fails, final destination must be `NullSteward`.
 
-If no valid bids exist, final destination must be `NullSteward`.
+If no valid bid is accepted, the auction remains `Scheduled`.
+
+No settlement, finalization, inscription intent, or `NullSteward` outcome is produced solely because no valid bid exists.
 
 ---
 
