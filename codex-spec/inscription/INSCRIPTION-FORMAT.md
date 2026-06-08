@@ -1,11 +1,16 @@
-# Inscription Format — Numbers
+# Inscription Format: Numbers
 
 This document defines the canonical inscription content bytes for Numbers.
 
 It is normative.
 
 This document defines only the inscription content payload.
+
 Transaction construction and chain interaction are defined elsewhere.
+
+This document does not require live inscription execution.
+
+This document does not alter auction lifecycle, settlement, finalization, authority consumption, restart reconstruction, or sequence advancement semantics.
 
 ---
 
@@ -14,16 +19,16 @@ Transaction construction and chain interaction are defined elsewhere.
 For canonical number `N`, the inscription content payload must be:
 
 - The UTF-8 encoding of the base-10 ASCII digits of `N`
-- With no leading zeros (except `N = 0`)
+- With no leading zeros
 - With no trailing newline
 - With no surrounding whitespace
 - With no additional metadata
 
 Examples:
 
-- N = 0  → payload bytes encode the string "0"
-- N = 7  → payload bytes encode the string "7"
-- N = 37 → payload bytes encode the string "37"
+- N = 1   → payload bytes encode the string "1"
+- N = 7   → payload bytes encode the string "7"
+- N = 37  → payload bytes encode the string "37"
 - N = 100 → payload bytes encode the string "100"
 
 ---
@@ -32,7 +37,7 @@ Examples:
 
 The inscription content type must be:
 
-- `text/plain; charset=utf-8`
+- `text/plain; charset=utf-8` 
 
 No other content type is permitted for canonical Numbers inscriptions.
 
@@ -58,14 +63,16 @@ If `N` would produce a payload larger than 32 bytes, execution must halt.
 
 ---
 
-## 5. Display and Rendering (Non-Normative)
+## 5. Display and Rendering
 
-The system may render the payload text in any font or style.
-Rendering has no effect on canonical on-chain payload bytes.
+Display rendering is outside canonical inscription content.
+
+Font, style, layout, animation, interface treatment, and local rendering choices have no effect on canonical on-chain payload bytes.
 
 ---
 
 ## 6. Final Rule
 
 If the payload bytes differ from the rules above, the inscription is non-canonical.
+
 No non-canonical payload may be used for a Numbers inscription.

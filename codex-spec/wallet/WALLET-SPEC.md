@@ -11,11 +11,42 @@ It is normative.
 
 No wallet behavior may occur outside the rules defined here.
 
+## 0. Scope Boundary
+
+This document defines wallet behavior only when wallet-dependent behavior is enabled by an active implementation slice.
+
+For Demo 1:
+
+- wallet behavior is not required for auction correctness
+- wallet behavior is not required for sequence advancement
+- wallet behavior is not required for restart reconstruction
+- wallet behavior is not required for API state reconstruction
+- Bitcoin Core is not required
+- live inscription funding is not required
+- settlement address derivation is not required unless explicitly enabled by the active implementation slice
+
+Demo 1 must remain executable without:
+
+- a master seed
+- decrypted wallet state
+- confirmed UTXOs
+- Bitcoin Core RPC
+- inscription funding
+- signing
+- mempool observation
+- confirmation observation
+
+Wallet behavior must not create auction lifecycle semantics.
+
+Wallet behavior must not create retry, recovery, authority, or sequence-advancement behavior.
+
+If this document conflicts with `PROTOTYPE-SCOPE.md` for Demo 1 behavior, `PROTOTYPE-SCOPE.md` controls.
+
 ---
 
 ## 1. Master Seed
 
-The system must operate from a single HD master seed.
+When wallet behavior is enabled by an active implementation slice, the wallet must operate from a single HD master seed.
 
 The seed must be:
 
@@ -107,7 +138,7 @@ The system must not scan unused address ranges to infer state.
 The private key corresponding to a settlement address must:
 
 - Never be used to sign outgoing transactions within Numbers.
-- Exist only to allow operator recovery if necessary.
+- Exist only for external operator custody actions outside Numbers protocol semantics.
 
 Settlement addresses are receive-only for protocol purposes.
 
@@ -117,6 +148,12 @@ Settlement addresses are receive-only for protocol purposes.
 
 Inscription transactions must be funded from the operator wallet
 derived from the master seed.
+
+If the final destination is `NullSteward` and live inscription is enabled by the active implementation slice, inscription funding remains operator-funded.
+
+This funding rule does not define the `NullSteward` destination mechanism.
+
+For mainnet launch, any `NullSteward` destination mechanism must be specified separately before use.
 
 Settlement addresses must never fund inscription transactions.
 
@@ -149,7 +186,7 @@ If authority is consumed:
 
 If broadcast is not committed:
 
-- Reserved UTXOs may be released.
+- Reserved UTXOs are eligible for release only if release behavior is explicitly defined by the active implementation slice.
 
 UTXO reservation must not introduce new lifecycle states.
 
