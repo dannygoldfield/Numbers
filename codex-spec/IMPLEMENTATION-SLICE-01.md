@@ -187,9 +187,13 @@ The state-evaluation step must persist any required deterministic lifecycle reco
 1. initial `AuctionRecord` creation on empty canonical store
 2. time-based `AuctionCloseRecord` for an open auction whose `current_end_time` has passed
 3. `ResolutionRecord` for a closed auction without resolution
-4. settlement-deadline expiration records when chain-confirmed settlement semantics are active
+4. chain-confirmed settlement-deadline expiration records only when a later active implementation slice enables chain-confirmed settlement semantics
 5. required deferred `InscriptionIntentRecord` after finalization when absent
 6. next `AuctionRecord` after finalization and rhythm gap when no active auction exists
+
+Demo 1 local settlement must not auto-expire on `settlement_deadline`.
+
+Demo 1 `expired` settlement can be produced only by `POST /demo/settlement`.
 
 This persistence makes auction `N + 1` `Scheduled` only.
 
@@ -230,6 +234,8 @@ If no valid bid is accepted:
 
 - system control state is `Running`
 - auction lifecycle state is `Scheduled` or `Open`
+
+If no `PauseEventRecord` exists, system control state derives as `Running`.
 
 Demo 1 uses `validation_profile = demo_local`.
 
@@ -397,6 +403,11 @@ Allowed final destinations for Demo 1 are:
 - winner destination
 - `NullSteward`
 
+Allowed Demo 1 `FinalizationRecord.finalization_reason` values are:
+
+- `settled_to_winner` when `SettlementRecord.status = settled`
+- `expired_to_nullsteward` when `SettlementRecord.status = expired`
+
 After finalization:
 
 - auction lifecycle state is terminal
@@ -442,12 +453,17 @@ Demo 1 must persist exactly one deferred `InscriptionIntentRecord` for each fina
 For Demo 1 inscription intent:
 
 - `adapter_mode` must be `deferred_in_this_slice`
+- `destination_script_pubkey` must be `null`
+- `settlement_reference` must equal the `record_id` of the `SettlementRecord` that caused finalization
+- `intent_id` must be derived according to `inscription/INSCRIPTION-MACHINE.md`
 - no transaction is constructed
 - no transaction is signed
 - no transaction is broadcast
 - no mempool state is checked
 - no confirmation state is checked
 - inscription status must remain visibly deferred or not started according to the API state shape
+
+Demo 1 local destination identifiers and `NullSteward` do not need to be convertible to Bitcoin `scriptPubKey` values.
 
 `InscriptionIntentRecord` does not consume inscription authority.
 
@@ -641,6 +657,10 @@ The implementation must not silently repair:
 - sequence gaps
 - duplicate auction numbers
 - duplicate terminal records
+
+Demo 1 API error codes must use the stable vocabulary defined in `api/API-SPEC.md` and `api/API-STATE-SHAPES.md`.
+
+`GET /auction/{N}` is reserved for a later implementation slice and must not be implemented in Demo 1.
 
 Retry behavior is excluded unless explicitly defined by this implementation slice.
 

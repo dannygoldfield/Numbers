@@ -52,17 +52,17 @@ Demo 1 must not require:
 
 For Demo 1:
 
-- `InscriptionIntentRecord` may be persisted
+- exactly one deferred `InscriptionIntentRecord` must be persisted after each Demo 1 finalization
 - inscription adapter mode must be `deferred_in_this_slice`
 - no `InscriptionBroadcastRecord` is required
 - no `InscriptionConfirmationRecord` is required
-- no live inscription success may be silently simulated
+- no live inscription success must be silently simulated
 
 Auction lifecycle, winner resolution, finalization, sequence advancement, and restart reconstruction must remain demonstrable without live inscription execution.
 
 ## Demo 2
 
-Demo 2 may add:
+A later Demo 2 implementation slice can add:
 
 - local Bitcoin Core Testnet integration
 - local wallet integration
@@ -145,7 +145,7 @@ Broadcast attempt is an operation, not a lifecycle state.
 
 The inscription transaction must deliver the inscribed output to the finalized destination address.
 
-The finalized destination address must be:
+For live inscription modes, the finalized destination address must be:
 
 - persisted in the auction finalization records
 - immutable once persisted
@@ -170,9 +170,11 @@ then:
 
 - inscription broadcast must not proceed
 - the condition must be classified via `errors/ERROR-TAXONOMY.md`
-- no inscription authority may be consumed
+- no inscription authority must be consumed
 
 Destination resolution must occur before transaction construction.
+
+For Demo 1 deferred inscription mode, no transaction construction occurs and no live destination script is required.
 
 ---
 
@@ -224,7 +226,7 @@ The inscription-related canonical event record types are:
 3. `InscriptionConfirmationRecord`
 4. `AmbiguityRecord`
 
-No inscription-specific record type outside this set may be persisted as canonical system truth.
+No inscription-specific record type outside this set can be persisted as canonical system truth.
 
 ---
 
@@ -264,15 +266,39 @@ Must be SHA-256 over the exact payload bytes defined in `inscription/INSCRIPTION
 
 ### `destination_script_pubkey`
 
-Must be derived solely from the finalized destination address.
+For `adapter_mode = testnet_ordinals`, `destination_script_pubkey` must be derived solely from the finalized destination address.
+
+For `adapter_mode = deferred_in_this_slice`, `destination_script_pubkey` must be `null`.
+
+Demo 1 local destination identifiers and `NullSteward` do not need to be convertible to Bitcoin `scriptPubKey` values.
+
+### `settlement_reference`
+
+For Demo 1, `settlement_reference` must equal the `record_id` of the `SettlementRecord` that caused finalization.
+
+For later live settlement slices, `settlement_reference` must be defined by the active implementation slice before use.
 
 ### `intent_id`
 
-Must be deterministically derived from the other intent fields.
+For Demo 1, `intent_id` must be deterministically derived as:
+
+```text
+intent_id = "intent_" + lowercase_hex_sha256(canonical_json({
+  "auction_id": auction_id,
+  "number": number,
+  "settlement_reference": settlement_reference,
+  "adapter_mode": adapter_mode,
+  "inscription_payload_hash": inscription_payload_hash
+}))
+```
+
+The `canonical_json` and `lowercase_hex_sha256` rules are defined in `data/DATA-MODEL.md`.
+
+For later live inscription slices, alternate `intent_id` derivation must be explicitly specified before use.
 
 ## Rules
 
-- at most one `InscriptionIntentRecord` may exist per auction
+- at most one `InscriptionIntentRecord` can exist per auction
 - intent must be immutable once persisted
 - intent persistence does not consume inscription authority
 - intent persistence does not prove broadcast
@@ -287,7 +313,7 @@ For Demo 1, `adapter_mode` must be `deferred_in_this_slice` unless live testnet 
 
 `InscriptionBroadcastRecord` represents the classified result of an inscription broadcast attempt.
 
-It may exist only when `InscriptionIntentRecord.adapter_mode = testnet_ordinals`.
+It can exist only when `InscriptionIntentRecord.adapter_mode = testnet_ordinals`.
 
 It must not exist when `InscriptionIntentRecord.adapter_mode = deferred_in_this_slice`.
 
@@ -331,8 +357,8 @@ Must be one of:
 ### `candidate_txid`
 
 - must be non-null when `broadcast_outcome = committed`
-- may be null when `broadcast_outcome = pre_commit_rejected`
-- may be null when `broadcast_outcome = ambiguous`
+- can be `null` when `broadcast_outcome = pre_commit_rejected`
+- can be `null` when `broadcast_outcome = ambiguous`
 
 ### `attempt_index`
 
@@ -366,9 +392,9 @@ If `rpc_result = unknown`, then `mempool_presence` must be `unknown`.
 
 This document does not permit automatic retry after `pre_commit_rejected`.
 
-A later implementation slice may explicitly permit bounded retry behavior.
+A later implementation slice can explicitly permit bounded retry behavior.
 
-Without that explicit permission, `pre_commit_rejected` records the failed broadcast classification and no further broadcast attempt may be made automatically.
+Without that explicit permission, `pre_commit_rejected` records the failed broadcast classification and no further broadcast attempt can be made automatically.
 
 ---
 
@@ -376,7 +402,7 @@ Without that explicit permission, `pre_commit_rejected` records the failed broad
 
 `InscriptionConfirmationRecord` represents observed canonical inscription confirmation.
 
-It may exist only after an `InscriptionBroadcastRecord` with `broadcast_outcome = committed`.
+It can exist only after an `InscriptionBroadcastRecord` with `broadcast_outcome = committed`.
 
 ## Required Payload Fields
 
@@ -416,7 +442,7 @@ If any precondition is not satisfied, broadcast must not proceed.
 
 The failed condition must be classified via `errors/ERROR-TAXONOMY.md`.
 
-No inscription authority may be consumed.
+No inscription authority must be consumed.
 
 ## 8.2 Steps
 
@@ -491,7 +517,7 @@ If during replacement the system cannot determine mempool presence for either th
 
 Confirmation observation is included only in implementation slices that enable `testnet_ordinals`.
 
-After authority consumption, the system may observe the authoritative node until either:
+After authority consumption, the system can observe the authoritative node until either:
 
 - a candidate txid becomes Known Confirmed to confirmation depth
 - ambiguity is detected
@@ -503,7 +529,7 @@ The candidate set consists only of:
 - the committed txid
 - explicitly permitted equivalent replacement txids recorded in `InscriptionBroadcastRecord`
 
-No other txids may be considered.
+No other txids can be considered.
 
 ## 10.2 Confirmation Rule
 
@@ -549,7 +575,7 @@ Post-restart chain checks are included only in implementation slices that enable
 
 If inscription state reconstructs to `Inscribing`:
 
-- the system may query the authoritative node for confirmation status of all candidate txids
+- the system can query the authoritative node for confirmation status of all candidate txids
 - if any candidate is Known Confirmed to the configured confirmation depth, the system must persist `InscriptionConfirmationRecord`
 - if node responses are contradictory relative to persisted records, the condition must be classified through `errors/ERROR-TAXONOMY.md`
 

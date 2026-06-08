@@ -19,7 +19,7 @@ This document defines:
 
 Auction lifecycle and inscription lifecycle are separate layered machines.
 
-They may operate concurrently but must not interfere with each other’s authority domains.
+They can operate concurrently but must not interfere with each other’s authority domains.
 
 ---
 
@@ -75,6 +75,14 @@ No other auction transitions are permitted.
 | `Open → Closed` because bid cap was reached in Demo 1 | Bid cap closure is reserved for a later implementation slice. |
 | Any transition inferred from missing records | Guess-space forbidden. |
 
+## System Control Derivation
+
+If no `PauseEventRecord` exists, system control state derives as `Running`.
+
+If the latest `PauseEventRecord.event_type = pause`, system control state derives as `Paused`.
+
+If the latest `PauseEventRecord.event_type = resume`, system control state derives as `Running`.
+
 ---
 
 # II. Inscription Lifecycle Machine
@@ -114,7 +122,7 @@ There is no canonical `Broadcasting` lifecycle state.
 | From | Trigger | To | Required Canonical Event Records | Notes |
 |---|---|---|---|---|
 | `NotStarted` | Inscription intent persisted | `NotStarted` | `InscriptionIntentRecord` | Intent persistence does not consume inscription authority and does not prove broadcast. |
-| `NotStarted` | Broadcast classified as `pre_commit_rejected` | `NotStarted` | `InscriptionBroadcastRecord` | Authority not consumed. `pre_commit_rejected` may be recorded only when the system can determine that `broadcast_commit` did not occur. This table does not create retry behavior. |
+| `NotStarted` | Broadcast classified as `pre_commit_rejected` | `NotStarted` | `InscriptionBroadcastRecord` | Authority not consumed. `pre_commit_rejected` can be recorded only when the system can determine that `broadcast_commit` did not occur. This table does not create retry behavior. |
 | `NotStarted` | `broadcast_commit` | `Inscribing` | `InscriptionBroadcastRecord` | `InscriptionBroadcastRecord.broadcast_outcome = committed`. Authority consumed. |
 | `NotStarted` | Broadcast classified as `ambiguous` | `Ambiguous` | `InscriptionBroadcastRecord` or `AmbiguityRecord` | Authority frozen permanently. |
 | `Inscribing` | Canonical inscription observed to required confirmation depth | `Inscribed` | `InscriptionConfirmationRecord` | Terminal inscription state. |
@@ -146,7 +154,7 @@ No other inscription transitions are permitted.
 - `broadcast_commit` occurs when:
   - a broadcast RPC succeeds
   - the authoritative node reports the transaction present in its mempool
-- Inscription authority may be consumed at most once per auction.
+- Inscription authority can be consumed at most once per auction.
 - After `broadcast_commit`, no semantically distinct inscription attempt is permitted.
 - Controlled fee replacement, if implemented, is permitted only under the equivalence rules defined in `inscription/INSCRIPTION-MACHINE.md`.
 - Ambiguity permanently freezes inscription authority.

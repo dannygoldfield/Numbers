@@ -163,6 +163,26 @@ Error code meaning must not change within the API version.
 
 The API must not retry actions on behalf of clients.
 
+## Demo 1 Error Code Vocabulary
+
+For Demo 1, API `error_code` must be one of:
+
+- `malformed_request`
+- `invalid_json`
+- `unknown_endpoint`
+- `method_not_allowed`
+- `bid_precondition_failed`
+- `bid_admission_failed`
+- `settlement_precondition_failed`
+- `invalid_settlement_outcome`
+- `invalid_pagination`
+- `storage_unavailable`
+- `fatal_reconstruction_error`
+
+These codes are machine-stable for Demo 1.
+
+`message` can provide human-readable detail, but client behavior must not depend on parsing `message`.
+
 ---
 
 # 6. Public Endpoint Surface
@@ -171,13 +191,14 @@ Endpoints listed here define the entire permitted API surface.
 
 No undocumented endpoint is permitted.
 
-The permitted endpoints are:
+The permitted Demo 1 endpoints are:
 
 1. `GET /state`
 2. `GET /auction/history`
-3. `GET /auction/{N}`
-4. `POST /bid`
-5. `POST /demo/settlement`
+3. `POST /bid`
+4. `POST /demo/settlement`
+
+`GET /auction/{N}` is reserved for a later implementation slice and must not be implemented in Demo 1.
 
 ---
 
@@ -333,49 +354,17 @@ Unknown, unavailable, or not-yet-applicable values must be represented as `null`
 
 ---
 
-# 9. `GET /auction/{N}`
+# 9. Reserved Endpoint: `GET /auction/{N}`
 
-Returns recorded and mechanically derived state for auction number `N`.
+`GET /auction/{N}` is reserved for a later implementation slice.
 
-## Required Data Fields
+Demo 1 must not implement this endpoint.
 
-The response must include:
+Requests to `GET /auction/{N}` in Demo 1 must return the API error envelope with:
 
-- `number`
-- `auction_state`
-- `system_control_state`
-- `opened_at`
-- `base_end_time`
-- `number_of_extension_events`
-- `current_end_time`
-- `closed_at`
-- `resolution_time`
-- `winning_bid_id`
-- `winning_amount_sats`
-- `settlement_status`
-- `settlement_source`
-- `settlement_deadline`
-- `finalized_at`
-- `final_destination`
-- `bid_count`
-- `current_high_bid`
-- `inscription_state`
-- `inscription_adapter_mode`
-- `inscription_txid`
-- `ambiguity`
+- `error_code = unknown_endpoint`
 
-Unknown, unavailable, or not-yet-applicable values must be represented as `null`.
-
-## Forbidden Behavior
-
-`GET /auction/{N}` must not:
-
-- infer missing records
-- infer ownership
-- reinterpret settlement
-- reinterpret finalization
-- hide ambiguity
-- expose undocumented internal fields
+This endpoint reservation must not be used to infer additional Demo 1 API behavior.
 
 ---
 

@@ -59,6 +59,24 @@ Violation of these rules is fatal.
 
 # 3. Common Conventions
 
+## Demo 1 Error Codes
+
+For Demo 1, API `error_code` must be one of:
+
+- `malformed_request`
+- `invalid_json`
+- `unknown_endpoint`
+- `method_not_allowed`
+- `bid_precondition_failed`
+- `bid_admission_failed`
+- `settlement_precondition_failed`
+- `invalid_settlement_outcome`
+- `invalid_pagination`
+- `storage_unavailable`
+- `fatal_reconstruction_error`
+
+No other `error_code` value is permitted for Demo 1.
+
 ## Primitive Types
 
 - timestamps must be ISO 8601 UTC strings or `null`
@@ -252,7 +270,7 @@ If any required timestamp is missing after its corresponding canonical event rec
 - `server_time` must equal authoritative server time at response generation.
 - `current_number` must identify the current auction number.
 - `auction_state` must be reconstructed from canonical event records.
-- `system_control_state` must be reconstructed from `PauseEventRecord` entries.
+- `system_control_state` must be reconstructed from `PauseEventRecord` entries. If no `PauseEventRecord` exists, `system_control_state` must be `Running`.
 - `number_of_extension_events` must equal the count of `ExtensionEventRecord` entries for the current auction.
 - `current_high_bid` must be derived only from valid `BidRecord` entries using the winner-selection ordering rule.
 - `bid_count` must equal the count of `BidRecord` entries for the current auction, including invalid bids.
@@ -354,52 +372,13 @@ It is not limited to finalized auction outcome summaries.
 
 ---
 
-# 7. `GET /auction/{N}` Shape
+# 7. Reserved Shape: `GET /auction/{N}`
 
-`GET /auction/{N}` returns recorded and mechanically derived state for one auction number.
+`GET /auction/{N}` is reserved for a later implementation slice.
 
-## Shape
+Demo 1 must not expose this shape.
 
-```json
-{
-  "number": "integer",
-  "auction_state": "Scheduled | Open | Closed | AwaitingSettlement | Finalized",
-  "system_control_state": "Running | Paused",
-
-  "opened_at": "ISO-8601 or null",
-  "base_end_time": "ISO-8601 or null",
-  "number_of_extension_events": "integer",
-  "current_end_time": "ISO-8601 or null",
-  "closed_at": "ISO-8601 or null",
-
-  "resolution_time": "ISO-8601 or null",
-  "winning_bid_id": "string or null",
-  "winning_amount_sats": "integer or null",
-
-  "settlement_status": "settled | expired | null",
-  "settlement_source": "demo_local | chain_confirmed | null",
-  "settlement_deadline": "ISO-8601 or null",
-
-  "finalized_at": "ISO-8601 or null",
-  "final_destination": "string or null",
-
-  "bid_count": "integer",
-  "current_high_bid": "BidSummaryObject or null",
-
-  "inscription_state": "NotStarted | Inscribing | Ambiguous | Inscribed",
-  "inscription_adapter_mode": "deferred_in_this_slice | testnet_ordinals | null",
-  "inscription_txid": "string or null",
-
-  "ambiguity": "AmbiguityObject or null"
-}
-```
-
-## Field Rules
-
-- all values must be derived from canonical event records
-- missing records must not be inferred
-- unknown, unavailable, or not-yet-applicable fields must be `null`
-- ambiguity must be exposed when an `AmbiguityRecord` applies to the auction
+Requests to `GET /auction/{N}` in Demo 1 must return the API error envelope with `error_code = unknown_endpoint`.
 
 ---
 
@@ -663,27 +642,9 @@ It is not limited to finalized auction outcome summaries.
 
 # 17. Composite Auction View
 
-A read-only aggregation for clients.
+Composite auction view is reserved for a later implementation slice.
 
-This introduces no new semantics.
-
-## Shape
-
-```json
-{
-  "auction": "GET /auction/{N} object",
-  "resolution": "ResolutionObject or null",
-  "settlement": "SettlementObject or null",
-  "inscription": "InscriptionObject",
-  "ambiguity": "AmbiguityObject or null"
-}
-```
-
-## Field Rules
-
-- `auction` must conform to the `GET /auction/{N}` shape
-- nested objects must conform to their defined shapes
-- this view must not add fields or infer missing records
+Demo 1 must use `GET /state` and `GET /auction/history` for frontend-visible state and history.
 
 ---
 

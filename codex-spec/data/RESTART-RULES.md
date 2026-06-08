@@ -64,7 +64,7 @@ Specifically:
 - if any `InscriptionBroadcastRecord` has `broadcast_outcome = committed`, inscription broadcast must not be repeated
 - if `InscriptionConfirmationRecord` exists, confirmation must not be recomputed
 
-If an outcome record does not exist but its prerequisite transition has occurred, deterministic evaluation may complete only when explicitly permitted by this document and the governing lifecycle table.
+If an outcome record does not exist but its prerequisite transition has occurred, deterministic evaluation can complete only when explicitly permitted by this document and the governing lifecycle table.
 
 Unknown does not grant authority.
 
@@ -109,7 +109,7 @@ If any required canonical event record is:
 
 then execution must halt.
 
-No authority may be exercised.
+No authority can be exercised.
 
 ---
 
@@ -186,7 +186,7 @@ If required time inputs are missing, malformed, or contradictory, execution must
 
 ## Step 5: Complete Permitted Deterministic Auction Transitions
 
-Only transitions explicitly permitted by reconstructed state may be evaluated.
+Only transitions explicitly permitted by reconstructed state can be evaluated.
 
 Permitted deterministic evaluations after restart are:
 
@@ -203,10 +203,15 @@ Permitted deterministic evaluations after restart are:
    - compute resolution deterministically.
    - persist exactly one `ResolutionRecord`.
 
-3. If auction state is `AwaitingSettlement` and settlement deadline expired:
+3. If auction state is `AwaitingSettlement`, settlement deadline expired, and the active implementation slice enables chain-confirmed settlement semantics:
    - persist exactly one `SettlementRecord`.
    - persist exactly one `FinalizationRecord`.
-   - persist exactly one deferred `InscriptionIntentRecord` for Demo 1 before evaluating later auction availability.
+
+   This transition is outside Demo 1.
+
+   Demo 1 local settlement does not auto-expire on settlement deadline during restart or runtime state evaluation.
+
+   In Demo 1, `expired` settlement is produced only by `POST /demo/settlement`.
 
 4. If the latest auction state is `Finalized`, no active auction exists, `auction.inter_auction_gap_seconds` has elapsed after `FinalizationRecord.finalization_time`, and no `AuctionRecord` exists for `N + 1`:
    - persist exactly one `AuctionRecord` for `N + 1`.
@@ -258,7 +263,7 @@ For a given auction:
 4. Else if any `InscriptionBroadcastRecord` has `broadcast_outcome = committed`:
    - inscription state is `Inscribing`.
    - inscription authority is consumed.
-   - only confirmation observation explicitly permitted by the active implementation slice may occur.
+   - only confirmation observation explicitly permitted by the active implementation slice can occur.
 
 5. Else:
    - inscription state is `NotStarted`.
@@ -295,7 +300,7 @@ Post-restart chain checks are included only in implementation slices that enable
 
 If inscription state reconstructs to `Inscribing` and the active implementation slice enables confirmation observation:
 
-- the system may query the authoritative node for confirmation status of permitted candidate txids
+- the system can query the authoritative node for confirmation status of permitted candidate txids
 - if a candidate txid is Known Confirmed to the configured confirmation depth, the system must persist `InscriptionConfirmationRecord`
 - if node responses are contradictory relative to persisted canonical event records, the condition must be classified via `errors/ERROR-TAXONOMY.md`
 
@@ -335,7 +340,7 @@ If any state is invalid, contradictory, malformed, or incomplete:
 
 - execution must halt
 - operator inspection is required
-- no authority may be exercised
+- no authority can be exercised
 
 ---
 

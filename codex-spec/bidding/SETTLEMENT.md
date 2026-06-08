@@ -164,6 +164,8 @@ If chain-confirmed settlement is successful:
 
 For Demo 1 local settlement, `expired` is produced only by the Demo 1 local settlement control.
 
+Demo 1 must not automatically expire settlement when `server_time >= settlement_deadline`.
+
 For Demo 1 local settlement control, `expired` does not require `server_time >= settlement_deadline`.
 
 Demo 1 local `expired` is a deterministic operator/demo control outcome, not observed chain expiry.
@@ -236,7 +238,7 @@ Finalization is irreversible.
 
 Settlement outcome must not rewrite or reinterpret `ResolutionRecord`.
 
-No settlement state may be re-entered once finalized.
+No settlement state can be re-entered once finalized.
 
 ---
 
@@ -250,9 +252,9 @@ Settlement does not consume inscription authority.
 
 Once settlement deadline passes for chain-confirmed settlement:
 
-- no late payment may be accepted
-- no settlement-related state may be rewritten
-- no final destination may be changed
+- no late payment can be accepted
+- no settlement-related state can be rewritten
+- no final destination can be changed
 
 ---
 

@@ -174,7 +174,7 @@ The entire canonical data model consists of:
 12. `AmbiguityRecord`
 13. `PauseEventRecord`
 
-No other record type may be persisted as canonical system truth.
+No other record type can be persisted as canonical system truth.
 
 Each canonical event record:
 
@@ -288,7 +288,7 @@ Must be one of:
 - `BidRecord` does not consume auction authority
 - `BidRecord` does not consume inscription authority
 
-Only a `BidRecord` with `validity = valid` may:
+Only a `BidRecord` with `validity = valid` can:
 
 - open a `Scheduled` auction
 - trigger an extension
@@ -319,7 +319,7 @@ Represents transition `Scheduled` to `Open`.
 
 ## Rules
 
-- exactly one `AuctionOpenRecord` may exist per auction
+- exactly one `AuctionOpenRecord` can exist per auction
 - must be written atomically with the first valid `BidRecord`
 - `opening_bid_id` must reference the first valid `BidRecord`
 - `opened_at` must equal authoritative `server_time`
@@ -386,7 +386,7 @@ Must be one of:
 - `closed_at` must equal authoritative `server_time`
 - no further valid bids are permitted after `AuctionCloseRecord`
 
-A valid `BidRecord` before `AuctionCloseRecord` may participate in resolution.
+A valid `BidRecord` before `AuctionCloseRecord` can participate in resolution.
 
 A `BidRecord` after `AuctionCloseRecord` must be invalid.
 
@@ -447,7 +447,7 @@ Each object must contain exactly:
 
 Invalid `BidRecord` entries must not be included.
 
-No fields outside this list may be included.
+No fields outside this list can be included.
 
 The canonical JSON serialization rules in this document govern `resolution_inputs_hash`.
 
@@ -540,6 +540,19 @@ Represents transition to `Finalized`.
 
 A no-valid-bid condition does not produce `FinalizationRecord` in Demo 1 because the auction remains `Scheduled`.
 
+### `finalization_reason`
+
+For Demo 1, `finalization_reason` must be one of:
+
+- `settled_to_winner`
+- `expired_to_nullsteward`
+
+`finalization_reason` must equal `settled_to_winner` when `SettlementRecord.status = settled`.
+
+`finalization_reason` must equal `expired_to_nullsteward` when `SettlementRecord.status = expired`.
+
+No other `finalization_reason` value is permitted in Demo 1.
+
 ## Rules
 
 - exactly one `FinalizationRecord` must exist per auction
@@ -558,9 +571,12 @@ Represents persisted inscription intent.
 
 - `intent_time`
 - `destination_address`
+- `destination_script_pubkey`
 - `inscription_payload_hash`
 - `inscription_content_type`
 - `adapter_mode`
+- `settlement_reference`
+- `intent_id`
 
 ## Field Rules
 
@@ -570,6 +586,20 @@ Must be one of:
 
 - `deferred_in_this_slice`
 - `testnet_ordinals`
+
+### `destination_script_pubkey`
+
+For Demo 1, when `adapter_mode = deferred_in_this_slice`, `destination_script_pubkey` must be `null`.
+
+For live inscription modes, `destination_script_pubkey` must be derived solely from the finalized destination address according to `inscription/INSCRIPTION-MACHINE.md`.
+
+### `settlement_reference`
+
+For Demo 1, `settlement_reference` must equal the `record_id` of the `SettlementRecord` that caused finalization.
+
+### `intent_id`
+
+For Demo 1, `intent_id` must use the deterministic derivation rule defined in `inscription/INSCRIPTION-MACHINE.md`.
 
 ## Rules
 
@@ -627,7 +657,7 @@ Must be one of:
 1. the broadcast RPC succeeds
 2. the authoritative node reports the transaction present in its mempool
 
-`pre_commit_rejected` may be recorded only when the system can determine that `broadcast_commit` did not occur.
+`pre_commit_rejected` can be recorded only when the system can determine that `broadcast_commit` did not occur.
 
 `ambiguous` must be recorded when the system cannot determine whether `broadcast_commit` occurred.
 
@@ -713,6 +743,14 @@ Must be one of:
 - must not recreate authority
 - must not modify deadlines
 - is a system control record, not a lifecycle state
+
+## System Control Derivation
+
+If no `PauseEventRecord` exists, system control state must derive as `Running`.
+
+If the latest `PauseEventRecord.event_type = pause`, system control state must derive as `Paused`.
+
+If the latest `PauseEventRecord.event_type = resume`, system control state must derive as `Running`.
 
 ---
 
