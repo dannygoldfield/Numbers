@@ -51,6 +51,19 @@ Persisting `AuctionRecord` for `N + 1` makes auction `N + 1` `Scheduled`.
 
 Auction `N + 1` opens only when the first valid bid for `N + 1` is accepted.
 
+When `FinalizationRecord` exists for `N`, `auction.inter_auction_gap_seconds` has elapsed, and no active auction exists, the backend must persist `AuctionRecord` for `N + 1` at the next state-evaluation boundary.
+
+State-evaluation boundaries for Demo 1 are:
+
+- backend startup after restart reconstruction completes
+- `GET /state`
+- `POST /bid`
+- `GET /auction/history`
+
+This deterministic creation of `AuctionRecord` for `N + 1` does not open auction `N + 1`.
+
+No background scheduler is required for Demo 1.
+
 Canonical event records must be appended through a single serialized commit path that guarantees total ordering.
 
 All lifecycle state must be derived from canonical event records.
@@ -85,6 +98,8 @@ If a required canonical event record is absent, the corresponding event must be 
 ---
 
 # 3. Auction Initialization
+
+The first auction number must be `auction.starting_number`.
 
 For each number `N`:
 
@@ -187,10 +202,9 @@ Extension records:
 
 # 7. Auction Closing
 
-The auction transitions from `Open` to `Closed` when one of the following is true:
+The auction transitions from `Open` to `Closed` when:
 
 - `server_time >= current_end_time`
-- configured bid cap is reached
 
 At closing:
 
@@ -199,6 +213,10 @@ At closing:
 - no further valid bids are permitted
 
 Auction close is deterministic once the close condition is satisfied.
+
+For Demo 1, bid cap closure is excluded.
+
+`cap_reached` is reserved for a later implementation slice and must not be emitted in Demo 1.
 
 ---
 
@@ -335,8 +353,9 @@ Auction correctness must not depend on inscription progress, broadcast, confirma
 For Demo 1:
 
 - live inscription broadcast is not required
-- `InscriptionIntentRecord` may be persisted after `FinalizationRecord`
+- exactly one deferred `InscriptionIntentRecord` must be persisted for each finalized auction
 - `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
+- `InscriptionIntentRecord` must be persisted through the same serialized canonical commit path as finalization or immediately after `FinalizationRecord` before any later auction availability evaluation
 - no `InscriptionBroadcastRecord` is required
 - no `InscriptionConfirmationRecord` is required
 - no live inscription success may be simulated
@@ -396,7 +415,7 @@ On restart:
 - live inscription broadcast must not be triggered by restart
 - inscription success must not be simulated by restart
 
-Restart may deterministically evaluate only transitions explicitly permitted by `data/RESTART-RULES.md`.
+Restart deterministic evaluation is limited to transitions explicitly permitted by `data/RESTART-RULES.md`.
 
 No other automatic transition is permitted.
 

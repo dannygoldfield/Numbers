@@ -200,8 +200,15 @@ Permitted deterministic evaluations after restart are:
 3. If auction state is `AwaitingSettlement` and settlement deadline expired:
    - persist exactly one `SettlementRecord`.
    - persist exactly one `FinalizationRecord`.
+   - persist exactly one deferred `InscriptionIntentRecord` for Demo 1 before evaluating later auction availability.
 
-4. No-valid-bid restart path:
+4. If the latest auction state is `Finalized`, no active auction exists, `auction.inter_auction_gap_seconds` has elapsed after `FinalizationRecord.finalization_time`, and no `AuctionRecord` exists for `N + 1`:
+   - persist exactly one `AuctionRecord` for `N + 1`.
+   - reconstruct auction `N + 1` as `Scheduled`.
+   - do not persist `AuctionOpenRecord`.
+   - do not start a countdown.
+
+5. No-valid-bid restart path:
 
    No restart transition exists for a no-valid-bid condition in the current first-valid-bid opening model.
 
@@ -263,12 +270,14 @@ For a given auction:
 For Demo 1:
 
 - live inscription broadcast is not required
-- `InscriptionIntentRecord` may exist
+- exactly one deferred `InscriptionIntentRecord` must exist for each finalized auction
 - `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
 - no `InscriptionBroadcastRecord` is required
 - no `InscriptionConfirmationRecord` is required
 - restart must preserve the deferred inscription status
 - restart must not silently simulate inscription broadcast or confirmation
+
+If `FinalizationRecord` exists for a Demo 1 auction and the required deferred `InscriptionIntentRecord` is absent, execution must halt unless the active implementation slice explicitly permits completing that missing record on restart.
 
 Demo 1 auction correctness must remain demonstrable without live inscription execution.
 

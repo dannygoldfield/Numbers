@@ -216,7 +216,6 @@ Extension records:
 Auction close is permitted when:
 
 - `server_time >= current_end_time`
-- or configured bid cap is reached
 
 When close occurs:
 
@@ -229,6 +228,10 @@ If `AuctionCloseRecord` exists before a bid is evaluated, the bid must be invali
 If the system detects that `server_time >= current_end_time` before accepting a bid, the system must close the auction before accepting any further valid bid.
 
 Bid admission and auction close must be serialized through canonical event record persistence.
+
+For Demo 1, bid cap closure is excluded.
+
+`cap_reached` must not be emitted as an `AuctionCloseRecord.reason` in Demo 1.
 
 ---
 
@@ -507,8 +510,9 @@ Authority semantics are governed by `core/AUTHORITY-CONSUMPTION.md`.
 For Demo 1:
 
 - live inscription broadcast is not required
-- `InscriptionIntentRecord` may be persisted
+- exactly one deferred `InscriptionIntentRecord` must be persisted for each finalized auction
 - `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
+- `InscriptionIntentRecord` persistence must occur through the same serialized canonical commit path as finalization or immediately after `FinalizationRecord` before any later auction availability evaluation
 - no `InscriptionBroadcastRecord` is required
 - no `InscriptionConfirmationRecord` is required
 - no live inscription success may be simulated

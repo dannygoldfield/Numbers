@@ -31,7 +31,7 @@ They may operate concurrently but must not interfere with each other’s authori
 |---|---|---|
 | `Scheduled` | Auction exists but has not yet received its first valid bid. | No |
 | `Open` | Auction is actively accepting bids. | No |
-| `Closed` | Auction is closed to bids. Resolution must exist. | No |
+| `Closed` | Auction is closed to bids. Resolution is eligible and pending unless `ResolutionRecord` already exists. | No |
 | `AwaitingSettlement` | Resolution exists. Settlement outcome pending or being determined. | No |
 | `Finalized` | Auction destination permanently fixed. | Yes |
 
@@ -39,6 +39,7 @@ They may operate concurrently but must not interfere with each other’s authori
 
 - `Finalized` includes successful and failed-settlement outcomes.
 - No valid bid means the auction remains `Scheduled`; it is not a no-bid finalization path.
+- `Closed` is the pre-resolution auction lifecycle state derived from `AuctionCloseRecord` when no `ResolutionRecord` exists.
 - Auction terminal state is `Finalized`.
 - System control states such as `Paused` are overlays and are not lifecycle states.
 - Auction state is derived from canonical event records.
@@ -51,7 +52,7 @@ They may operate concurrently but must not interfere with each other’s authori
 | From | Trigger | To | Required Canonical Event Records | Notes |
 |---|---|---|---|---|
 | `Scheduled` | First valid bid accepted | `Open` | `BidRecord`, `AuctionOpenRecord` | Atomic transition. `BidRecord.validity = valid`. `AuctionOpenRecord.opened_at = server_time`. `AuctionOpenRecord.base_end_time = opened_at + auction.duration_seconds`. |
-| `Open` | `server_time >= current_end_time` or bid cap reached | `Closed` | `AuctionCloseRecord` | `current_end_time = base_end_time + (extension_increment_seconds * number_of_extension_events)`. |
+| `Open` | `server_time >= current_end_time` | `Closed` | `AuctionCloseRecord` | `current_end_time = base_end_time + (extension_increment_seconds * number_of_extension_events)`. Demo 1 does not emit `cap_reached`. |
 | `Closed` | `ResolutionRecord` persisted | `AwaitingSettlement` | `ResolutionRecord` | Resolution must occur exactly once and must not be recomputed. |
 | `AwaitingSettlement` | Settlement confirmed before deadline | `Finalized` | `SettlementRecord`, `FinalizationRecord` | Destination = winning destination. |
 | `AwaitingSettlement` | Settlement deadline expired | `Finalized` | `SettlementRecord`, `FinalizationRecord` | Destination = `NullSteward`. |
@@ -69,6 +70,7 @@ No other auction transitions are permitted.
 | `AwaitingSettlement → Open` | Settlement does not reopen bidding. |
 | `Finalized → Any` | Terminal auction state. |
 | `Scheduled → Finalized` because no valid bid was accepted | No valid bid leaves the auction `Scheduled`. |
+| `Open → Closed` because bid cap was reached in Demo 1 | Bid cap closure is reserved for a later implementation slice. |
 | Any transition inferred from missing records | Guess-space forbidden. |
 
 ---

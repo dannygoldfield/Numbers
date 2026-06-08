@@ -24,6 +24,7 @@ Demo 1 must demonstrate:
 - first valid bid opens auction
 - deterministic bid admission and rejection
 - auction close
+- time-based auction close
 - resolution
 - simplified settlement outcome
 - finalization
@@ -50,6 +51,7 @@ Demo 1 includes:
 - bid admission
 - invalid bid recording
 - auction close
+- time-based auction close
 - resolution
 - simplified settlement
 - finalization
@@ -81,6 +83,7 @@ Demo 1 excludes:
 - generalized payments
 - automatic retry behavior
 - mainnet `NullSteward` burn implementation
+- bid cap closure
 
 Excluded components must not be required for Demo 1 auction correctness.
 
@@ -108,7 +111,7 @@ Restart must not repair, alter, infer, skip, or synthesize missing canonical rec
 
 ## 5. Auction Creation and Sequence
 
-Auction numbers must begin from the configured starting number.
+Auction numbers must begin from `auction.starting_number`.
 
 Auction numbers must increase by exactly `1`.
 
@@ -133,6 +136,21 @@ Auction `N + 1` does not open automatically.
 Auction `N + 1` opens only when the first valid bid for `N + 1` is accepted.
 
 Inscription progress for `N` must not block auction availability for `N + 1` after finalization and rhythm-gap requirements are satisfied.
+
+When `FinalizationRecord` exists for `N`, `auction.inter_auction_gap_seconds` has elapsed, and no active auction exists, the backend must persist `AuctionRecord` for `N + 1` at the next state-evaluation boundary.
+
+Demo 1 state-evaluation boundaries are:
+
+- backend startup after restart reconstruction completes
+- `GET /state`
+- `POST /bid`
+- `GET /auction/history`
+
+This persistence makes auction `N + 1` `Scheduled` only.
+
+It must not open auction `N + 1`.
+
+No background scheduler is required for Demo 1.
 
 ---
 
@@ -220,6 +238,10 @@ While auction lifecycle state is `Open`:
 
 When `server_time >= current_end_time`, the auction must close according to the state machine.
 
+Bid cap closure is excluded from Demo 1.
+
+`cap_reached` must not be emitted in Demo 1.
+
 ---
 
 ## 10. Auction Close
@@ -233,6 +255,8 @@ After auction close:
 - resolution becomes eligible
 
 Close must not depend on live inscription, wallet state, Bitcoin Core, mempool observation, or confirmation observation.
+
+Demo 1 implements time-based close only.
 
 ---
 
@@ -310,8 +334,11 @@ After finalization:
 
 - auction lifecycle state is terminal
 - final destination must not change
+- exactly one deferred `InscriptionIntentRecord` must be persisted for the finalized auction
 - sequence advancement toward `N + 1` becomes eligible only after `auction.inter_auction_gap_seconds` has elapsed
 - inscription lifecycle can proceed only as permitted by this implementation slice
+
+For Demo 1, `FinalizationRecord` and the required deferred `InscriptionIntentRecord` must be persisted through the same serialized canonical commit path or immediately adjacent serialized commits before any later auction availability evaluation.
 
 ---
 
@@ -343,7 +370,7 @@ Demo 1 must not simulate live inscription success.
 
 Demo 1 must not simulate confirmation.
 
-Demo 1 can persist `InscriptionIntentRecord` after finalization if required by the data model and inscription machine.
+Demo 1 must persist exactly one deferred `InscriptionIntentRecord` for each finalized auction.
 
 For Demo 1 inscription intent:
 
@@ -438,6 +465,7 @@ History must include enough information to inspect:
 - invalid bids
 - auction open
 - auction close
+- time-based auction close
 - resolution
 - settlement outcome
 - finalization
@@ -519,7 +547,7 @@ This slice defines no automatic retry behavior.
 6. resolution produces a deterministic winner
 7. simplified settlement produces a terminal outcome
 8. finalization records final destination
-9. next auction becomes available only after rhythm gap
+9. next auction becomes available only after finalization and rhythm gap
 10. next auction opens only on first valid bid
 11. inscription status is not started or deferred, with no live broadcast
 12. restart reconstructs state from canonical event records

@@ -33,7 +33,7 @@ Any modal usage violating this rule is invalid.
 
 ## I-01: Auction Numbers Are Strictly Monotonic
 
-Auction numbers must increase strictly by `1` when a new auction is created.
+Auction numbers must begin at `auction.starting_number` and increase strictly by `1` when a new auction is created.
 
 Rules:
 
@@ -54,6 +54,10 @@ It must not be treated as:
 - an automatic auction-start trigger
 
 Auction `N + 1` opens only when the first valid bid for `N + 1` is accepted.
+
+When `FinalizationRecord` exists for `N`, `auction.inter_auction_gap_seconds` has elapsed, and no active auction exists, `AuctionRecord` for `N + 1` must be persisted at the next state-evaluation boundary defined by the active implementation slice.
+
+This persistence makes auction `N + 1` `Scheduled`; it does not open auction `N + 1`.
 
 Sequence advancement must not depend on live inscription broadcast, live inscription confirmation, inscription success, or inscription ambiguity.
 
@@ -114,7 +118,7 @@ Corrections are forbidden unless an explicit correction record type is defined b
 
 ## I-05: Each Closed Auction Resolves Exactly Once
 
-Each closed auction must resolve exactly once.
+Each auction that reaches `Closed` must resolve exactly once.
 
 Rules:
 
@@ -406,6 +410,8 @@ For Demo 1:
 - external SSD availability is not required
 - live inscription success must not be simulated
 - confirmation must not be simulated
+- exactly one deferred `InscriptionIntentRecord` must be persisted for each finalized auction
+- `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
 
 Auction lifecycle, finalization, sequence advancement, API state, and restart reconstruction must remain demonstrable without live inscription execution.
 
