@@ -380,11 +380,13 @@ For Demo 1:
 - live inscription broadcast is not required
 - exactly one deferred `InscriptionIntentRecord` must be persisted for each finalized auction
 - `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
-- `InscriptionIntentRecord` must be persisted through the same serialized canonical commit path as finalization or immediately after `FinalizationRecord` before any later auction availability evaluation
+- `InscriptionIntentRecord` must follow `FinalizationRecord` in canonical sequence order within the same atomic canonical commit group as the `SettlementRecord` and `FinalizationRecord`
 - no `InscriptionBroadcastRecord` is required
 - no `InscriptionConfirmationRecord` is required
 - no live inscription success may be simulated
 - no confirmation may be simulated
+
+For Demo 1, `InscriptionIntentRecord` must not be appended later by state evaluation, restart, repair, inference, synthesis, or any post-finalization action.
 
 `InscriptionIntentRecord` does not consume inscription authority.
 

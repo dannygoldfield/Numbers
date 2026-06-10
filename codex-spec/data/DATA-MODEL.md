@@ -604,7 +604,8 @@ For Demo 1, `intent_id` must use the deterministic derivation rule defined in `i
 ## Rules
 
 - must exist before any inscription broadcast attempt
-- must follow `FinalizationRecord`
+- for Demo 1, must follow `FinalizationRecord` in canonical record order within the same atomic canonical commit group as the `SettlementRecord` and `FinalizationRecord`
+- for Demo 1, must not be appended later by state evaluation, restart, repair, inference, synthesis, or any post-finalization action
 - does not consume inscription authority
 - does not prove broadcast
 - does not prove confirmation

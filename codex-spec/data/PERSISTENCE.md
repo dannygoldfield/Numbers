@@ -164,7 +164,7 @@ Demo 1 must not require live Bitcoin or Ordinals execution.
 
 For Demo 1:
 
-- `InscriptionIntentRecord` may be persisted
+- exactly one deferred `InscriptionIntentRecord` must be persisted for each Demo 1 finalization in the same atomic canonical commit group as the `SettlementRecord` and `FinalizationRecord`
 - `InscriptionIntentRecord.adapter_mode` must be `deferred_in_this_slice`
 - no `InscriptionBroadcastRecord` is required
 - no `InscriptionConfirmationRecord` is required
@@ -305,6 +305,8 @@ The settlement deadline must be persisted exactly once in `ResolutionRecord`.
 
 Settlement persistence must occur before `FinalizationRecord`.
 
+For Demo 1 local settlement, `SettlementRecord`, `FinalizationRecord`, and the required deferred `InscriptionIntentRecord` must persist in one atomic canonical commit group. Within that group, canonical record order must be `SettlementRecord`, then `FinalizationRecord`, then `InscriptionIntentRecord`.
+
 Settlement does not create inscription authority.
 
 Settlement does not consume inscription authority.
@@ -335,7 +337,8 @@ The inscription-related canonical event records are:
 Rules:
 
 - must exist before any inscription broadcast attempt
-- must follow `FinalizationRecord`
+- for Demo 1, must follow `FinalizationRecord` in canonical record order within the same atomic canonical commit group as the `SettlementRecord` and `FinalizationRecord`
+- for Demo 1, must not be appended later by state evaluation, restart, repair, inference, synthesis, or any post-finalization action
 - does not consume inscription authority
 - does not prove broadcast
 - does not prove confirmation

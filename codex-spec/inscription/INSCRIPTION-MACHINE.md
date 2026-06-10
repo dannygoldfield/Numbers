@@ -52,7 +52,7 @@ Demo 1 must not require:
 
 For Demo 1:
 
-- exactly one deferred `InscriptionIntentRecord` must be persisted after each Demo 1 finalization
+- exactly one deferred `InscriptionIntentRecord` must be persisted after `FinalizationRecord` in canonical sequence order within the same atomic canonical commit group as the `SettlementRecord` and `FinalizationRecord` for each Demo 1 finalization
 - inscription adapter mode must be `deferred_in_this_slice`
 - no `InscriptionBroadcastRecord` is required
 - no `InscriptionConfirmationRecord` is required
@@ -306,6 +306,8 @@ For later live inscription slices, alternate `intent_id` derivation must be expl
 - intent persistence must not alter auction lifecycle state
 
 For Demo 1, `adapter_mode` must be `deferred_in_this_slice` unless live testnet inscription has been explicitly moved into Demo 1 by a later scope revision.
+
+For Demo 1, `InscriptionIntentRecord` must not be appended later by state evaluation, restart, repair, inference, synthesis, or any post-finalization action.
 
 ---
 
