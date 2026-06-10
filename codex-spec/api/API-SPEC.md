@@ -385,7 +385,9 @@ If auction state is `Scheduled` and the bid is valid, the bid atomically opens t
 
 If auction state is `Open` and the bid is valid, the bid is accepted into the open auction.
 
-If auction state is `Closed`, `AwaitingSettlement`, or `Finalized`, the bid must be rejected explicitly.
+If auction state is `Closed`, `AwaitingSettlement`, or `Finalized`, the bid must be rejected explicitly as an endpoint precondition failure.
+
+A bid rejected because auction state is `Closed`, `AwaitingSettlement`, or `Finalized` must not reach admission evaluation and must not produce a `BidRecord`, unless a later active implementation slice explicitly defines audit recording for precondition failures.
 
 ---
 
@@ -535,12 +537,16 @@ Bid acceptance does not imply inscription.
 
 Bid validation is evaluated against authoritative server receipt time and persisted auction state.
 
-A bid is invalid if:
+Bid validation applies only to bid submissions that reach admission evaluation under `bidding/BIDDING-ADMISSION.md`.
+
+Requests rejected because auction state is `Closed`, `AwaitingSettlement`, or `Finalized` are endpoint precondition failures.
+
+They must not reach admission evaluation and must not produce a `BidRecord`, unless a later active implementation slice explicitly defines audit recording for precondition failures.
+
+A bid that reaches admission evaluation is invalid if:
 
 - submitted for a non-current auction number
 - submitted when system control state is not `Running`
-- submitted when auction state is not `Scheduled` or `Open`
-- submitted after `AuctionCloseRecord`
 - malformed or incomplete
 - below the minimum valid bid
 - below required increment
@@ -605,6 +611,10 @@ If any precondition fails, the request must be rejected explicitly.
 
 ## 12.3 Record Effects
 
+For Demo 1, `POST /demo/settlement` must persist the required `SettlementRecord`, `FinalizationRecord`, and deferred `InscriptionIntentRecord` in one atomic canonical commit group.
+
+If any of the three records cannot be persisted, none of the three records may persist, and the request must fail explicitly.
+
 If `outcome = settled`:
 
 - persist exactly one `SettlementRecord`
@@ -622,6 +632,8 @@ If `outcome = expired`:
 - `SettlementRecord.confirmation_txid = null`
 - persist exactly one `FinalizationRecord`
 - `FinalizationRecord.destination_address` must equal `NullSteward`
+
+For both outcomes, the same atomic canonical commit group must persist exactly one required deferred `InscriptionIntentRecord`.
 
 For Demo 1 local settlement control, `outcome = expired` does not require `server_time >= settlement_deadline`.
 

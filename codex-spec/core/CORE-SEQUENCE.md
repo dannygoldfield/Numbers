@@ -69,8 +69,13 @@ The state-evaluation step must persist any required deterministic lifecycle reco
 2. time-based `AuctionCloseRecord` for an open auction whose `current_end_time` has passed
 3. `ResolutionRecord` for a closed auction without resolution
 4. settlement-deadline expiration records when chain-confirmed settlement semantics are active
-5. required deferred `InscriptionIntentRecord` after finalization when absent
-6. next `AuctionRecord` after finalization and rhythm gap when no active auction exists
+5. next `AuctionRecord` after finalization and rhythm gap when no active auction exists
+
+For Demo 1, state evaluation must not append, infer, synthesize, or repair a missing deferred `InscriptionIntentRecord` after finalization.
+
+For Demo 1, the required deferred `InscriptionIntentRecord` must be persisted in the same atomic canonical commit group as the `SettlementRecord` and `FinalizationRecord`.
+
+If a `FinalizationRecord` exists for a Demo 1 auction and the required deferred `InscriptionIntentRecord` is absent, execution must halt.
 
 This deterministic creation of `AuctionRecord` for `N + 1` does not open auction `N + 1`.
 
