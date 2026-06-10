@@ -133,6 +133,20 @@ No other `error_code` value is permitted for Demo 1.
 
 `null` means no `SettlementRecord` exists.
 
+## Sequence Availability State Enum
+
+`sequence_availability_state` must be one of:
+
+- `auction_available`
+- `auction_active`
+- `rhythm_gap_pending`
+
+`auction_available` means the current auction is `Scheduled` and can open when the first valid bid is accepted.
+
+`auction_active` means the current auction is `Open`, `Closed`, or `AwaitingSettlement`.
+
+`rhythm_gap_pending` means the latest auction is `Finalized`, no `AuctionRecord` exists for `N + 1`, and the rhythm gap has not elapsed.
+
 ## Inscription Adapter Mode Enum
 
 `inscription_adapter_mode` must be one of:
@@ -253,7 +267,8 @@ If any required timestamp is missing after its corresponding canonical event rec
   "settlement_deadline": "ISO-8601 or null",
   "finalized_at": "ISO-8601 or null",
   "final_destination": "string or null",
-  "sequence_availability_state": "not_finalized | waiting_for_rhythm_gap | ready_to_create_next | current_auction_exists",
+
+  "sequence_availability_state": "auction_available | auction_active | rhythm_gap_pending",
   "next_auction_available_at": "ISO-8601 or null",
   "rhythm_gap_elapsed": "boolean or null",
 
@@ -278,13 +293,16 @@ If any required timestamp is missing after its corresponding canonical event rec
 - `current_high_bid` must be derived only from valid `BidRecord` entries using the winner-selection ordering rule.
 - `bid_count` must equal the count of `BidRecord` entries for the current auction, including invalid bids.
 - `settlement_deadline` must be derived from `ResolutionRecord` when present and must be `null` before resolution.
-- `sequence_availability_state` must be mechanically derived from canonical auction records, finalization state, rhythm-gap eligibility, and the existence or absence of a later `AuctionRecord`.
-- `sequence_availability_state = not_finalized` when the current auction has no `FinalizationRecord`.
-- `sequence_availability_state = waiting_for_rhythm_gap` when the current auction is finalized, no later `AuctionRecord` exists, and `server_time < next_auction_available_at`.
-- `sequence_availability_state = ready_to_create_next` when the current auction is finalized, no later `AuctionRecord` exists, and `server_time >= next_auction_available_at`.
-- `sequence_availability_state = current_auction_exists` when an `AuctionRecord` exists for the next number after the latest finalized auction.
-- `next_auction_available_at` must equal `FinalizationRecord.finalization_time + auction.inter_auction_gap_seconds` only when the current auction is finalized and no later `AuctionRecord` exists; otherwise it must be `null`.
-- `rhythm_gap_elapsed` must be `true` only when `next_auction_available_at` is non-null and `server_time >= next_auction_available_at`; it must be `false` when `next_auction_available_at` is non-null and `server_time < next_auction_available_at`; it must be `null` when `next_auction_available_at` is `null`.
+- `sequence_availability_state` must be mechanically derived from canonical records after the state-evaluation step for the request.
+- `sequence_availability_state` must be `auction_available` when the current auction state is `Scheduled`.
+- `sequence_availability_state` must be `auction_active` when the current auction state is `Open`, `Closed`, or `AwaitingSettlement`.
+- `sequence_availability_state` must be `rhythm_gap_pending` when the latest auction is `Finalized`, no `AuctionRecord` exists for `N + 1`, and `server_time < next_auction_available_at`.
+- `next_auction_available_at` must equal `FinalizationRecord.finalization_time + auction.inter_auction_gap_seconds` only while the latest auction is `Finalized` and no `AuctionRecord` exists for `N + 1`.
+- `next_auction_available_at` must be `null` otherwise.
+- `rhythm_gap_elapsed` must be `true` only while the latest auction is `Finalized`, no `AuctionRecord` exists for `N + 1`, and `server_time >= next_auction_available_at`.
+- `rhythm_gap_elapsed` must be `false` only while the latest auction is `Finalized`, no `AuctionRecord` exists for `N + 1`, and `server_time < next_auction_available_at`.
+- `rhythm_gap_elapsed` must be `null` otherwise.
+- `GET /state` state evaluation must persist `AuctionRecord` for `N + 1` before response when `rhythm_gap_elapsed` would otherwise be `true` and all sequence conditions are satisfied.
 - `inscription_state` must be reconstructed from inscription canonical event records.
 - `last_record_sequence_index` must equal the highest persisted canonical event record sequence index.
 

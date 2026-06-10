@@ -190,13 +190,11 @@ The state-evaluation step must persist any required deterministic lifecycle reco
 4. chain-confirmed settlement-deadline expiration records only when a later active implementation slice enables chain-confirmed settlement semantics
 5. next `AuctionRecord` after finalization and rhythm gap when no active auction exists
 
+Demo 1 state evaluation must not repair a finalized auction that is missing its required deferred `InscriptionIntentRecord`.
+
 Demo 1 local settlement must not auto-expire on `settlement_deadline`.
 
 Demo 1 `expired` settlement can be produced only by `POST /demo/settlement`.
-
-The Demo 1 state-evaluation step must not complete a missing deferred `InscriptionIntentRecord` after `FinalizationRecord` exists.
-
-For Demo 1, `SettlementRecord`, `FinalizationRecord`, and the required deferred `InscriptionIntentRecord` are persisted only through the atomic `POST /demo/settlement` commit group defined in Section 19.1.
 
 This persistence makes auction `N + 1` `Scheduled` only.
 
@@ -419,11 +417,11 @@ After finalization:
 - sequence advancement toward `N + 1` becomes eligible only after `auction.inter_auction_gap_seconds` has elapsed
 - inscription lifecycle can proceed only as permitted by this implementation slice
 
-For Demo 1, `FinalizationRecord` and the required deferred `InscriptionIntentRecord` must be persisted only as part of the atomic `POST /demo/settlement` canonical commit group.
+For Demo 1, `SettlementRecord`, `FinalizationRecord`, and the required deferred `InscriptionIntentRecord` must be persisted in one atomic canonical commit group by `POST /demo/settlement`.
 
-A finalized Demo 1 auction without its required deferred `InscriptionIntentRecord` is invalid persisted state.
+If any record in this commit group cannot be persisted, none of the three records may persist and the request must fail explicitly.
 
-Restart reconstruction must halt if `FinalizationRecord` exists for a Demo 1 auction and the required deferred `InscriptionIntentRecord` is absent.
+A Demo 1 `FinalizationRecord` without the required deferred `InscriptionIntentRecord` is invalid persisted state and must halt reconstruction.
 
 ---
 
@@ -514,17 +512,11 @@ The state must be derived from canonical event records.
 - final destination when known
 - inscription status
 - sequence availability state
-- next auction availability time
-- rhythm-gap elapsed status
+- next auction availability time when applicable
+- rhythm gap elapsed status when applicable
 - server time
 
-`GET /state` must expose sequence availability using the fixed shape defined in `api/API-STATE-SHAPES.md`.
-
-`sequence_availability_state` must be derived from canonical records and the rhythm-gap rule.
-
-`next_auction_available_at` must equal `FinalizationRecord.finalization_time + auction.inter_auction_gap_seconds` when the current auction is finalized and no later `AuctionRecord` exists; otherwise it must be `null`.
-
-`rhythm_gap_elapsed` must be `true` only when `next_auction_available_at` is non-null and `server_time >= next_auction_available_at`; it must be `false` when `next_auction_available_at` is non-null and the gap has not elapsed; it must be `null` otherwise.
+`GET /state` must use the sequence availability fields defined in `api/API-STATE-SHAPES.md`.
 
 `GET /state` must not depend on live Bitcoin, wallet state, mempool observation, or confirmation observation.
 
@@ -613,11 +605,11 @@ If `outcome = settled`, final destination must be the winner destination.
 
 If `outcome = expired`, final destination must be `NullSteward`.
 
-`POST /demo/settlement` must persist exactly one `SettlementRecord`, exactly one `FinalizationRecord`, and exactly one deferred `InscriptionIntentRecord` in one atomic canonical commit group before returning success.
+`POST /demo/settlement` must persist exactly one `SettlementRecord`, exactly one `FinalizationRecord`, and exactly one deferred `InscriptionIntentRecord` in one atomic canonical commit group.
 
-If any of the three records cannot be persisted, none of the three records must be persisted and the request must fail explicitly.
+If any of the three records cannot be persisted, none of the three records may persist and the request must fail explicitly.
 
-No later state-evaluation step may repair or complete a partial Demo 1 settlement/finalization/intent commit.
+`POST /demo/settlement` must return success only after all three records are durably persisted.
 
 `POST /demo/settlement` must return the exact response shape defined in `api/API-STATE-SHAPES.md`.
 
@@ -659,6 +651,8 @@ After backend restart:
 - finalized auctions must remain finalized
 - final destinations must remain unchanged
 - deferred inscription state must remain deferred or not started
+- a finalized Demo 1 auction missing its required deferred `InscriptionIntentRecord` must halt reconstruction
+- restart must not repair or append a missing deferred `InscriptionIntentRecord`
 - no live inscription action must be triggered by restart
 - no authority must be granted by restart
 - no retry must be triggered by restart

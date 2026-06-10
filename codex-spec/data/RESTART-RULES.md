@@ -290,9 +290,7 @@ For Demo 1:
 
 If `FinalizationRecord` exists for a Demo 1 auction and the required deferred `InscriptionIntentRecord` is absent, execution must halt.
 
-Restart must not complete, repair, synthesize, or append a missing deferred `InscriptionIntentRecord` after `FinalizationRecord` exists.
-
-For Demo 1, `SettlementRecord`, `FinalizationRecord`, and the required deferred `InscriptionIntentRecord` must have been persisted as one atomic canonical commit group by `POST /demo/settlement`.
+Restart must not repair, append, infer, or synthesize the missing deferred `InscriptionIntentRecord`.
 
 Demo 1 auction correctness must remain demonstrable without live inscription execution.
 
