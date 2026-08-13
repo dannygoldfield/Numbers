@@ -338,7 +338,7 @@ fn main() {
     let rpc_url = env::var("RPC_URL").expect("RPC_URL not set");
     let rpc_user = env::var("RPC_USER").expect("RPC_USER not set");
     let rpc_pass = env::var("RPC_PASS").expect("RPC_PASS not set");
-    println!("Using RPC credentials: {} / {}", rpc_user, rpc_pass);
+    println!("RPC credentials loaded.");
 
     let rpc = Client::new(&rpc_url, Auth::UserPass(rpc_user, rpc_pass))
         .expect("Failed to create RPC client");
