@@ -8,56 +8,50 @@ on:
     branches:
       - main
 
-jobs:
-  test:
+permissions:
+  contents: read
 
+jobs:
+  rust:
+    name: Rust tests
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        language: [python, rust, node]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select stable Rust
+        run: |
+          rustup update stable
+          rustup default stable
+
+      - name: Run Rust tests
+        run: cargo test --locked
+
+  frontend:
+    name: Frontend build and lint
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      if: matrix.language == 'python'
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.12'
-    - name: Install Python dependencies
-      if: matrix.language == 'python'
-      run: |
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
-    - name: Run Python tests
-      if: matrix.language == 'python'
-      run: |
-        source venv/bin/activate
-        pytest tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-    - name: Set up Rust
-      if: matrix.language == 'rust'
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-    - name: Run Rust tests
-      if: matrix.language == 'rust'
-      run: |
-        cargo test
+      - name: Install locked dependencies
+        run: npm ci
 
-    - name: Set up Node.js
-      if: matrix.language == 'node'
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-    - name: Install Node.js dependencies
-      if: matrix.language == 'node'
-      run: |
-        npm install
-    - name: Run Node.js tests
-      if: matrix.language == 'node'
-      run: |
-        NODE_OPTIONS=--experimental-vm-modules npx mocha tests
+      - name: Build frontend
+        run: npm run build
+
+      - name: Lint frontend
+        run: npm run lint
