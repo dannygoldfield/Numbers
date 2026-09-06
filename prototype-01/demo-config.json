@@ -1,0 +1,17 @@
+{
+  "starting_number": 1,
+  "demo_1_initial_rana": 600,
+  "demo_2_initial_rana": 600,
+  "duration_seconds": 225,
+  "inter_auction_gap_seconds": 12,
+  "extension_window_seconds": 10,
+  "extension_increment_seconds": 15,
+  "max_extensions": 2,
+  "minimum_bid_rana": 5,
+  "minimum_increment_rana": 1,
+  "maximum_bid_rana": null,
+  "database_path": "data/demo-02.sqlite3",
+  "host": "127.0.0.1",
+  "port": 8765,
+  "log_verbosity": "quiet"
+}

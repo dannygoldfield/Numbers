@@ -1,0 +1,16 @@
+{
+  "name": "numbers-prototype-01-dev",
+  "private": true,
+  "description": "Formatting and exact-value browser tests for the Rust-served local UI",
+  "scripts": {
+    "format": "prettier --write static tests/*.cjs",
+    "format:check": "prettier --check static tests/*.cjs",
+    "test": "node --test tests/*.cjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "prettier": "3.9.6"
+  }
+}

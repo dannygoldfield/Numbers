@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+proto_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$proto_dir"
+exec ./cargo-local run --locked -- --config "$proto_dir/demo-config.json"

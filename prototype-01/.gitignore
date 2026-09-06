@@ -1,0 +1,7 @@
+data/
+target/
+.toolchain/
+__pycache__/
+*.diagnostic.log
+
+node_modules/

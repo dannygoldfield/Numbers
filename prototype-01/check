@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+proto_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$proto_dir"
+./cargo-local fmt --all -- --check
+./cargo-local clippy --locked --all-targets -- -D warnings
+./cargo-local test --locked
+npm run format:check
+npm test

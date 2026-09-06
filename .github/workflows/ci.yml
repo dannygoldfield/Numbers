@@ -55,3 +55,29 @@ jobs:
 
       - name: Lint frontend
         run: npm run lint
+
+  prototype:
+    name: Prototype 1 checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: prototype-01
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: prototype-01/package-lock.json
+
+      - name: Install locked development dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check the pinned Rust prototype and browser helpers
+        run: ./check

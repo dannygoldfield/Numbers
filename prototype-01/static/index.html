@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Numbers · Prototype 1</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a class="wordmark" href="/">Numbers<span class="dot">.</span></a
+      ><span class="edition">Prototype 01 <span>Local demonstration</span></span>
+      <nav>
+        <a id="auction-link" href="/">Auction</a
+        ><a id="protocol-link" href="/protocol" target="_blank" rel="noopener">Protocol ↗</a>
+      </nav>
+    </header>
+    <div id="connection" role="status">Connecting to the local journal…</div>
+    <main>
+      <section id="auction-view" aria-label="Auction view">
+        <div class="eyebrow">
+          <span class="status-dot"></span><span id="phase">Connecting</span
+          ><span class="serial">One number at a time</span>
+        </div>
+        <div class="auction-grid">
+          <div class="number-stage">
+            <h1 id="number">—</h1>
+            <div id="title-banner" class="title-banner" hidden></div>
+          </div>
+          <div class="auction-controls">
+            <div class="clock-row">
+              <div>
+                <span class="label" id="clock-label">Auction duration</span>
+                <div id="clock">3:45</div>
+              </div>
+              <div class="clock-note" id="clock-note">The first valid bid starts the clock.</div>
+            </div>
+            <div class="leader-row">
+              <span class="label" id="leader-label">Leading bid</span
+              ><strong id="leader">No bids yet</strong>
+            </div>
+            <div class="bid-panel">
+              <label for="identity">Simulated local identity</label
+              ><select id="identity">
+                <option value="demo-1">Bidder A · demo-1</option>
+                <option value="demo-2">Bidder B · demo-2</option>
+              </select>
+              <div class="balance-row">
+                <div>
+                  <span class="label">Available rana</span><strong id="available">—</strong>
+                </div>
+                <div><span class="label">Reserved rana</span><strong id="reserved">—</strong></div>
+              </div>
+              <form id="bid-form" novalidate>
+                <label for="amount">Your bid in rana</label>
+                <div class="input-row">
+                  <input
+                    id="amount"
+                    name="amount"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    placeholder="Enter an amount"
+                    aria-describedby="bid-rule"
+                  /><button id="bid-button" type="submit" disabled>Place bid <span>↗</span></button>
+                </div>
+                <p id="bid-rule" class="hint">Amounts are evaluated by the backend.</p>
+              </form>
+            </div>
+            <div id="settlement-controls" hidden>
+              <p class="label">Settlement demonstration</p>
+              <p>The winner is fixed. Choose a simulated settlement outcome.</p>
+              <button id="settle" type="button">Simulate successful settlement</button
+              ><button id="expire" type="button" class="secondary">
+                Simulate failed settlement
+              </button>
+            </div>
+            <div id="result" role="status" aria-live="polite">
+              Two simulated bidders. One recorded history.
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="protocol-view" aria-label="Read-only Protocol view">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Behind the auction</div>
+            <h2>Protocol</h2>
+          </div>
+          <span class="read-only">Read only</span>
+        </div>
+        <div class="protocol-stats">
+          <div><span class="label">Auction state</span><strong id="protocol-state">—</strong></div>
+          <div>
+            <span class="label">Protocol-held rana</span><strong id="protocol-balance">—</strong>
+          </div>
+          <div>
+            <span class="label">Committed records</span><strong id="record-count">—</strong>
+          </div>
+          <div>
+            <span class="label">Reconstructed through</span><strong id="reconstructed">—</strong>
+          </div>
+        </div>
+        <div class="protocol-grid">
+          <section class="journal">
+            <div class="journal-heading">
+              <h3>Ordered journal</h3>
+              <span>Oldest → newest</span>
+            </div>
+            <div id="records">Loading records…</div>
+          </section>
+          <aside>
+            <h3>Current derived state</h3>
+            <div id="account-summary"></div>
+            <details>
+              <summary>Latest command result</summary>
+              <p class="hint">Responses without a record are transient observations.</p>
+              <pre id="last-command">No command submitted in this view.</pre>
+            </details>
+            <details>
+              <summary>Backend state projection</summary>
+              <pre id="state-json">—</pre>
+            </details>
+            <p class="scope-note">
+              This local demonstration preserves history through application operations and restart.
+              Simulated identities are not authentication. Local records do not establish protection
+              against the machine owner.
+            </p>
+          </aside>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <span>123456789 and 0</span><span>Numbers · Specification 0.1 · Rana demonstration</span>
+    </footer>
+  </body>
+</html>
