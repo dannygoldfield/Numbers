@@ -47,7 +47,7 @@ Before further code changes, read [REVIEW.md](REVIEW.md) and run `./check`. For 
 
 The full `./check` passed on 2026-09-06: Rust formatting, Clippy with warnings denied, all 23 Rust test entries and all three browser-value tests, plus frontend formatting. The restored UI was inspected in the browser, and its restart preserved all three current journal records. [VERIFICATION.md](VERIFICATION.md) retains the detailed settlement and restart evidence.
 
-GitHub's workflow now includes a separate Prototype 1 job running this same check script with its pinned Rust toolchain and Node 22. The older application's jobs remain separate.
+GitHub's workflow now includes a separate Prototype 1 job running this same check script with its pinned Rust toolchain and Node 22. All three jobs passed for checkpoint `0ecb53c`: [GitHub verification](https://github.com/dannygoldfield/Numbers/actions/runs/34051745603). The older application's jobs remain separate.
 
 On the existing Mac, the dated history backup is in `~/Documents/Numbers-Backups/2026-09-06-prototype-01/`, with an accompanying zip archive. It contains both SQLite histories, the current configuration, integrity results, record counts and checksums. Each backup's ordered records were compared with its source. The original histories remain in `prototype-01/data/`; both originals and backups are excluded from the source checkpoint.
 
@@ -56,3 +56,5 @@ The backup's README explains how to use a separate working copy if needed. The z
 ## Work remaining
 
 No unfinished change blocks this pause. The next product step is to use the prototype and choose the next explicit requirement. Real payments, Bitcoin integration, authentication and public hosting still need their own specification and approval. This checkpoint is a verified local demonstration, not a production deployment.
+
+GitHub reported two open dependency alerts in the historical `frontend/package-lock.json` during the checkpoint push: [browserslist, high severity, patched in 4.28.7](https://github.com/dannygoldfield/Numbers/security/dependabot/46) and [@humanfs/node, moderate severity, patched in 0.16.8](https://github.com/dannygoldfield/Numbers/security/dependabot/45). Record these as maintenance work before returning to the older frontend. Both alerts identify the historical frontend manifest, not Prototype 1's manifest. Its dependencies were not changed as part of this pause checkpoint.
