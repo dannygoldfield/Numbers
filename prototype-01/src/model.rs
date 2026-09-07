@@ -103,7 +103,7 @@ pub struct State {
     pub close: Value,
     pub resolution: Value,
     pub settlement: Value,
-    pub title: Value,
+    pub ownership: Value,
     pub leader: Value,
     pub hold: Value,
     pub bids: Vec<Value>,
@@ -123,7 +123,7 @@ impl Default for State {
             close: Value::Null,
             resolution: Value::Null,
             settlement: Value::Null,
-            title: Value::Null,
+            ownership: Value::Null,
             leader: Value::Null,
             hold: Value::Null,
             bids: vec![],
@@ -136,7 +136,7 @@ impl Default for State {
 }
 impl State {
     pub fn phase(&self) -> &str {
-        if !self.title.is_null() {
+        if !self.ownership.is_null() {
             "Finalized"
         } else if !self.resolution.is_null() {
             "AwaitingSettlement"
@@ -162,7 +162,7 @@ impl State {
     }
     pub fn next_time(&self) -> Result<i64> {
         add_seconds(
-            millis(text(&self.title["server_time"])?)?,
+            millis(text(&self.ownership["server_time"])?)?,
             &self.auction["inter_auction_gap_seconds"],
         )
     }
@@ -192,7 +192,7 @@ impl State {
                     self.close = Value::Null;
                     self.resolution = Value::Null;
                     self.settlement = Value::Null;
-                    self.title = Value::Null;
+                    self.ownership = Value::Null;
                     self.leader = Value::Null;
                     self.hold = Value::Null;
                     self.bids.clear();
@@ -227,7 +227,7 @@ impl State {
                 "AuctionCloseRecord" => self.close = record.clone(),
                 "ResolutionRecord" => self.resolution = record.clone(),
                 "SettlementRecord" => self.settlement = record.clone(),
-                "FinalizationRecord" => self.title = record.clone(),
+                "FinalizationRecord" => self.ownership = record.clone(),
                 _ => return Err(Fault::history("unknown record")),
             }
             self.records.push(record.clone());
@@ -613,7 +613,7 @@ fn plan_settlement(state: &State, time_ms: i64, raw: Option<&[u8]>) -> Result<Ve
     } else {
         "RanaReleaseRecord"
     };
-    let title_kind = if success { "winner" } else { "PublicLand" };
+    let ownership_kind = if success { "winner" } else { "PublicLand" };
     let holder_id = if success {
         hold["bidder_id"].clone()
     } else {
@@ -652,7 +652,7 @@ fn plan_settlement(state: &State, time_ms: i64, raw: Option<&[u8]>) -> Result<Ve
             "FinalizationRecord",
             json!({
                 "settlement_record_id": settlement_id,
-                "title_kind": title_kind,
+                "title_kind": ownership_kind,
                 "holder_id": holder_id,
                 "finalization_time": server_time,
                 "finalization_reason": finalization_reason
@@ -775,7 +775,7 @@ pub fn projection(state: &State, time_ms: i64, validated: usize) -> Result<Value
             "amount_rana": payload["amount_rana"]
         })
     };
-    let finalized = !state.title.is_null();
+    let finalized = !state.ownership.is_null();
     let sequence_phase = if finalized {
         "rhythm_gap"
     } else if state.phase() == "Scheduled" {
@@ -810,8 +810,8 @@ pub fn projection(state: &State, time_ms: i64, validated: usize) -> Result<Value
         })
         .collect();
     let settlement = select(&state.settlement, &["status", "settlement_time"]);
-    let title = select(
-        &state.title,
+    let ownership = select(
+        &state.ownership,
         &["title_kind", "holder_id", "finalization_time"],
     );
     let last = state
@@ -833,7 +833,7 @@ pub fn projection(state: &State, time_ms: i64, validated: usize) -> Result<Value
         "leading_bid": leading_bid,
         "resolution": resolution,
         "settlement": settlement,
-        "title": title,
+        "title": ownership, // RT06: retain the revision 0.1 wire key.
         "balances": balances,
         "protocol_held_rana": jnum(&state.protocol),
         "sequence": {

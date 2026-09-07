@@ -124,14 +124,14 @@ h1 {
   overflow-wrap: anywhere;
   max-width: 100%;
 }
-.title-banner {
+.ownership-banner {
   border: 1px solid var(--line);
   padding: 12px 20px;
   border-radius: 30px;
   font-size: 12px;
   text-align: center;
 }
-.title-banner.final {
+.ownership-banner.final {
   background: var(--lime);
   border-color: var(--lime);
 }
@@ -519,7 +519,7 @@ body.protocol-only #protocol-link {
   button {
     transition: background 0.15s;
   }
-  .title-banner.final {
+  .ownership-banner.final {
     animation: arrive 0.5s ease-out;
   }
   @keyframes arrive {

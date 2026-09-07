@@ -2,6 +2,7 @@
 name = "numbers-prototype-01"
 version = "0.1.0"
 edition = "2021"
+default-run = "numbers-prototype-01"
 
 [dependencies]
 chrono = "0.4"

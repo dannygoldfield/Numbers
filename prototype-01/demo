@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+proto_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+cd "$proto_dir"
+./cargo-local build --quiet --locked --bins
+exec ./target/debug/numbers-demo "$@"

@@ -1,0 +1,107 @@
+{
+  "folders": [
+    {
+      "name": "Prototype 1",
+      "path": "."
+    },
+    {
+      "name": "Specification",
+      "path": "../numbers-spec"
+    }
+  ],
+  "settings": {
+    "editor.fontSize": 16,
+    "terminal.integrated.fontSize": 15,
+    "editor.minimap.enabled": false,
+    "rust-analyzer.linkedProjects": [
+      "${workspaceFolder}/Cargo.toml"
+    ],
+    "files.exclude": {
+      "**/target": true,
+      "**/node_modules": true
+    },
+    "git.openRepositoryInParentFolders": "always"
+  },
+  "extensions": {
+    "recommendations": [
+      "rust-lang.rust-analyzer"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Numbers: Guided mechanics",
+        "type": "shell",
+        "command": "./demo guided",
+        "options": {
+          "cwd": "${workspaceFolder:Prototype 1}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated",
+          "focus": true,
+          "clear": false
+        },
+        "runOptions": {
+          "instanceLimit": 1
+        }
+      },
+      {
+        "label": "Numbers: Start separate live demo",
+        "type": "shell",
+        "command": "./demo serve",
+        "options": {
+          "cwd": "${workspaceFolder:Prototype 1}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated",
+          "focus": true,
+          "clear": false
+        },
+        "runOptions": {
+          "instanceLimit": 1
+        }
+      },
+      {
+        "label": "Numbers: Live terminal",
+        "type": "shell",
+        "command": "./demo live",
+        "options": {
+          "cwd": "${workspaceFolder:Prototype 1}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated",
+          "focus": true,
+          "clear": false
+        },
+        "runOptions": {
+          "instanceLimit": 1
+        }
+      },
+      {
+        "label": "Numbers: Verify prototype",
+        "type": "shell",
+        "command": "./check",
+        "options": {
+          "cwd": "${workspaceFolder:Prototype 1}"
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated",
+          "focus": true,
+          "clear": false
+        },
+        "runOptions": {
+          "instanceLimit": 1
+        }
+      }
+    ]
+  }
+}

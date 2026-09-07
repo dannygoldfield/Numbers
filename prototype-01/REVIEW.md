@@ -50,6 +50,24 @@ The journal stores one canonical record JSON string per ordered row. SQLite tran
 
 Use a short rule reference when it helps locate authority: `RT02` for reservation replacement, `G08` for successful settlement, `PR04` for reconstruction. Comments should explain intent, ordering or an otherwise surprising constraint. They should not restate an assignment or invent a new rule.
 
-Keep event fields vertically readable. Prefer meaningful local names and small functions with one responsibility. Avoid hidden defaults, retry helpers, speculative abstractions and catch-all recovery. If a change affects economics, title, time, ordering or history, identify its specification clause before changing code.
+Keep event fields vertically readable. Prefer meaningful local names and small functions with one responsibility. Avoid hidden defaults, retry helpers, speculative abstractions and catch-all recovery. If a change affects economics, ownership, time, ordering or history, identify its specification clause before changing code.
 
-A review should follow one accepted bid through the reservation group and one settlement through the terminal group, then inspect the corresponding tests. Both success and failure must preserve the fixed winner; only the specified ledger effect and title differ.
+A review should follow one accepted bid through the reservation group and one settlement through the terminal group, then inspect the corresponding tests. Both success and failure must preserve the fixed winner; only the specified ledger effect and ownership outcome differ.
+
+
+## Demonstration code — UI05
+
+`Numbers-demo.code-workspace` opens this application and the active specification together. [DEMO.md](DEMO.md) maps presenter moments to rules and functions.
+
+| File | Responsibility |
+|---|---|
+| `src/bin/numbers-demo/main.rs` | Command selection and help |
+| `src/bin/numbers-demo/live.rs` | Existing HTTP commands, exact numeric spelling, one submission per command |
+| `src/bin/numbers-demo/guided.rs` | Explicit UI05 fixture and separate-process reconstruction comparison |
+| `src/bin/numbers-demo/presentation.rs` | Human-readable state and record summaries |
+| `src/bin/numbers-demo/session.rs` | Separate journal directories, live launch and read-only inspection |
+| `tests/demonstration.rs` | Execute the walkthrough, inspect persisted evidence, exercise the real server and an unreadable response |
+
+The walkthrough calls `Engine::request`, not duplicate bid or settlement logic. It releases its writer before a child process reconstructs the journal, then compares exact ordered rows and all projected facts. Only the observational reconstruction receipt differs. Restart receipts are presentation files, not protocol events.
+
+The internal State uses `ownership`. Literal revision 0.1 JSON keys remain unchanged under RT06; this preserves existing journal bytes, hashes and API compatibility. Human-facing labels translate the legacy outcome to Unowned with no owner.

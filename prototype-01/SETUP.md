@@ -13,6 +13,8 @@ The environment is installed for continuing Numbers development, with reproducib
 | Apple Command Line Tools | Existing local installation | Native linker and compilation of bundled SQLite |
 | SQLite | Bundled through the locked rusqlite dependency | Durable journal; no separate database service |
 | Node.js | Existing 22.23.2 installation; Node 22+ required for UI development checks | Run the formatter and exact-value browser tests |
+| curl | Existing macOS command-line tool | HTTP transport for the optional live terminal client; ambient curl configuration is disabled, with no automatic retries |
+| VS Code | Existing local installation with rust-analyzer | Optional presentation workspace and source navigation |
 | Prettier | 3.9.6, exact development dependency | Format HTML, CSS and JavaScript |
 
 Rust is installed in its standard user locations, `~/.cargo/` and `~/.rustup/`. `rust-toolchain.toml` chooses the project version and required components. `Cargo.lock` and `package-lock.json` pin dependency resolution. The `cargo-local` wrapper also finds the standard Rust installation when the current shell has not reloaded its PATH.
@@ -58,8 +60,13 @@ All behavioral inputs are in `demo-config.json`. Only the starting number and op
 
 To run an explicitly separate demonstration history, prepare a separate configuration with its own unused database path and local port. That is a separate history, not a reset or recovery of the existing one. Do not change or delete a recorded history to make a test pass.
 
-Tests use temporary directories, explicit test clocks and child processes. Their clock and crash controls are not available through the application or browser.
+Tests use temporary directories, explicit test clocks and child processes. The UI05 guided executable also supplies explicit simulated timestamps in a separate journal. No clock or crash control is available through the live HTTP application or browser.
 
 ## Continuing infrastructure work
 
 This baseline supplies compilation, storage, formatting, linting, editor support and repeatable verification for the approved local application. Extend it when an actual development requirement appears. Payment services, identity infrastructure, external attestations and public hosting require their own specification and deployment decisions; they are not silently enabled by environment setup.
+
+
+## Presentation workspace
+
+Open [Numbers-demo.code-workspace](Numbers-demo.code-workspace) for workspace-scoped editor settings and the four presentation/check tasks. [DEMO.md](DEMO.md) explains their use. `./demo` builds both binaries with locked dependencies; `default-run` keeps `./run` targeting the existing server. The live client uses system curl solely for HTTP transport and disables its user configuration. New demo sessions live under ignored `data/demonstrations/` and are never reset by the launcher.

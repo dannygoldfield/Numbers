@@ -1,6 +1,14 @@
-# Numbers Prototype 1 — pause checkpoint
+# Numbers Prototype 1 — continuation notes
 
-Saved on 2026-09-06. This is a continuation note, not a source of protocol rules.
+Updated on 2026-09-07. This is a continuation note, not a source of protocol rules.
+
+## Current work — demonstrations and ownership
+
+C60 authorizes live terminal and guided demonstrations for Prototype 1. C61 selects ownership and Unowned (no owner); canonical revision 0.1 record names are preserved by RT06. See [DEMO.md](DEMO.md), [REVIEW.md](REVIEW.md), and `Numbers-demo.code-workspace`. These additions use the same engine and separate demo journals. The browser's restored visual design remains in place.
+
+C62 records the user’s 2026-09-07 authorization to commit and push this demonstration checkpoint to the existing GitHub repository. This checkpoint follows the earlier saved version and includes the current specification, implementation, presenter materials and verification notes. The following dated sections preserve the prior pause state and its backup evidence.
+
+## Historical checkpoint — 2026-09-06
 
 ## Where we left off
 
@@ -58,3 +66,12 @@ The backup's README explains how to use a separate working copy if needed. The z
 No unfinished change blocks this pause. The next product step is to use the prototype and choose the next explicit requirement. Real payments, Bitcoin integration, authentication and public hosting still need their own specification and approval. This checkpoint is a verified local demonstration, not a production deployment.
 
 GitHub reported two open dependency alerts in the historical `frontend/package-lock.json` during the checkpoint push: [browserslist, high severity, patched in 4.28.7](https://github.com/dannygoldfield/Numbers/security/dependabot/46) and [@humanfs/node, moderate severity, patched in 0.16.8](https://github.com/dannygoldfield/Numbers/security/dependabot/45). Record these as maintenance work before returning to the older frontend. Both alerts identify the historical frontend manifest, not Prototype 1's manifest. Its dependencies were not changed as part of this pause checkpoint.
+
+
+## Latest local demonstration state — 2026-09-07
+
+The new tools passed the complete check script (26 Rust entries and three browser-value tests). A complete guided run and a separately restarted live test are retained under `data/demonstrations/`; see VERIFICATION.md for paths and evidence. Both older journals remain unchanged.
+
+A fresh live session was left at Number1, 600 Rana each, minimum5/increment1, on port8766, in `data/demonstrations/live-1788795541902-85987/`. This is a point-in-time handoff observation: later user activity may advance it. To resume that history after stopping it, use `./demo serve --session data/demonstrations/live-1788795541902-85987`. Use `./demo live` in another terminal. The original port8765 preview remains stopped and can be started with `./run`.
+
+VS Code has the presentation workspace open. Choose Terminal → Run Task → Numbers: Guided mechanics to start a new step-by-step walkthrough. C62 authorizes saving this work as the demonstration checkpoint on main and pushing it to GitHub. Demo journals and generated receipts remain local; the earlier history backup still describes the prior saved journals. Read the Git log for the source checkpoint and GitHub Actions for its remote check results.

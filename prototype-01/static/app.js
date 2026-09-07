@@ -111,7 +111,7 @@ function renderState() {
       Open: 'Auction open',
       Closed: 'Auction closed',
       AwaitingSettlement: 'Awaiting settlement',
-      Finalized: 'Title finalized',
+      Finalized: 'Ownership finalized',
     }[phase],
   );
   put('number', state.current_number);
@@ -132,16 +132,17 @@ function renderState() {
   element('bid-button').disabled = inFlight || !connected || !['Scheduled', 'Open'].includes(phase);
   element('settlement-controls').hidden = phase !== 'AwaitingSettlement';
   element('settle').disabled = element('expire').disabled = inFlight || !connected;
+  // RT06: legacy wire keys remain exact; labels use ownership and Unowned.
   const banner = state.title
     ? state.title.title_kind === 'winner'
-      ? `Title assigned to ${bidderName(state.title.holder_id)}`
-      : 'Title assigned to PublicLand'
+      ? `Owned by ${bidderName(state.title.holder_id)}`
+      : 'Unowned'
     : state.resolution
-      ? 'Winner resolved · title awaiting settlement'
+      ? 'Winner resolved · ownership awaiting settlement'
       : '';
-  put('title-banner', banner);
-  element('title-banner').hidden = !banner;
-  element('title-banner').classList.toggle('final', Boolean(state.title));
+  put('ownership-banner', banner);
+  element('ownership-banner').hidden = !banner;
+  element('ownership-banner').classList.toggle('final', Boolean(state.title));
   put('protocol-state', phase);
   put('protocol-balance', state.protocol_held_rana);
   put('record-count', state.last_sequence_index);
@@ -162,7 +163,14 @@ function renderState() {
   }
   for (const [label, value] of [
     ['Settlement', state.settlement ? state.settlement.status : 'Pending'],
-    ['Title', state.title ? state.title.title_kind : 'Unassigned'],
+    [
+      'Ownership',
+      state.title
+        ? state.title.title_kind === 'winner'
+          ? `Owned by ${bidderName(state.title.holder_id)}`
+          : 'Unowned'
+        : 'Pending',
+    ],
   ]) {
     const row = document.createElement('div');
     row.className = 'account';
@@ -220,8 +228,8 @@ function recordEffect(record) {
         : `Rejected · ${payload.rejection_reason}`;
     case 'FinalizationRecord':
       return payload.title_kind === 'winner'
-        ? `Winner title · ${bidderName(payload.holder_id)}`
-        : 'PublicLand title';
+        ? `Owned by ${bidderName(payload.holder_id)}`
+        : 'Unowned · no owner';
     default:
       return '';
   }
@@ -339,8 +347,8 @@ async function submit(endpoint, body) {
         put(
           'result',
           result.data.state.title.title_kind === 'winner'
-            ? `Number ${result.data.state.current_number}: settlement committed. Winning rana captured; title assigned to the winner.`
-            : `Number ${result.data.state.current_number}: settlement committed. Winning reservation released; title assigned to PublicLand.`,
+            ? `Number ${result.data.state.current_number}: settlement committed. Winning rana captured; the winner is now the owner.`
+            : `Number ${result.data.state.current_number}: settlement committed. Winning reservation released; the number is Unowned.`,
         );
       element('result').classList.toggle('error', !accepted);
     }

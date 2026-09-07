@@ -67,7 +67,7 @@ fn accepted(value: &Value) {
 }
 
 #[test]
-fn exact_worked_auction_has_31_records_and_both_title_outcomes() {
+fn exact_worked_auction_has_31_records_and_both_ownership_outcomes() {
     let mut demo = Demo::new();
     assert_eq!(
         balances(&demo.engine.state),
@@ -112,7 +112,7 @@ fn exact_worked_auction_has_31_records_and_both_title_outcomes() {
         json!([[[50, 0], [100, 0]], 50])
     );
     assert_eq!(
-        demo.engine.state.title["payload_json"]["holder_id"],
+        demo.engine.state.ownership["payload_json"]["holder_id"],
         "demo-1"
     );
     assert_eq!(demo.read(237)["data"]["current_number"], 1);
@@ -126,7 +126,7 @@ fn exact_worked_auction_has_31_records_and_both_title_outcomes() {
         json!([[[50, 0], [100, 0]], 50])
     );
     assert_eq!(
-        demo.engine.state.title["payload_json"]["title_kind"],
+        demo.engine.state.ownership["payload_json"]["title_kind"],
         "PublicLand"
     );
     assert_eq!(
@@ -444,14 +444,14 @@ fn single_writer_and_append_only_sql_constraints() {
         .is_err());
 }
 #[test]
-fn storage_failure_never_selects_publicland_or_acknowledges_a_bid() {
+fn storage_failure_never_selects_unowned_or_acknowledges_a_bid() {
     let mut d = Demo::new();
     let db = rusqlite::Connection::open(&d.path).unwrap();
     db.execute_batch("BEGIN EXCLUSIVE;").unwrap();
     let r = d.bid(0, "demo-1", json!(10));
     assert_eq!(r["error"]["code"], "storage_unavailable");
     assert_eq!(d.engine.state.phase(), "Scheduled");
-    assert!(d.engine.state.title.is_null());
+    assert!(d.engine.state.ownership.is_null());
     db.execute_batch("ROLLBACK;").unwrap();
     assert_eq!(d.read(1)["error"]["code"], "storage_unavailable");
     assert_eq!(d.engine.rows().unwrap().len(), 3);

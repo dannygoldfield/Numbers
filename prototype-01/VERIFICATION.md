@@ -69,3 +69,23 @@ After incorporating the nine upstream maintenance commits through `a58ec16`, the
 The local preview was stopped cleanly. SQLite backups of the current three-record history and earlier 25-record history passed integrity checks and exact ordered-row comparisons; the source file hashes were unchanged. A private local manifest records their hashes and counts. The repository workflow adds a Prototype 1 job running `./check`; the local results above do not claim a remote run has already completed. The user authorized the checkpoint commit and push under C59, superseding the earlier local-only publication restriction for this checkpoint.
 
 All three GitHub jobs subsequently passed for source checkpoint `0ecb53c99de5207c6cd73e7e98f3927f93137190`: historical Rust tests, historical frontend build/lint, and Prototype 1 checks. [Run 34051745603](https://github.com/dannygoldfield/Numbers/actions/runs/34051745603) records the remote results. The legacy frontend dependency alerts found during the push are listed in HANDOFF.md; successful checks do not resolve those alerts.
+
+
+## Demonstration tools and ownership wording — 2026-09-07
+
+The full `./check` passed after the final source edits: Rust formatting, Clippy with warnings denied, 26 Rust integration test entries (23 existing plus three executable demonstration tests), frontend formatting and all three browser-value tests. No dependency was added. Existing server launch selection remains explicit through Cargo's default-run setting.
+
+The new tests execute the shipped guided binary through all 18 UI05 steps. They verify 42 persisted records, both canonical settlement outcomes, two extensions, final balances A600/B538 with zero holds and protocol62, and separate-process receipts at sequences32 and41. Read-only inspection validates all42. Reusing the directory or serving a guided session with the real clock is rejected without changing its journal bytes.
+
+The live-client integration test launches the actual server, accepts bids5 and6, rejects an equal bid, and preserves fractional and very large amount syntax in recorded command bytes. A separate transport test supplies an unreadable response and observes no automatic retry. The guided Enter, records and quit controls were also exercised interactively through the first three steps; the partial journal was retained.
+
+A manual live session on port8766 accepted A20 through the terminal. The browser reflected the shared journal and the eventual next-number state. After real-clock closing, the explicit failed-settlement command released20 and finalized Unowned. The server was stopped and relaunched with the same session path; it reconstructed all12 records, including the next Number2 AuctionRecord. This test history is retained at `data/demonstrations/live-1788794326916-82682/`.
+
+A complete guided evidence run is retained at `data/demonstrations/guided-1788795356890-83986/`, including result.json and both restart receipts. These are ignored local demonstration files, not source artifacts or protocol events. The provided VS Code workspace was opened with the guide and actual Rust source. Its task commands were exercised directly; the native task picker itself was not automated.
+
+Compatibility checks copied both original journals for read-only validation by the new executable. `data/demo-02.sqlite3` reconstructed3 records; `data/prototype.sqlite3` reconstructed25. The source files remained byte-for-byte identical to their pre-change SHA-256 digests:
+
+- demo-02.sqlite3: `290dd2a4035e0fa544cd89fe655bf49381e58a1084d7b86edab82caecc1fad80`
+- prototype.sqlite3: `021d1c04ba611cd282db7bb75b1192287ca8332c2830815a58513774f23224d3`
+
+RT06 preserves literal API/schema keys and enums; only current prose, display and internal variable names change. The active-spec event-field schemas were reviewed against the prior version and current local document links were checked. Historical source specifications and past verification narratives remain historical. No Prototype2 auction rule, real payment or identity behavior was introduced, and this local validation does not constitute new GitHub CI evidence.

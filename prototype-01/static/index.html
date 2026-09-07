@@ -26,7 +26,7 @@
         <div class="auction-grid">
           <div class="number-stage">
             <h1 id="number">—</h1>
-            <div id="title-banner" class="title-banner" hidden></div>
+            <div id="ownership-banner" class="ownership-banner" hidden></div>
           </div>
           <div class="auction-controls">
             <div class="clock-row">
@@ -120,6 +120,10 @@
             </details>
             <details>
               <summary>Backend state projection</summary>
+              <p class="hint">
+                Revision 0.1 raw fields retain the original names: title means ownership; PublicLand
+                means Unowned. Saved records are unchanged.
+              </p>
               <pre id="state-json">—</pre>
             </details>
             <p class="scope-note">
