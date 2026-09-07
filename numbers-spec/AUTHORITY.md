@@ -14,7 +14,7 @@ The active precedence is:
 2. `AUTHORITY.md` — authority and interpretation.
 3. `SCOPE.md` — included and excluded prototype capability.
 4. `INVARIANTS.md` — system consistency properties.
-5. `RANA-AND-TITLE.md` — economic and title meaning.
+5. `RANA-AND-OWNERSHIP.md` — economic and ownership meaning.
 6. `STATE-AND-EVENTS.md` — lifecycle, commands, events, and commit groups.
 7. `PERSISTENCE-AND-RESTART.md` — durable representation and reconstruction.
 8. `PROTOTYPE-01.md` — identities and parameter definitions.
@@ -28,7 +28,7 @@ All these files are normative documents except sections explicitly labeled non-n
 
 `must` and `must not` express obligations and prohibitions. `only`, `exactly one`, and `at most one` bound permitted behavior. Conditions, allowed commands, and event types form closed sets. Unlisted transitions, corrections, retries, and recovery paths are forbidden.
 
-Higher precedence controls a direct conflict. Silence does not supply a default or permission. If applying the rules still requires an economic, title, fairness, authority, timing, history, or transition choice, implementation must stop and the missing rule must be returned to user review. An implementer must not select between conflicting interpretations.
+Higher precedence controls a direct conflict. Silence does not supply a default or permission. If applying the rules still requires an economic, ownership, fairness, authority, timing, history, or transition choice, implementation must stop and the missing rule must be returned to user review. An implementer must not select between conflicting interpretations.
 
 ## AU04 — Rule ownership and refinement
 

@@ -39,7 +39,7 @@ Operational settings are limited to local database path, loopback host, local po
 | Auction | SE03 admission, timing, leading-bid derivation, close, and fixed resolution |
 | Rana accounting | RT01–RT03 ledger preconditions, holds, release, capture, and conservation |
 | Settlement | RT03 terminal command validation against the fixed result |
-| Title | RT04 binding and unique FinalizationRecord |
+| Ownership | RT04 binding and unique FinalizationRecord |
 | Persistence/reconstruction | PR01–PR06 order, atomic groups, durability, validation, replay |
 | UI | UI01–UI04 command submission and projections only |
 

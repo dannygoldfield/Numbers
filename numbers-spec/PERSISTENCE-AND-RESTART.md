@@ -43,7 +43,7 @@ SE05 defines indivisible commit groups. All group fields, payloads, IDs, sequenc
 
 Success/acceptance must not be returned before durable commit. Durability must survive process crash, ordinary restart, and machine restart under the supported local storage assumptions. Volatile-only or best-effort persistence is insufficient. If a response is lost after commit, the committed records remain authoritative and must not be appended again.
 
-Close and resolution deliberately form separate complete groups, so an interrupted evaluator can leave a valid Closed boundary. Initialization's two allocations and first auction are one group, preventing reissuance or partially initialized identities. Finalization's ledger action and title form one group, preventing title without the required Rana effect.
+Close and resolution deliberately form separate complete groups, so an interrupted evaluator can leave a valid Closed boundary. Initialization's two allocations and first auction are one group, preventing reissuance or partially initialized identities. Finalization's ledger action and ownership form one group, preventing ownership without the required Rana effect.
 
 ## PR04 — Validate and reconstruct before evaluation
 
@@ -53,11 +53,11 @@ Startup must validate P02 configuration, then load the complete committed journa
 2. Validate the permitted SE05 group shape and SE06 references, per-number prerequisites, uniqueness, and group timestamp consistency. Committed server_time must be nondecreasing. A group with a valid hash but illegal semantics is still invalid.
 3. Fold explicit RT ledger effects, verify nonnegative balances, hold references, and conservation after each group. Validate exactly two initial issues in the initialization group; no later issuance is permitted.
 4. Derive state by SE01 and validate the captured auction timing/bid rules, effective end and extension causes, close condition, and contiguous number creation only after the previous finalization and gap.
-5. Validate recorded resolution references/amount/input hash against the valid-bid history and deterministic ordering as a consistency check. Do not create a new resolution or replace its fixed result. Validate settlement/ledger/title binding, correct terminal outcome, and no outstanding hold after finalization.
+5. Validate recorded resolution references/amount/input hash against the valid-bid history and deterministic ordering as a consistency check. Do not create a new resolution or replace its fixed result. Validate settlement/ledger/ownership binding, correct terminal outcome, and no outstanding hold after finalization.
 
 If the journal is empty, it is a valid uninitialized store; no balances or auction are asserted until G01. Absence of a not-yet-eligible future record is valid. Absence of a required member/prerequisite of a committed group is invalid. In particular, Closed without ResolutionRecord is valid; SettlementRecord without its ledger effect and FinalizationRecord is not.
 
-Reconstruction must perform no writes, bid replay, new capture, release, title assignment, initial allocation, repair, or deadline adjustment. On successful completion, expose a non-canonical reconstruction receipt identifying the highest validated sequence index (0 for empty history) and successful validation. Then invoke SE04 as a distinct startup evaluation using the current server time. New permitted records from that evaluation are new history, not reconstructed or repaired old history.
+Reconstruction must perform no writes, bid replay, new capture, release, ownership assignment, initial allocation, repair, or deadline adjustment. On successful completion, expose a non-canonical reconstruction receipt identifying the highest validated sequence index (0 for empty history) and successful validation. Then invoke SE04 as a distinct startup evaluation using the current server time. New permitted records from that evaluation are new history, not reconstructed or repaired old history.
 
 ## PR05 — Material restart boundaries
 
@@ -74,9 +74,9 @@ The following is the complete supported boundary behavior; all outcomes require 
 | Closed before resolution | Closed and unchanged hold | G07 once; captured resolution time is this new evaluation |
 | After resolution | Fixed winner and winning hold | Explicit settlement command only; never automatic local expiry |
 | During terminal group write | Whole G08/G09 committed or no terminal group | Use existing outcome if committed; otherwise remain AwaitingSettlement with its prior hold; never replay the command automatically |
-| Finalized within rhythm gap | Same terminal settlement, balances, title | Remain finalized until next eligible evaluation |
+| Finalized within rhythm gap | Same terminal settlement, balances, ownership | Remain finalized until next eligible evaluation |
 | Finalized after gap with next absent | Same terminal facts | G10 once, no opening or allocation |
-| After next AuctionRecord | Next Scheduled; previous title unchanged | First valid bid needed again |
+| After next AuctionRecord | Next Scheduled; previous ownership unchanged | First valid bid needed again |
 | Complete commit with lost response | Committed effects unchanged | Read them; no implicit resubmission |
 
 Reconstruction of the same committed journal yields identical authoritative state. Current wall time and observational countdowns can differ; explicit post-reconstruction evaluation can then append new permitted events. This is not a promise that time stopped during downtime.
@@ -87,8 +87,8 @@ Before admission, known unavailable persistence must reject processing as `stora
 
 If writing a group fails, return explicit failure if possible and stop authoritative processing. Do not acknowledge acceptance, attempt a partial substitute, or automatically retry. If commit status is uncertain, treat the result as unknown to the caller: halt writes and reconstruct the durable store before further processing. This is inspection of local atomic truth, not replay of an uncertain external action.
 
-A process interruption before commit leaves no new complete group. A complete commit is replayed as fact. A visible incomplete group, bad hash, missing prerequisite, illegal ordering, duplicate terminal record, negative balance, contradictory title, unreadable journal, or invalid time must halt with a durable non-authoritative diagnostic when storage permits. If diagnostic storage is also unavailable, surface that failure; do not invent a canonical error entry. The diagnostic must identify the failing record/group when known and state that no repair was performed.
+A process interruption before commit leaves no new complete group. A complete commit is replayed as fact. A visible incomplete group, bad hash, missing prerequisite, illegal ordering, duplicate terminal record, negative balance, contradictory ownership, unreadable journal, or invalid time must halt with a durable non-authoritative diagnostic when storage permits. If diagnostic storage is also unavailable, surface that failure; do not invent a canonical error entry. The diagnostic must identify the failing record/group when known and state that no repair was performed.
 
-Malformed history must not be edited, skipped, quarantined out of replay, truncated, supplemented with guessed events, or routed to PublicLand. Existing facts and one-shot limits remain. Repeated restart does not make invalid history valid. After a valid reconstruction, only a new explicit command or SE04 permitted evaluation can proceed; no automatic bid/settlement retry exists.
+Malformed history must not be edited, skipped, quarantined out of replay, truncated, supplemented with guessed events, or routed to Unowned. Existing facts and one-shot limits remain. Repeated restart does not make invalid history valid. After a valid reconstruction, only a new explicit command or SE04 permitted evaluation can proceed; no automatic bid/settlement retry exists.
 
 The application must provide no operation for clearing a journal, resetting allocations, or replacing an existing history. An explicitly initialized separate empty local store is a separate demo history, not a continuation or recovery of another store. This specification defines no migration from the superseded sats generation and no import of its records.

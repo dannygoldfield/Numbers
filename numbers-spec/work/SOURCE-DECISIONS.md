@@ -219,3 +219,19 @@ The user requested restoration to the version immediately after removing “THE 
 ## C59 — GitHub checkpoint and project pause, 2026-09-06
 
 After reviewing the proposed pause tasks, the user authorized all three: incorporate the nine existing GitHub maintenance updates, commit and push the specification and prototype with a handoff note, and separately back up the local demonstration histories. The updates were incorporated by fast-forward. Include the prototype in repository checks, preserving the existing historical-application jobs. This extends the earlier local-only authorization to this checkpoint commit and push; public hosting and payment integration remain outside scope. The local preview is stopped for the pause. The current and earlier journals are preserved, backed up separately from GitHub, and checked for matching ordered records. No protocol rule or journal entry changes.
+
+
+## C60 — Frontend and backend demonstrations, 2026-09-07
+
+The user approved all proposed Prototype 1 demonstration additions: retain the browser demo; add readable live terminal commands through the existing HTTP endpoints; add a guided walkthrough using the same Rust engine with a clearly labeled simulated clock and a separate journal; provide presenter notes, inspectable records and a VS Code workspace; demonstrate exact reconstruction in a separate process. This is demonstration tooling, not approval of Prototype 2, a new closing rule or a live time-control endpoint. Each explicit live command is sent once. Fresh demonstration runs use newly created directories and cannot reset or overwrite an existing journal. UI05 owns these presentation and fixture requirements.
+
+## C61 — Ownership and Unowned terminology, 2026-09-07
+
+The user requested ownership in place of the property-associated term “title”, expressing the Numbers question as “What if you can own a number?” After clarification, the user selected “Unowned — no owner” for the outcome formerly displayed as PublicLand. It does not mean collective ownership. Use ownership/Unowned in current explanatory documentation, code concepts and human-facing displays. Before finalization ownership is pending; a finalized Unowned result is distinct from that pending state.
+
+This is terminology, not a change to winning, settlement, accounting, finality or external rights. Revision 0.1 serialized keys and values (including title, title_kind, holder_id, PublicLand and expired_to_publicland) remain exact compatibility spellings. Never rewrite saved records, hashes, API representations or submitted commands to update prose. Current documentation explains the mapping; historical provenance and frozen codex-spec preserve their original wording. RT04 and the glossary own the meaning.
+
+
+## C62 — Commit and push the demonstration checkpoint, 2026-09-07
+
+After trying the guided terminal demonstration and reviewing the code presentation, the user requested: “Make commits and push to github”. This authorizes committing the approved C60/C61 specification, implementation, presenter workspace, documentation and verification notes to the existing Numbers repository and pushing to its GitHub remote. Local journals, generated demonstration receipts, build outputs and machine configuration remain outside the source checkpoint. No auction behavior change or public deployment follows from this instruction.

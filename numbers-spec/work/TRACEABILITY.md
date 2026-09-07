@@ -20,11 +20,11 @@ Non-normative audit map. Every candidate normative clause, invariant, lifecycle 
 | P01 | PROTOTYPE-01.md | C09/C18/C19/C43/C44; M01/M05 |
 | P02 | PROTOTYPE-01.md | C12/C19/C40; K02/K06/K07/K09/K20; M12/A01 |
 | P03 | PROTOTYPE-01.md | C07/C24/C25; K19 |
-| RT01 | RANA-AND-TITLE.md | C15/C19/C21/C25/C43/C44; D01/M02/M05 |
-| RT02 | RANA-AND-TITLE.md | C21/C25/C45; D02/M03 |
-| RT03 | RANA-AND-TITLE.md | C14/C17/C21–C23/C44/C46; K09/K10; M04/M12 |
-| RT04 | RANA-AND-TITLE.md | C10/C11/C17/C22/C46; K10/K11; D05/M04 |
-| RT05 | RANA-AND-TITLE.md | C16/C17/C23/C25; K08/K10/K15/K18; D07/M04/A01 |
+| RT01 | RANA-AND-OWNERSHIP.md | C15/C19/C21/C25/C43/C44; D01/M02/M05 |
+| RT02 | RANA-AND-OWNERSHIP.md | C21/C25/C45; D02/M03 |
+| RT03 | RANA-AND-OWNERSHIP.md | C14/C17/C21–C23/C44/C46; K09/K10; M04/M12 |
+| RT04 | RANA-AND-OWNERSHIP.md | C10/C11/C17/C22/C46; K10/K11; D05/M04 |
+| RT05 | RANA-AND-OWNERSHIP.md | C16/C17/C23/C25; K08/K10/K15/K18; D07/M04/A01 |
 | SE01 | STATE-AND-EVENTS.md | C13/C14/C17/C22; K02–K04/K08–K12; C45/C46 |
 | SE02 | STATE-AND-EVENTS.md | C07/C20/C25/C30; K04/K09/K16–K19; M07/M08/M10/M11 |
 | SE03 | STATE-AND-EVENTS.md | C12/C21/C43/C45; K04–K09/K17/K20; M07/M08/M12 |
@@ -133,3 +133,13 @@ C47 / S24: The user approved removal of the unused settlement deadline after rev
 C48 / S25: In response to the combined simplify/activate/build request, the user said: “Yes I approve the the settlement simplification. With that I approve implementation of Prototype 1.” This activates numbers-spec revision 0.1 as the sole active authority. codex-spec is historical and untouched. Owners: STATUS, AU01. Earlier draft-only statements in this working record describe their historical checkpoint. Local implementation is authorized; no commit, push or publication was requested.
 
 C49: Rana remains useful for this prototype, but need not remain a public concept or permanent internal standard for future payment integrations. Prototype 1 accounting is unchanged.
+
+
+## C60–C61 follow-up — 2026-09-07
+
+| User decision | Current clauses | Implementation and evidence |
+|---|---|---|
+| C60: demonstrate frontend and backend with a guided walkthrough | UI05, existing SE02–SE06 and PR04 | `prototype-01/src/bin/numbers-demo/`, `DEMO.md`, `Numbers-demo.code-workspace`, `tests/demonstration.rs` |
+| C61: ownership; Unowned means no owner | RT04/RT06, GLOSSARY, UI01 | Internal State.ownership, browser and terminal labels; unchanged literal JSON keys; saved-history reconstruction and both-outcome tests |
+
+S26/S27 distinguish added demonstration tools and terminology from auction semantics. Historical mappings above retain the vocabulary at their decision time.

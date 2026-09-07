@@ -1,4 +1,4 @@
-# Rana and protocol title
+# Rana and protocol ownership
 
 ## RT01 — Amounts, issuance, and conservation
 
@@ -43,26 +43,31 @@ Resolution fixes the winning bid before settlement is eligible. Only `SubmitSett
 
 A missing/mismatched hold is invalid history or an invariant failure under PR06, not a permitted failed-settlement result.
 
-- **`settled`:** persist SettlementRecord, RanaCaptureRecord consuming the full winning hold and crediting that amount to `protocol`, and FinalizationRecord assigning winner title, in that order and one atomic group.
-- **`expired`:** persist SettlementRecord, RanaReleaseRecord consuming the full winning hold and returning it to that bidder's available Rana, and FinalizationRecord assigning PublicLand, in that order and one atomic group. Protocol-held Rana does not increase.
+- **`settled`:** persist SettlementRecord, RanaCaptureRecord consuming the full winning hold and crediting that amount to `protocol`, and FinalizationRecord assigning winner ownership, in that order and one atomic group.
+- **`expired`:** persist SettlementRecord, RanaReleaseRecord consuming the full winning hold and returning it to that bidder's available Rana, and FinalizationRecord assigning Unowned, in that order and one atomic group. Protocol-held Rana does not increase.
 
 Both outcomes leave no live reservation for the finalized auction. Both preserve the ResolutionRecord and its winning identity. Settled captures exactly the winning bid amount; there is no price adjustment. No spending operation exists for protocol-held Rana.
 
 `expired` is the retained machine label for simulated failed settlement. Settlement has no deadline or participant-fault precondition. Until a terminal command is accepted, the fixed winner’s hold remains reserved. The backend validates and performs it; the UI only submits the command. No automatic capture, expiry, timeout, failure inference, late-payment recognition, or rerun occurs. AwaitingSettlement can persist indefinitely until an accepted command.
 
-## RT04 — Title and PublicLand
+## RT04 — Ownership and Unowned
 
-FinalizationRecord is the sole title record; no second title-assignment event exists. Before it exists, protocol title is unassigned. Its `title_kind` and `holder_id` mean:
+FinalizationRecord is the sole ownership record; no second ownership-assignment event exists. Before it exists, protocol ownership is unassigned. Its `title_kind` and `holder_id` mean:
 
 - `winner`: holder_id equals the identity of the fixed winning BidRecord and settlement is settled.
-- `PublicLand`: holder_id is null and settlement is expired.
+- `PublicLand` (displayed as Unowned): holder_id is null and settlement is expired. No owner exists.
 
-PublicLand is an irreversible protocol title status. The number remains accounted for in the sequence and outside ordinary participant-held title. PublicLand is not a person, bidder, account, error, government owner, legal land claim, configurable recipient, repair path, or general recovery mechanism. It receives no Rana.
+Unowned is an irreversible protocol ownership status. The number remains accounted for in the sequence and outside ordinary participant-held ownership. Unowned is not a person, bidder, account, error, government owner, legal land claim, configurable recipient, repair path, or general recovery mechanism. It receives no Rana.
 
-The only PublicLand trigger is the accepted expired settlement group in RT03. Absence of bids, storage errors, malformed history, time alone, restart, or operator belief must not substitute for that trigger. Each number receives exactly one final title; later facts or later specification work cannot reassign it.
+The only Unowned trigger is the accepted expired settlement group in RT03. Absence of bids, storage errors, malformed history, time alone, restart, or operator belief must not substitute for that trigger. Each number receives exactly one final ownership outcome; later facts or later specification work cannot reassign it.
 
 ## RT05 — One-shot boundaries
 
-Resolution permission is exhausted by the durable ResolutionRecord; terminal-settlement permission by its complete settlement group; title-assignment permission by its FinalizationRecord in that same group. A reservation can end only once by its permitted release or capture. These limits are enforced by canonical references, event preconditions, and record/group uniqueness, not a separate mutable authority flag.
+Resolution permission is exhausted by the durable ResolutionRecord; terminal-settlement permission by its complete settlement group; ownership-assignment permission by its FinalizationRecord in that same group. A reservation can end only once by its permitted release or capture. These limits are enforced by canonical references, event preconditions, and record/group uniqueness, not a separate mutable authority flag.
 
 A complete commit makes those facts irreversible. An uncommitted local group has no canonical economic effect. An uncertain commit response is handled by halting and reconstructing durable history under PR06, never by speculative retry, forfeiture, or authority consumption before commit. Restart and operator action cannot restore consumed permission. There is no external-action authority scope or ambiguity-repair lifecycle in Prototype 1.
+
+
+## RT06 — Ownership vocabulary compatibility
+
+C61 changes current prose and display vocabulary only. RT04's Unowned outcome is serialized as `PublicLand` in revision 0.1. The existing `title`, `title_kind`, `holder_id` and `expired_to_publicland` spellings remain unchanged in their specified schemas. The owner remains the winning bidder on successful settlement, otherwise null on failed settlement. No joint owner, substitute winner, spending authority, reassignment or external ownership mechanism follows from these names. Saved history must reconstruct without a migration.

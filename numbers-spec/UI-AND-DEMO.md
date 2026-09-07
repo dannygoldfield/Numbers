@@ -2,15 +2,15 @@
 
 ## UI01 — Two non-authoritative views
 
-Auction View and Protocol View must be served by the same local application and support side-by-side display. The backend performs SE evaluation and returns canonical or mechanically derived facts. The browser must not determine validity, authoritative balances, winner, settlement, or title.
+Auction View and Protocol View must be served by the same local application and support side-by-side display. The backend performs SE evaluation and returns canonical or mechanically derived facts. The browser must not determine validity, authoritative balances, winner, settlement, or ownership.
 
-Auction View must show current number/state, a visibly simulated identity selector for demo-1/demo-2, both available/reserved balances for the selected identity, current leading bid, bid input, plain-language acceptance/rejection, the derived 3:45 base countdown, extension changes, fixed winner, settlement status, title assignment, 12-second rhythm pause, and next number.
+Auction View must show current number/state, a visibly simulated identity selector for demo-1/demo-2, both available/reserved balances for the selected identity, current leading bid, bid input, plain-language acceptance/rejection, the derived 3:45 base countdown, extension changes, fixed winner, settlement status, ownership assignment, 12-second rhythm pause, and next number.
 
 Auction View must offer the explicit local settlement commands when AwaitingSettlement. Label them “Simulate successful settlement” and “Simulate failed settlement”. They submit settled and expired respectively; expired is only the retained machine label. They do not prove outside payment failure, identity, or human fault. There is no settlement timer or deadline display. The backend alone validates them and performs RT03.
 
-Use typography, rhythm, visible state changes, and a clear title-assignment moment. Animation cannot create an outcome or imply title before its record. No production identity or external ownership claim is permitted.
+Use typography, rhythm, visible state changes, and a clear ownership-assignment moment. Animation cannot create an outcome or imply ownership before its record. No production identity or external ownership claim is permitted.
 
-Protocol View must be read-only: no bid, settlement, title, editing, reset, or other mutating control. It must display the submitted command representation, backend validation/result, resulting records grouped by global order, derived auction state, ledger movements, available/reserved and protocol-held balances, settlement, title, payload hashes, and latest reconstruction receipt. Canonical records must be shown without reinterpretation. Display the submitted command by decoding command_utf8_hex to UTF-8, alongside the unchanged canonical payload; this display decoding creates no new fact. Transient command errors with no canonical record must be labeled as unrecorded command results, never fabricated as events.
+Protocol View must be read-only: no bid, settlement, ownership, editing, reset, or other mutating control. It must display the submitted command representation, backend validation/result, resulting records grouped by global order, derived auction state, ledger movements, available/reserved and protocol-held balances, settlement, ownership, payload hashes, and latest reconstruction receipt. Canonical records must be shown without reinterpretation. Display the submitted command by decoding command_utf8_hex to UTF-8, alongside the unchanged canonical payload; this display decoding creates no new fact. Transient command errors with no canonical record must be labeled as unrecorded command results, never fabricated as events.
 
 ## UI02 — Fixed response contract
 
@@ -39,7 +39,7 @@ A state projection contains exactly:
 | leading_bid | `{bid_id, bidder_id, amount_rana}` from SE03 high bid, or null |
 | resolution | `{record_id, winning_bid_id, winning_bidder_id, winning_amount_rana, resolution_time}` from the immutable resolution and its winning bid; otherwise null |
 | settlement | `{record_id, status, settlement_time}` from SettlementRecord, otherwise null |
-| title | `{record_id, title_kind, holder_id, finalization_time}` from FinalizationRecord, otherwise null |
+| `title` (ownership projection) | `{record_id, title_kind, holder_id, finalization_time}` from FinalizationRecord, otherwise null |
 | balances | Two objects in demo-1, demo-2 order, each `{bidder_id, available_rana, reserved_rana}` under RT01 |
 | protocol_held_rana | RT01 derived balance |
 | sequence | `{phase, next_number, next_available_at}`: phase is auction_available for Scheduled, auction_active for Open/Closed/AwaitingSettlement, rhythm_gap for latest Finalized. Only rhythm_gap has next_number=current_number+1 and next_available_at=finalization_time+captured gap; otherwise both are null |
@@ -54,9 +54,9 @@ Countdown display must derive from backend server_time and current_end_time with
 
 The rhythm display must derive from recorded finalization and next_available_at. The UI must wait for an actual next AuctionRecord before displaying the next number as available. The next countdown stays dormant until its own opening record.
 
-Reading state/history invokes the backend's explicitly prescribed SE04 evaluation. Protocol View still has no controls choosing canonical state: its read cannot select a bid, settlement outcome, title, or transition predicate. UI polling frequency is an observation choice; no animation or client clock becomes a backend trigger rule.
+Reading state/history invokes the backend's explicitly prescribed SE04 evaluation. Protocol View still has no controls choosing canonical state: its read cannot select a bid, settlement outcome, ownership, or transition predicate. UI polling frequency is an observation choice; no animation or client clock becomes a backend trigger rule.
 
-Each explicit UI submission sends its command once. The UI must show the authoritative acceptance/rejection and refresh the derived state and Protocol View after the response. Disable accidental repeat submission while awaiting that response. A failed/lost response must prompt state inspection; it must not initiate automatic replay. Human-readable messages must identify the rule failure and whether canonical records were written. The backend result, not optimistic UI updates, determines displayed balances and title.
+Each explicit UI submission sends its command once. The UI must show the authoritative acceptance/rejection and refresh the derived state and Protocol View after the response. Disable accidental repeat submission while awaiting that response. A failed/lost response must prompt state inspection; it must not initiate automatic replay. Human-readable messages must identify the rule failure and whether canonical records were written. The backend result, not optimistic UI updates, determines displayed balances and ownership.
 
 ## UI04 — Required deterministic demonstration
 
@@ -72,22 +72,35 @@ Fixture: starting_number=1; initial allocations=100 rana each; duration_seconds=
 | 45 | A bids 30: invalid Bid 10 | amount_below_required_increment; balances/leader/end unchanged |
 | 60 | B raises to 40: Bid 11, Release 12, Reserve 13 | B60/40; same-identity replacement uses only 10 more Rana |
 | 90 | A bids 50: Bid 14, Release 15, Reserve 16 | A50/50; B100/0; leader A50 |
-| 225 | Read boundary: Close 17, Resolution 18 in separate groups | Winner A50 fixed; AwaitingSettlement; title unassigned |
-| 226 | Submit settled: Settlement 19, Capture 20, Finalization 21 | A50/0; B100/0; protocol 50; winner title A; next available at 238 |
-| 237 | Read only | Same final title; gap still pending; no next auction |
+| 225 | Read boundary: Close 17, Resolution 18 in separate groups | Winner A50 fixed; AwaitingSettlement; ownership unassigned |
+| 226 | Submit settled: Settlement 19, Capture 20, Finalization 21 | A50/0; B100/0; protocol 50; winner ownership A; next available at 238 |
+| 237 | Read only | Same final ownership; gap still pending; no next auction |
 | 238 | Read boundary: AuctionRecord 22 | Number 2 Scheduled; no new issuance or countdown |
 | 240 | B bids 10: Bid 23, Reserve 24, Open 25 | B90/10; number 2 effective end=465 |
 | 465 | Read boundary: Close 26, Resolution 27 | Winner B10 fixed; AwaitingSettlement |
-| 466 | Submit expired: Settlement 28, Release 29, Finalization 30 | B100/0; A50/0; protocol remains 50; number 2 title PublicLand; winner result still B10 |
-| 478 | Read boundary: AuctionRecord 31 | Number 3 Scheduled, no hold, no countdown; prior titles unchanged |
+| 466 | Submit expired: Settlement 28, Release 29, Finalization 30 | B100/0; A50/0; protocol remains 50; number 2 ownership Unowned; winner result still B10 |
+| 478 | Read boundary: AuctionRecord 31 | Number 3 Scheduled, no hold, no countdown; prior ownership outcomes unchanged |
 
-The first auction demonstrates every requested competitive and economic action. The second demonstrates the actual permitted PublicLand path with release rather than forfeiture. Losing reservations were released when outbid; settlement must not release them twice.
+The first auction demonstrates every requested competitive and economic action. The second demonstrates the actual permitted Unowned path with release rather than forfeiture. Losing reservations were released when outbid; settlement must not release them twice.
 
 Additional acceptance cases are mandatory specifications of verification, not new UI controls:
 
 - On a separate fresh fixture history, A bids 10 at t=0; B bids 20 at 214 (no extension); A bids 30 at 215 (end becomes 240); B bids 40 at 230 (end becomes 255); A bids 50 at 245 (maximum two extensions already reached, so end stays 255). A submission at 255 is preempted by close. With an explicit max_extensions=0 fixture, no valid bid extends.
 - With the main fixture, a well-formed bid above the bidder's affordable replacement amount is an invalid BidRecord with insufficient_available_rana, assuming no higher-priority rejection applies; it changes no hold. Rejected first bids leave Scheduled indefinitely.
-- Restart at every PR05 material boundary, particularly first-bid group, extension group, Closed before resolution, and both terminal groups. Verify identical replayed balances, references, title, and event prefix before any new SE04 evaluation.
+- Restart at every PR05 material boundary, particularly first-bid group, extension group, Closed before resolution, and both terminal groups. Verify identical replayed balances, references, ownership, and event prefix before any new SE04 evaluation.
 - A corrupt hash or illegal/incomplete group must halt. A committed settlement with a lost response must not be captured again. Repeated settlement submission after finalization produces no new terminal command records.
 
 No UI control for time travel, corruption injection, clearing history, or forced transition is authorized by these verification cases.
+
+
+## UI05 — Prototype 1 demonstration tools — C60
+
+The existing Auction and Protocol views remain available. Human-facing ownership vocabulary follows C61/RT06; canonical snippets retain revision 0.1 spellings.
+
+The live terminal client may read state/history and submit exactly the existing bid and simulated settlement commands through the local HTTP interface. It must send each explicit submission once, preserve numeric spelling and display the backend's accepted/rejected result, balances and record references. A lost response must report uncertainty and prompt inspection; it must not replay the command. The client selects a number or auction ID from a displayed state; that context must not silently change during a submission. Local syntax/transport failures are observations, not invented journal entries. Live timing remains the existing server clock. Command output may include both exact JSON and a readable summary; only backend records determine outcomes.
+
+A separate guided executable may invoke the same Engine with explicitly scripted test timestamps, using a fresh journal per run. It must identify simulated time, expose each step's command/time/records, offer step-by-step progression and an explicit automatic mode for verification. Its clock control must not be exposed as a live server endpoint. Existing saved demo journals cannot be reset, edited or used for guided runs.
+
+The guided fixture starts at Number 1 with 600 Rana each, minimum bid 5, increment 1 and the existing 225-second/12-second timing and 10-second-window/15-second-extension/max-two rules. All times below are seconds relative to its opening. Initialize at -1; A bids 20 at 0; B30 at 30; A30 at 45 is rejected; B40 at 60 replaces its own hold; A50 at 90; B60 at 215 extends to 240; A61 at 230 extends to 255; B62 at 245 cannot extend further; read at 255 fixes B62; successful settlement at 256 captures 62 and records B as owner. At that boundary a separate process must reconstruct the same ordered rows and derived facts before any new evaluation. Advance at 268; A bids 5 at 270 on Number 2; read at 495 fixes A5; failed settlement at 496 releases 5 and finalizes Unowned. Verify separate-process reconstruction again, then advance at 508 to Number 3. Final balances are A600/B538 available, zero reserved and protocol62, with 42 records. The earlier UI04 fixture remains unchanged.
+
+The tools may create an explicitly separate live session at loopback port 8766 and a supplied session directory, using the existing demo parameters. Resuming a live session requires its existing configuration; no implicit reset is permitted. Read-only journal inspection/reconstruction may use a supplied existing journal, but must not append lifecycle events. Persistent presentation receipts and session configuration are noncanonical operational files. Presenter notes and editor tasks must distinguish live timing from simulated time, code from recorded results, and pending ownership from final ownership.

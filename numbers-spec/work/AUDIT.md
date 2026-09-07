@@ -83,7 +83,7 @@ These are specification, structural, and arithmetic checks. No application was w
 
 Ready for user review as a complete, internally consistent inactive Prototype 1 candidate under the declared local assumptions. No blocking questions remain. Non-blocking choices are local operational settings, presentation details, and implementation/runtime selection constrained by the normative behavior. Activation remains a separate explicit user decision.
 
-Root files: STATUS.md, AUTHORITY.md, SCOPE.md, GLOSSARY.md, INVARIANTS.md, PROTOTYPE-01.md, STATE-AND-EVENTS.md, RANA-AND-TITLE.md, PERSISTENCE-AND-RESTART.md, UI-AND-DEMO.md, SECURITY-NOW-AND-LATER.md.
+Root files: STATUS.md, AUTHORITY.md, SCOPE.md, GLOSSARY.md, INVARIANTS.md, PROTOTYPE-01.md, STATE-AND-EVENTS.md, RANA-AND-OWNERSHIP.md, PERSISTENCE-AND-RESTART.md, UI-AND-DEMO.md, SECURITY-NOW-AND-LATER.md.
 
 Working files: SOURCE-DECISIONS.md, SPEC-CHANGES.md, TECHNICAL-DEBT.md, OPEN-QUESTIONS.md, AUDIT.md, TRACEABILITY.md.
 
@@ -141,3 +141,12 @@ See [the backend review guide](../../prototype-01/REVIEW.md) for rule-to-code re
 ## C51–C52 — Fresh demonstration configuration, 2026-09-05
 
 The user requested minimum_bid_rana=5, minimum_increment_rana=1, and 500 extra Rana for each bidder, then authorized returning to Number 1 if simpler. Use a separate empty demo journal, starting_number=1, initial allocations=600 each (original 100 plus 500), minimum5/increment1. Preserve the previous journal unchanged. This is existing P02 initialization and PR06 separate-history behavior, not a reset or reinterpretation of recorded facts. The proposed SE07/G11 funding amendment was withdrawn before implementation or use; revision 0.1 remains active with no later-issuance feature. C50's future five-rana increment is superseded for the new demo. UI04 retains its explicit historical test fixture.
+
+
+## Follow-up audit — C60/C61, 2026-09-07
+
+S26 adds only the UI05 presentation surfaces and its fully specified isolated fixture. The live client retains SE02 command schemas, numeric spelling, displayed auction context and single submission. The guided path calls the existing engine with explicit test timestamps; the live HTTP interface has no clock override. Separate-process comparisons validate stored rows and projected facts before new evaluation. The fixture covers both RT03 outcomes and retains existing extension predicates and limits.
+
+S27 changes current vocabulary to ownership and Unowned (no owner). RT06 explicitly preserves `title`, `title_kind`, `holder_id`, `PublicLand` and `expired_to_publicland`. SE06 schema columns retain their original fields and enum spellings. No collective ownership, alternative failure trigger, ledger operation or reassignment was introduced. Historical records are not migrated.
+
+Implementation validation and preserved-journal digests are recorded in `prototype-01/VERIFICATION.md`. Both original local histories reconstructed from separate copies and their original file bytes were unchanged. UI05/RT06 are additions within approved revision0.1; there is no second active specification set.
