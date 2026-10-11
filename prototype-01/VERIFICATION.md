@@ -169,3 +169,10 @@ Documentation cleanup validated local link targets in 25 current guides. All 25 
 Seven local SQLite histories were backed up using consistent read-only source snapshots. Each destination passed integrity checking and exact ordered-row comparison; the backup manifest also records file and ordered-row SHA-256 hashes. Counts at backup were 28 for the current demo, 25 for the earlier demo, and 42, 9, 42, 12 and 3 across the five saved guided/live sessions. Seventeen configuration, session, result and receipt JSON files were copied with hashes. The backup directory and zip are under `~/Documents/Numbers-Backups/2026-10-10-prototype-01`; they remain outside Git.
 
 The rebuilt loopback demo restarted with its existing configuration and reconstructed through sequence 28. Its 28 ordered records matched the backup exactly after restart. No reset, issuance, bid or settlement command was submitted during cleanup. No new rendered-browser inspection is claimed; the previously recorded browser-policy limitation remains. C64 authorizes committing and publishing this checkpoint, with the immutable source tag `prototype-01-baseline-2026-10-10`. Remote verification belongs to the corresponding GitHub Actions run.
+
+
+### Published checkpoint
+
+Commit `d1e3e71279457ed71e7f2c5b9ec12545d096780f` and annotated tag `prototype-01-baseline-2026-10-10` were pushed together successfully. GitHub's [Prototype 1 checks job](https://github.com/dannygoldfield/Numbers/actions/runs/38107022264/job/114374580072) passed for that exact commit. Later documentation-only publication notes do not move the preserved baseline tag. Refer to the [whole workflow](https://github.com/dannygoldfield/Numbers/actions/runs/38107022264) for the separate historical application jobs.
+
+The push reported three dependency advisories. Read-only inspection confirmed all three refer to the historical frontend lockfile; TD12 records their package names, severity, patched versions and follow-up boundary. No dependency upgrade or dismissal was performed.

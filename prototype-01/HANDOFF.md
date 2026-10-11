@@ -8,7 +8,7 @@ The focused review of `numbers-spec/` revision 0.1 and Prototype 1 found a prese
 
 This is an implementation correction, not a specification change. The Rust rules, API contract, record format and stored demo histories are unchanged. No dependency or infrastructure was added. The complete `./check` passed: Rust formatting, Clippy, 26 Rust integration entries, frontend formatting and six browser checks. See the dated evidence in [VERIFICATION.md](VERIFICATION.md).
 
-C64 authorizes the reviewed cleanup checkpoint and publication to the existing GitHub repository. Its source baseline is named `prototype-01-baseline-2026-10-10`; use Git and the corresponding GitHub Actions run to check publication and remote verification. The preceding published source checkpoint was `4a45179`. The browser demo was rebuilt and restarted at http://127.0.0.1:8765/ with its existing `data/demo-02.sqlite3` journal, reconstructing through record 28. Its ordered records matched the new backup exactly after restart. This is a dated observation; later user activity can advance the history.
+The reviewed cleanup checkpoint `d1e3e71` and annotated tag `prototype-01-baseline-2026-10-10` were published to the existing GitHub repository under C64. The [Prototype 1 GitHub check](https://github.com/dannygoldfield/Numbers/actions/runs/38107022264/job/114374580072) passed for that exact source baseline. The preceding published source checkpoint was `4a45179`. The browser demo was rebuilt and restarted at http://127.0.0.1:8765/ with its existing `data/demo-02.sqlite3` journal, reconstructing through record 28. Its ordered records matched the new backup exactly after restart. This is a dated observation; later user activity can advance the history.
 
 ### Current appearance and balance explanation
 
@@ -39,6 +39,8 @@ A separate verified backup contains all seven local histories, their configurati
 [PROTOTYPE-02.md](../numbers-spec/work/PROTOTYPE-02.md) is the single draft planning brief, not a new specification. No Prototype 2 goal, behavior or implementation is approved yet. Keep Prototype 1 demonstrable; collect colleague observations, choose one learning goal, draft the necessary changed clauses, then obtain explicit scope/activation approval. Evolve the existing engine on a focused branch with a separate journal. The source tag preserves the original rules and implementation; use a separate checkout only if both generations need to run at once.
 
 The [current debt register](../numbers-spec/work/TECHNICAL-DEBT.md#current-register-as-of-2026-10-10) records accepted limits and revisit triggers. Broad typed-state refactoring, multiple backend services and a standing agent team are not prerequisites for this transition.
+
+GitHub also reported three open alerts in the historical frontend dependency lockfile: js-yaml and browserslist (high), plus @humanfs/node (moderate). [TD12](../numbers-spec/work/TECHNICAL-DEBT.md#historical-dependency-evidence--2026-10-10) records the advisories and revisit condition. These were not fixed by the Prototype 1 cleanup; the legacy frontend remains a separate maintenance boundary.
 
 ### Next useful activity
 
