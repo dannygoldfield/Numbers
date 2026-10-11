@@ -10,7 +10,7 @@ This is a local protocol demonstration, not a production multi-user or real-valu
 
 The prototype must provide authoritative backend bid evaluation, initial Rana allocation, leader-only reservation, explicit release/replacement, successful capture into the protocol-held balance, locally commanded settlement, ownership finalization, sequence advancement, durable persistence, strict reconstruction, and the two views defined in UI-AND-DEMO. Only the commands and records in STATE-AND-EVENTS are permitted.
 
-A read-only Protocol View and an interactive Auction View must be served by the same local application. Sequential bid submission by one operator is sufficient. Their displays must identify both participants as simulated local identities.
+A read-only Record View and an interactive Auction View must be served by the same local application. Sequential bid submission by one operator is sufficient. Their displays must identify both participants as simulated local identities.
 
 ## SC03 — Excluded capability
 

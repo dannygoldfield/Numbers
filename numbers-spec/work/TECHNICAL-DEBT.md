@@ -1,4 +1,25 @@
-# Prototype shortcuts and deferred issues
+# Prototype limits and technical debt
+
+## Current register as of 2026-10-10
+
+This is the current planning register. The historical rationale below is preserved. Limits deliberately chosen for Prototype 1 are not automatically defects or promises to add infrastructure. All changes to behavior still require an explicit specification decision. The project owner prioritizes these items when approving the next scope; the implementer records verification when an item is changed.
+
+| Reference | Current disposition | Revisit when |
+|---|---|---|
+| TD01 | Two simulated identities; no authentication. Accepted local-demo limit. | Before independent participants can act as themselves. Specify identity, access and permissions. |
+| TD02–TD03 | One application writer and SQLite. Keep this architecture unless an observed need contradicts it. | Remote operation needs access controls; more servers or a new database require separate evidence, not merely a second browser. |
+| TD04 | Operator-selected simulated settlement, with no deadline. Accepted scope. | A new learning goal requires autonomous settlement or actual obligations. Define triggers before implementation. |
+| TD05–TD07 | Request-driven evaluation, local clock and payload consistency hashes. Accepted scope, not independently verifiable history. | Remote timing/fairness or independent reliance on records becomes part of the test. |
+| TD08 | Full reconstruction and a full in-memory history; commits clone derived state. Accepted for short histories. | Measured startup or command latency obstructs the intended experiment. Measure before adding caches or snapshots. |
+| TD09 | Ownership is an assignment within the prototype. External enforcement is outside scope. | A proposal connects the record to external assets or obligations. |
+| TD10 | Retired before implementation: no settlement deadline remains. | Only through an explicit proposal for new settlement semantics. |
+| TD11 | Internal state/events still use generic JSON and string labels. Deferred maintainability work. | Extending a lifecycle or record shape makes a small Rust type materially reduce ambiguity. Preserve existing wire bytes and test old histories; avoid a wholesale rewrite. |
+| F01 | Exceptional compensation remains undefined and excluded. Ordinary release and capture are already fully specified. | Before economically meaningful loss or a real-value experiment. Specify eligibility, funding and authority without rewriting prior outcomes. |
+| Audit 2026-10-10 | Direct journal commit and mutable live engine state are private; callers observe through read-only accessors. | Compiler-checked examples protect the boundary; future changes must keep the planner as the only source of committed groups. |
+
+Prototype 2 planning and decision gates are in [PROTOTYPE-02.md](PROTOTYPE-02.md). Keep each future debt entry specific: limitation, reason to defer, and the evidence that would require addressing it.
+
+## Historical candidate register
 
 Non-normative working record, updated through Phase 2. These are candidate recommendations or explicitly confirmed scope limits, not installed mechanisms or executable rules. Every shortcut is local to the named boundary. Q01 has been resolved by the user as indivisible rana with exact integer accounting. Q03 is also resolved by C44 as exact winning-amount capture to a protocol-held balance without a spending operation. C45/C46 now resolve Q02/Q04 as leader-only holds and failed-settlement release. None of those economic decisions is a shortcut or unresolved implementation choice.
 

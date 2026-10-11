@@ -14,7 +14,7 @@ From this directory:
 ./run
 ```
 
-Open [Auction](http://127.0.0.1:8765/) and [Protocol](http://127.0.0.1:8765/protocol). The Protocol page can sit beside the Auction page and contains no outcome controls. Stop the server with Ctrl-C. Running the same command again reconstructs the same journal.
+Open [Auction](http://127.0.0.1:8765/) and [Record](http://127.0.0.1:8765/protocol). The Record page can sit beside the Auction page and contains no outcome controls. Stop the server with Ctrl-C. Running the same command again reconstructs the same journal.
 
 [SETUP.md](SETUP.md) documents the installed tools, repeatable setup and checks. [REVIEW.md](REVIEW.md) is the backend reading guide. [VERIFICATION.md](VERIFICATION.md) records actual validation evidence and its limits.
 

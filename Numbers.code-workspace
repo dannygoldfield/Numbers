@@ -1,8 +1,22 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "name": "Prototype 1",
+      "path": "prototype-01"
+    },
+    {
+      "name": "Specification",
+      "path": "numbers-spec"
+    }
+  ],
+  "settings": {
+    "rust-analyzer.linkedProjects": [
+      "${workspaceFolder:Prototype 1}/Cargo.toml"
+    ],
+    "files.exclude": {
+      "**/target": true,
+      "**/node_modules": true
+    },
+    "git.openRepositoryInParentFolders": "always"
+  }
 }

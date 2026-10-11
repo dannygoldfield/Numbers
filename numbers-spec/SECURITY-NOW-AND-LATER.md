@@ -1,6 +1,6 @@
 # Security now and later
 
-## SN01 — Prototype 1 protection — normative candidate rule
+## SN01 — Prototype 1 protection — normative rule
 
 Prototype 1 must protect canonical economic and ownership truth against its own application operations and supported interruptions through the backend-only evaluation, explicit identity eligibility, serialized ordering, durable atomic groups, one-shot references, and validation/reconstruction rules in RT, SE, and PR. Local service exposure must follow P02. UI behavior must follow UI01–UI03. These mechanisms must not introduce additional product or economic predicates.
 

@@ -1,4 +1,4 @@
-# Candidate authority
+# Specification authority
 
 ## AU01 — Active authority and revisions
 
@@ -32,4 +32,4 @@ Higher precedence controls a direct conflict. Silence does not supply a default 
 
 ## AU04 — Rule ownership and refinement
 
-Rule IDs identify owning clauses. Cross-references and invariant summaries do not supply competing definitions. An editorial correction must preserve the rule's observable meaning. A semantic revision must be explicitly recorded in `work/SPEC-CHANGES.md`, traced to its decision source, and audited before use. Existing records must never be reinterpreted by a later specification or configuration revision. This candidate imports no behavior by reference from `codex-spec/`; source citations in `work/` explain provenance only.
+Rule IDs identify owning clauses. Cross-references and invariant summaries do not supply competing definitions. An editorial correction must preserve the rule's observable meaning. A semantic revision must be explicitly recorded in `work/SPEC-CHANGES.md`, traced to its decision source, and audited before use. Existing records must never be reinterpreted by a later specification or configuration revision. This specification imports no behavior by reference from `codex-spec/`; source citations in `work/` explain provenance only.

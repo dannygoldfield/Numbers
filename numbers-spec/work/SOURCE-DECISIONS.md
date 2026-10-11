@@ -235,3 +235,15 @@ This is terminology, not a change to winning, settlement, accounting, finality o
 ## C62 — Commit and push the demonstration checkpoint, 2026-09-07
 
 After trying the guided terminal demonstration and reviewing the code presentation, the user requested: “Make commits and push to github”. This authorizes committing the approved C60/C61 specification, implementation, presenter workspace, documentation and verification notes to the existing Numbers repository and pushing to its GitHub remote. Local journals, generated demonstration receipts, build outputs and machine configuration remain outside the source checkpoint. No auction behavior change or public deployment follows from this instruction.
+
+
+## C63 — Record view and project orientation, 2026-10-10
+
+The user requested “Change to Record” and an explanation of the project folder for colleagues. Rename the human-facing Protocol view to Record in navigation, the page heading, its accessible name, startup output and current presenter documentation. SC02 and UI01–UI05 use Record View for the same existing read-only view. Retain the `/protocol` address, internal identifiers, response fields, canonical records and protocol-held balance terminology. This is an editorial presentation change, not a change to auction rules or authority. Add a folder guide to the repository README identifying the active specification, implementation, demo tools, local histories, generated files and historical material.
+
+
+## C64 — Audit cleanup and transition preparation, 2026-10-10
+
+The user approved the audit recommendations and requested a simple, clear transition from Prototype 1 to Prototype 2, preserving past work and accounting for technical debt. Tighten the Rust engine boundary so only its internal planner-to-commit path can write records; expose borrowed observations instead of mutable state. Clarify active document status, preserve historical text and book configurations, and provide a single non-normative Prototype 2 planning entry. Record deferred typed-state work with a concrete revisit trigger rather than expanding the refactor.
+
+This authorizes the reviewed cleanup checkpoint, its GitHub commit/push and a named Prototype 1 source baseline, plus a separate backup of local histories. It does not activate Prototype 2, choose its auction rules, authorize public hosting or real payments, or reinterpret existing records. Keep historical source files and saved histories intact; navigation notices and archive placement do not give older material current authority.

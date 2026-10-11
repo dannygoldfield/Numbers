@@ -13,7 +13,7 @@ Start with the [worked auction](../numbers-spec/UI-AND-DEMO.md), then follow the
 | `src/values.rs` | Preserve command bytes, exact integers, canonical JSON, hashes and timestamps | PR01–PR02 |
 | `tests/protocol.rs` | Worked examples, rejection boundaries, reconstruction, corrupted history and killed writers | UI04, PR05–PR06 |
 
-The browser files are under `static/`. They submit commands once and display backend facts. `tests/browser-values.cjs` checks that presentation does not round large amounts or turn numeric-looking strings into numbers.
+The browser files are under `static/`. They submit commands once and display backend facts. `tests/browser-values.cjs` checks that presentation does not round large amounts or turn numeric-looking strings into numbers. `tests/browser-commands.cjs` exercises the shipped submission and rendering code with controlled responses: exact rejection guidance from the response snapshot, one pending submission, balances updated after acceptance, and inspection without replay after a lost response. Human-readable rejection text implements UI01/UI03; it does not change SE03 admission or the raw Record View evidence.
 
 ## The core path
 
@@ -30,7 +30,7 @@ request
 
 `plan` is pure. It describes the required records and never writes them. `plan_bid` and `plan_settlement` keep the two command paths separately readable. `rejection` follows the specification's exact priority order. `State::fold` applies ledger facts and verifies nonnegative balances, conservation and the live hold.
 
-SQLite is the durability boundary. The in-memory State is a derived cache that changes only after commit succeeds. The companion writer lock is separate from SQLite's locking, which matters on macOS. The application never retries a failed transaction.
+SQLite is the durability boundary. Engine fields, `commit` and `evaluate` are private to the storage module. Callers submit through `request`; `state()` provides a shared read-only borrow and `validated_through()` exposes the startup receipt. Compiler-checked examples reject direct commits and attempts to mutate the live cache. The in-memory State is a derived cache that changes only after commit succeeds. The companion writer lock is separate from SQLite's locking, which matters on macOS. The application never retries a failed transaction.
 
 ## Reconstruction is a check of existing facts
 
@@ -40,7 +40,7 @@ The reconstruction receipt names the highest sequence actually validated at star
 
 ## Representation choices
 
-Records use explicit JSON objects to keep field names directly comparable with SE06. A record is accepted only if its entire canonical representation equals the permitted group, including fields, references, IDs, timestamps and payload hashes. Valid hashes alone are insufficient.
+Records use explicit JSON objects to keep field names directly comparable with SE06. New records are constructed by the planner and reach a private commit method. During reconstruction, each entire canonical representation must equal the permitted group, including fields, references, IDs, timestamps and payload hashes. Valid hashes alone are insufficient.
 
 Economic integers use `BigInt`. Raw command fields retain their submitted numeric syntax until admission, so `10`, `10.0`, `1e1`, `true` and `"10"` remain distinguishable. Original UTF-8 bytes are preserved in the specified hexadecimal field. Payload strings use NFC only during canonical serialization.
 

@@ -315,6 +315,34 @@ function showResult(result, broadcast = true) {
   put('last-command', prettyExact(result));
   if (broadcast && channel) channel.postMessage(prettyExact(result));
 }
+// UI01/UI03: explain the backend's SE03 decision using its response snapshot.
+// This display calculation never validates, increases, or resubmits a bid.
+function bidRejectionReason(reason, snapshot) {
+  switch (reason) {
+    case 'wrong_auction_number':
+      return `This bid was for a different number. The current number is ${snapshot.current_number}.`;
+    case 'missing_required_field':
+      return 'The bid is missing required details.';
+    case 'malformed_field':
+      return 'The bid details have an invalid format. Enter a whole-number amount.';
+    case 'unknown_identity':
+      return 'Choose Bidder A or Bidder B.';
+    case 'amount_below_minimum':
+      return `Bid at least ${snapshot.parameters.minimum_bid_rana} rana.`;
+    case 'amount_below_required_increment': {
+      const required =
+        BigInt(String(snapshot.leading_bid.amount_rana)) +
+        BigInt(String(snapshot.parameters.minimum_increment_rana));
+      return `Bid at least ${required} rana.`;
+    }
+    case 'amount_above_maximum':
+      return `Bid no more than ${snapshot.parameters.maximum_bid_rana} rana.`;
+    case 'insufficient_available_rana':
+      return 'You do not have enough rana for this bid.';
+    default:
+      return 'The backend rejected this bid. Inspect the command result for details.';
+  }
+}
 async function submit(endpoint, body) {
   if (inFlight || !connected) return;
   inFlight = true;
@@ -341,7 +369,7 @@ async function submit(endpoint, body) {
           'result',
           accepted
             ? `Number ${result.data.bid_record.number}: bid accepted. Its reservation is committed to the journal.`
-            : `Number ${result.data.bid_record.number}: bid rejected: ${result.data.bid_record.payload_json.rejection_reason}. An invalid BidRecord was recorded; no rana moved.`,
+            : `Number ${result.data.bid_record.number}: bid rejected. ${bidRejectionReason(result.data.bid_record.payload_json.rejection_reason, result.data.state)} Your rejected bid was recorded; your balance is unchanged.`,
         );
       else
         put(

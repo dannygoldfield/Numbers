@@ -168,7 +168,9 @@ fn steps() -> [Step; 18] {
     ]
 }
 fn snapshot(engine: &Engine, time: i64) -> Result<Value> {
-    Ok(json!({"rows":engine.rows()?,"state":projection(&engine.state,time,engine.validated)?}))
+    Ok(
+        json!({"rows":engine.rows()?,"state":projection(engine.state(),time,engine.validated_through())?}),
+    )
 }
 pub(super) fn verify(session: &Path, time: i64) -> Result<()> {
     if !session.join("history.sqlite3").is_file() {
@@ -262,16 +264,16 @@ pub(super) fn guided(automatic: bool, directory: Option<&str>) -> Result<()> {
             (engine, last) = restarted(&session, time, engine)?;
             last_records.clear();
         } else {
-            let count = engine.state.records.len();
+            let count = engine.state().records.len();
             let (action, body) = match step.action {
                 Action::Read => ("state",None),
                 Action::Bid(identity,amount) => ("bid", Some(json!({
-                    "auction_number": engine.state.number.as_ref().map(jnum),
+                    "auction_number": engine.state().number.as_ref().map(jnum),
                     "bidder_id": identity,
                     "amount_rana": amount
                 }).to_string())),
                 Action::Settle(outcome) => ("settlement", Some(json!({
-                    "auction_id": id("auc", engine.state.number.as_ref().ok_or("No auction")?),
+                    "auction_id": id("auc", engine.state().number.as_ref().ok_or("No auction")?),
                     "outcome": outcome
                 }).to_string())),
                 Action::Restart => unreachable!(),
@@ -287,14 +289,18 @@ pub(super) fn guided(automatic: bool, directory: Option<&str>) -> Result<()> {
             if action == "bid" && last["data"]["accepted"] != json!(step.at != 45) {
                 return Err("Unexpected fixture admission result".into());
             }
-            last_records = engine.state.records[count..].to_vec();
+            last_records = engine.state().records[count..].to_vec();
             show_result(&last);
             show_records(&last_records);
         }
-        show_state(&projection(&engine.state, time, engine.validated)?)?;
+        show_state(&projection(
+            engine.state(),
+            time,
+            engine.validated_through(),
+        )?)?;
         println!();
     }
-    let state = projection(&engine.state, BASE + 508000, engine.validated)?;
+    let state = projection(engine.state(), BASE + 508000, engine.validated_through())?;
     if state["last_sequence_index"] != 42
         || state["current_number"] != 3
         || state["protocol_held_rana"] != 62

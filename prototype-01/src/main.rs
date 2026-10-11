@@ -63,7 +63,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if initialized["status"] != "success" {
         return Err(initialized.to_string().into());
     }
-    println!("Numbers Prototype 1 · Rust\nAuction: http://{host}:{port}/\nProtocol: http://{host}:{port}/protocol\nJournal: {}\nReconstructed through record {}. Press Ctrl-C to stop.", database_path.display(), engine.validated);
+    println!("Numbers Prototype 1 · Rust\nAuction: http://{host}:{port}/\nRecord: http://{host}:{port}/protocol\nJournal: {}\nReconstructed through record {}. Press Ctrl-C to stop.", database_path.display(), engine.validated_through());
     for request in server.incoming_requests() {
         if verbosity == "requests" {
             eprintln!("{} {}", request.method(), request.url());

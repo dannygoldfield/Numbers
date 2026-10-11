@@ -2,6 +2,8 @@
 
 Show a rule, the Rust that implements it, a command, and the records it commits. The browser, live terminal and guided walkthrough all use the same Prototype 1 engine.
 
+For a tour of the project folder before showing the demo, use the [repository folder guide](../README.md#project-folder-guide). It identifies the active rules, code, tests and saved histories.
+
 ## Open the presentation workspace
 
 Open `Numbers-demo.code-workspace` in VS Code. It shows only Prototype 1 and the active specification, avoiding the independent historical application at the repository root. Rust navigation uses the installed rust-analyzer extension. Workspace font settings apply only to this workspace.
@@ -64,7 +66,7 @@ Run **Numbers: Start separate live demo** or, in a first terminal:
 ./demo serve
 ```
 
-This creates a fresh session at [Auction](http://127.0.0.1:8766/) with a [Protocol view](http://127.0.0.1:8766/protocol). It starts Number 1 with 600 rana each, minimum 5 and increment 1. Its first valid bid starts the real 3:45 clock. Existing port-8765 histories are separate.
+This creates a fresh session at [Auction](http://127.0.0.1:8766/) with a [Record view](http://127.0.0.1:8766/protocol). It starts Number 1 with 600 rana each, minimum 5 and increment 1. Its first valid bid starts the real 3:45 clock. Existing port-8765 histories are separate.
 
 In a second terminal, use **Numbers: Live terminal** or:
 

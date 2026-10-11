@@ -79,3 +79,13 @@ The user requested minimum_bid_rana=5, minimum_increment_rana=1, and 500 extra R
 S26 / approved demonstration surface: UI05 adds an optional live terminal client, a guided fixture using explicit simulated time, separate demo journals, a presenter guide and VS Code tasks. The client submits the existing HTTP commands once against its last displayed auction. The guided fixture invokes the existing engine and proves reconstruction in separate processes. No live clock override, new economic operation or Prototype 2 rule is added. The existing UI04 acceptance fixture remains valid.
 
 S27 / approved terminology change: current prose and presentation use ownership and Unowned (no owner), replacing the property-oriented vocabulary. RT06 preserves revision 0.1 serialized keys and enum values so existing canonical history, hashes and API consumers remain compatible. Unowned is a final outcome, not pending or collective ownership. This changes display names and internal variable names; the settlement predicates and effects are unchanged. Historical decision records retain their original wording.
+
+
+## C63 — Record view label, 2026-10-10
+
+S28 / approved editorial change: SC02 and UI01–UI05 name the read-only demonstration view Record instead of Protocol. The page address remains `/protocol`. This changes the display label and current documentation only; view capabilities, response contracts, canonical history, economic rules and authority are unchanged. Historical provenance retains its original wording.
+
+
+## C64 — Editorial cleanup and implementation boundary, 2026-10-10
+
+S29 / approved non-semantic cleanup: remove stale candidate wording from active authority/invariant/security headings, put current status above historical working notes, and identify older documentation entrances as archives. Add Prototype 2 planning under non-normative `work/`, with no activation. Engine encapsulation enforces the existing PR03/PR06 write path; it does not change predicates, canonical schemas, event bytes, timing or accounting. Revision 0.1 remains the sole active authority.

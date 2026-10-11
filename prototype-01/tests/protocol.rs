@@ -32,7 +32,7 @@ impl Demo {
         }
     }
     fn bid(&mut self, second: i64, identity: &str, amount: Value) -> Value {
-        let body = json!({"auction_number":self.engine.state.number.as_ref().map(jnum),"bidder_id":identity,"amount_rana":amount}).to_string();
+        let body = json!({"auction_number":self.engine.state().number.as_ref().map(jnum),"bidder_id":identity,"amount_rana":amount}).to_string();
         self.engine
             .request("bid", Some(body.as_bytes()), BASE + second * 1000, 50, 0)
     }
@@ -41,7 +41,7 @@ impl Demo {
             .request("state", None, BASE + second * 1000, 50, 0)
     }
     fn settle(&mut self, second: i64, outcome: &str) -> Value {
-        let body = json!({"auction_id":id("auc",self.engine.state.number.as_ref().unwrap()),"outcome":outcome}).to_string();
+        let body = json!({"auction_id":id("auc",self.engine.state().number.as_ref().unwrap()),"outcome":outcome}).to_string();
         self.engine.request(
             "settlement",
             Some(body.as_bytes()),
@@ -70,17 +70,17 @@ fn accepted(value: &Value) {
 fn exact_worked_auction_has_31_records_and_both_ownership_outcomes() {
     let mut demo = Demo::new();
     assert_eq!(
-        balances(&demo.engine.state),
+        balances(demo.engine.state()),
         json!([[[100, 0], [100, 0]], 0])
     );
     accepted(&demo.bid(0, "demo-1", json!(20)));
     assert_eq!(
-        balances(&demo.engine.state),
+        balances(demo.engine.state()),
         json!([[[80, 20], [100, 0]], 0])
     );
     accepted(&demo.bid(30, "demo-2", json!(30)));
     assert_eq!(
-        balances(&demo.engine.state),
+        balances(demo.engine.state()),
         json!([[[100, 0], [70, 30]], 0])
     );
     let rejected = demo.bid(45, "demo-1", json!(30));
@@ -88,14 +88,14 @@ fn exact_worked_auction_has_31_records_and_both_ownership_outcomes() {
         rejected["data"]["bid_record"]["payload_json"]["rejection_reason"],
         "amount_below_required_increment"
     );
-    assert_eq!(demo.engine.state.records.len(), 10);
+    assert_eq!(demo.engine.state().records.len(), 10);
     accepted(&demo.bid(60, "demo-2", json!(40)));
     assert_eq!(
-        balances(&demo.engine.state),
+        balances(demo.engine.state()),
         json!([[[100, 0], [60, 40]], 0])
     );
     accepted(&demo.bid(90, "demo-1", json!(50)));
-    assert_eq!(demo.engine.state.records.len(), 16);
+    assert_eq!(demo.engine.state().records.len(), 16);
     let resolved = demo.read(225);
     assert_eq!(resolved["data"]["auction_state"], "AwaitingSettlement");
     assert_eq!(
@@ -105,49 +105,49 @@ fn exact_worked_auction_has_31_records_and_both_ownership_outcomes() {
     assert!(resolved["data"]["resolution"]
         .get("settlement_deadline")
         .is_none());
-    assert_eq!(demo.engine.state.records.len(), 18);
+    assert_eq!(demo.engine.state().records.len(), 18);
     accepted(&demo.settle(226, "settled"));
     assert_eq!(
-        balances(&demo.engine.state),
+        balances(demo.engine.state()),
         json!([[[50, 0], [100, 0]], 50])
     );
     assert_eq!(
-        demo.engine.state.ownership["payload_json"]["holder_id"],
+        demo.engine.state().ownership["payload_json"]["holder_id"],
         "demo-1"
     );
     assert_eq!(demo.read(237)["data"]["current_number"], 1);
     assert_eq!(demo.read(238)["data"]["current_number"], 2);
-    assert_eq!(demo.engine.state.records.len(), 22);
+    assert_eq!(demo.engine.state().records.len(), 22);
     accepted(&demo.bid(240, "demo-2", json!(10)));
     demo.read(465);
     accepted(&demo.settle(466, "expired"));
     assert_eq!(
-        balances(&demo.engine.state),
+        balances(demo.engine.state()),
         json!([[[50, 0], [100, 0]], 50])
     );
     assert_eq!(
-        demo.engine.state.ownership["payload_json"]["title_kind"],
+        demo.engine.state().ownership["payload_json"]["title_kind"],
         "PublicLand"
     );
     assert_eq!(
-        demo.engine.state.resolution["payload_json"]["winning_bid_id"],
+        demo.engine.state().resolution["payload_json"]["winning_bid_id"],
         "bid_000000000023"
     );
     assert_eq!(demo.read(478)["data"]["current_number"], 3);
-    assert_eq!(demo.engine.state.records.len(), 31);
+    assert_eq!(demo.engine.state().records.len(), 31);
     // Every complete group is reconstructible; every partial group is rejected.
     let rows = demo.engine.rows().unwrap();
     for length in 0..=rows.len() {
         let complete = length == 0
-            || demo.engine.state.records[length - 1]["group_index"]
-                == demo.engine.state.records[length - 1]["group_size"];
+            || demo.engine.state().records[length - 1]["group_index"]
+                == demo.engine.state().records[length - 1]["group_size"];
         let result = reconstruct(&rows[..length], &config());
         assert_eq!(result.is_ok(), complete, "prefix length {length}");
     }
     let restored = reconstruct(&rows, &config()).unwrap();
     assert_eq!(
         projection(&restored, BASE + 478000, 0).unwrap(),
-        projection(&demo.engine.state, BASE + 478000, 0).unwrap()
+        projection(demo.engine.state(), BASE + 478000, 0).unwrap()
     );
 }
 
@@ -156,18 +156,18 @@ fn extension_window_equality_cap_and_close_precedence() {
     let mut d = Demo::new();
     accepted(&d.bid(0, "demo-1", json!(10)));
     accepted(&d.bid(214, "demo-2", json!(20)));
-    assert_eq!(d.engine.state.end().unwrap(), BASE + 225000);
+    assert_eq!(d.engine.state().end().unwrap(), BASE + 225000);
     accepted(&d.bid(215, "demo-1", json!(30)));
-    assert_eq!(d.engine.state.end().unwrap(), BASE + 240000);
+    assert_eq!(d.engine.state().end().unwrap(), BASE + 240000);
     accepted(&d.bid(230, "demo-2", json!(40)));
-    assert_eq!(d.engine.state.end().unwrap(), BASE + 255000);
+    assert_eq!(d.engine.state().end().unwrap(), BASE + 255000);
     accepted(&d.bid(245, "demo-1", json!(50)));
-    assert_eq!(d.engine.state.end().unwrap(), BASE + 255000);
+    assert_eq!(d.engine.state().end().unwrap(), BASE + 255000);
     let late = d.bid(255, "demo-2", json!(60));
     assert_eq!(late["error"]["code"], "auction_not_accepting_bids");
     assert_eq!(late["evaluation_records"].as_array().unwrap().len(), 2);
     assert_eq!(
-        d.engine.state.resolution["payload_json"]["winning_amount_rana"],
+        d.engine.state().resolution["payload_json"]["winning_amount_rana"],
         50
     );
 }
@@ -181,21 +181,21 @@ fn zero_extensions_and_invalid_opening_do_not_start_or_extend_time() {
     assert_eq!(d.read(10000)["data"]["auction_state"], "Scheduled");
     accepted(&d.bid(10001, "demo-1", json!(10)));
     accepted(&d.bid(10220, "demo-2", json!(20)));
-    assert_eq!(d.engine.state.extensions, 0);
-    assert_eq!(d.engine.state.end().unwrap(), BASE + 10226000);
+    assert_eq!(d.engine.state().extensions, 0);
+    assert_eq!(d.engine.state().end().unwrap(), BASE + 10226000);
 }
 #[test]
 fn same_leader_can_use_its_hold_but_cannot_overdraw() {
     let mut d = Demo::new();
     accepted(&d.bid(0, "demo-1", json!(60)));
     accepted(&d.bid(1, "demo-1", json!(100)));
-    assert_eq!(balances(&d.engine.state), json!([[[0, 100], [100, 0]], 0]));
+    assert_eq!(balances(d.engine.state()), json!([[[0, 100], [100, 0]], 0]));
     let r = d.bid(2, "demo-1", json!(110));
     assert_eq!(
         r["data"]["bid_record"]["payload_json"]["rejection_reason"],
         "insufficient_available_rana"
     );
-    assert_eq!(balances(&d.engine.state), json!([[[0, 100], [100, 0]], 0]));
+    assert_eq!(balances(d.engine.state()), json!([[[0, 100], [100, 0]], 0]));
 }
 #[test]
 fn arbitrarily_large_amounts_remain_exact_through_capture_and_restart() {
@@ -208,7 +208,7 @@ fn arbitrarily_large_amounts_remain_exact_through_capture_and_restart() {
     accepted(&d.bid(0, "demo-1", huge.clone()));
     d.read(225);
     accepted(&d.settle(226, "settled"));
-    assert_eq!(jnum(&d.engine.state.protocol), huge);
+    assert_eq!(jnum(&d.engine.state().protocol), huge);
     let rebuilt = reconstruct(&d.engine.rows().unwrap(), &c).unwrap();
     assert_eq!(jnum(&rebuilt.protocol), huge);
 }
@@ -216,7 +216,7 @@ fn arbitrarily_large_amounts_remain_exact_through_capture_and_restart() {
 fn transport_rejections_do_not_evaluate_an_overdue_auction() {
     let mut d = Demo::new();
     d.bid(0, "demo-1", json!(10));
-    let count = d.engine.state.records.len();
+    let count = d.engine.state().records.len();
     for raw in [
         b"[]".as_slice(),
         br#"{"x":1,"x":2}"#,
@@ -227,8 +227,8 @@ fn transport_rejections_do_not_evaluate_an_overdue_auction() {
     ] {
         let response = d.engine.request("bid", Some(raw), BASE + 300000, 50, 0);
         assert_eq!(response["error"]["code"], "malformed_request", "{response}");
-        assert_eq!(d.engine.state.records.len(), count);
-        assert_eq!(d.engine.state.phase(), "Open");
+        assert_eq!(d.engine.state().records.len(), count);
+        assert_eq!(d.engine.state().phase(), "Open");
     }
     assert_eq!(d.read(301)["data"]["auction_state"], "AwaitingSettlement");
 }
@@ -291,8 +291,8 @@ fn all_business_rejection_reasons_are_ordered() {
             reason
         );
     }
-    assert_eq!(d.engine.state.phase(), "Scheduled");
-    assert_eq!(balances(&d.engine.state), json!([[[100, 0], [100, 0]], 0]));
+    assert_eq!(d.engine.state().phase(), "Scheduled");
+    assert_eq!(balances(d.engine.state()), json!([[[100, 0], [100, 0]], 0]));
 }
 #[test]
 fn settlement_waits_without_deadline_and_each_outcome_is_one_shot() {
@@ -304,7 +304,7 @@ fn settlement_waits_without_deadline_and_each_outcome_is_one_shot() {
             d.read(100000)["data"]["auction_state"],
             "AwaitingSettlement"
         );
-        let before = d.engine.state.records.len();
+        let before = d.engine.state().records.len();
         for raw in [
             r#"{}"#,
             r#"{"auction_id":12,"outcome":"settled"}"#,
@@ -315,7 +315,7 @@ fn settlement_waits_without_deadline_and_each_outcome_is_one_shot() {
                 .engine
                 .request("settlement", Some(raw.as_bytes()), BASE + 100000000, 50, 0);
             assert_eq!(r["status"], "error");
-            assert_eq!(d.engine.state.records.len(), before);
+            assert_eq!(d.engine.state().records.len(), before);
         }
         accepted(&d.settle(100001, outcome));
         let committed = d.engine.rows().unwrap();
@@ -327,7 +327,7 @@ fn settlement_waits_without_deadline_and_each_outcome_is_one_shot() {
         } else {
             json!([[[100, 0], [100, 0]], 0])
         };
-        assert_eq!(balances(&d.engine.state), expected);
+        assert_eq!(balances(d.engine.state()), expected);
     }
 }
 #[test]
@@ -369,7 +369,7 @@ fn replay_receipt_describes_startup_prefix_and_never_claims_new_appends() {
     let path = directory.path().join("history.sqlite3");
     let mut e = Engine::open(&path, config()).unwrap();
     e.request("state", None, BASE - 1000, 50, 0);
-    assert_eq!(e.validated, 0);
+    assert_eq!(e.validated_through(), 0);
     e.request(
         "bid",
         Some(br#"{"auction_number":1,"bidder_id":"demo-1","amount_rana":10}"#),
@@ -379,14 +379,14 @@ fn replay_receipt_describes_startup_prefix_and_never_claims_new_appends() {
     );
     drop(e);
     let mut e = Engine::open(&path, config()).unwrap();
-    assert_eq!(e.validated, 6);
-    assert_eq!(e.state.phase(), "Open");
+    assert_eq!(e.validated_through(), 6);
+    assert_eq!(e.state().phase(), "Open");
     let r = e.request("state", None, BASE + 225000, 50, 0);
     assert_eq!(
         r["data"]["reconstruction"]["validated_through_sequence_index"],
         6
     );
-    assert_eq!(e.state.records.len(), 8);
+    assert_eq!(e.state().records.len(), 8);
 }
 #[test]
 fn malformed_history_including_valid_rehashed_lies_is_rejected() {
@@ -450,8 +450,8 @@ fn storage_failure_never_selects_unowned_or_acknowledges_a_bid() {
     db.execute_batch("BEGIN EXCLUSIVE;").unwrap();
     let r = d.bid(0, "demo-1", json!(10));
     assert_eq!(r["error"]["code"], "storage_unavailable");
-    assert_eq!(d.engine.state.phase(), "Scheduled");
-    assert!(d.engine.state.ownership.is_null());
+    assert_eq!(d.engine.state().phase(), "Scheduled");
+    assert!(d.engine.state().ownership.is_null());
     db.execute_batch("ROLLBACK;").unwrap();
     assert_eq!(d.read(1)["error"]["code"], "storage_unavailable");
     assert_eq!(d.engine.rows().unwrap().len(), 3);
@@ -558,7 +558,7 @@ fn killed_process_preserves_atomic_terminal_groups_and_never_double_captures() {
             d.read(225);
             let body = json!({"auction_id":"auc_000000000001","outcome":outcome}).to_string();
             let group = plan(
-                &d.engine.state,
+                d.engine.state(),
                 "settlement",
                 BASE + 226000,
                 Some(body.as_bytes()),
@@ -590,16 +590,19 @@ fn killed_process_preserves_atomic_terminal_groups_and_never_double_captures() {
             assert!(ready, "child did not reach crash boundary");
             let mut restarted = Engine::open(&directory.join("history.sqlite3"), config()).unwrap();
             if stage == "committed" {
-                assert_eq!(restarted.state.phase(), "Finalized");
+                assert_eq!(restarted.state().phase(), "Finalized");
                 assert_eq!(restarted.rows().unwrap().len(), prefix.len() + 3);
                 let duplicate =
                     restarted.request("settlement", Some(body.as_bytes()), BASE + 227000, 50, 0);
                 assert_eq!(duplicate["error"]["code"], "settlement_not_available");
                 assert_eq!(restarted.rows().unwrap().len(), prefix.len() + 3);
             } else {
-                assert_eq!(restarted.state.phase(), "AwaitingSettlement");
+                assert_eq!(restarted.state().phase(), "AwaitingSettlement");
                 assert_eq!(restarted.rows().unwrap(), prefix);
-                assert_eq!(balances(&restarted.state), json!([[[40, 60], [100, 0]], 0]));
+                assert_eq!(
+                    balances(restarted.state()),
+                    json!([[[40, 60], [100, 0]], 0])
+                );
             }
         }
     }
@@ -643,5 +646,5 @@ fn configuration_has_only_explicit_defaults_and_allows_zero_allocation() {
         response["data"]["bid_record"]["payload_json"]["rejection_reason"],
         "insufficient_available_rana"
     );
-    assert_eq!(demo.engine.state.phase(), "Scheduled");
+    assert_eq!(demo.engine.state().phase(), "Scheduled");
 }

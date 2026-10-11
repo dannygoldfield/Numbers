@@ -9,16 +9,44 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 /// Owns the journal and its derived cache for the lifetime of the single writer.
+///
+/// Call [`Engine::request`] to apply commands. Observations use [`Engine::state`]
+/// and [`Engine::validated_through`]; callers cannot mutate the live cache or
+/// commit caller-supplied records.
+///
+/// ```compile_fail,E0624
+/// use numbers_prototype_01::store::Engine;
+/// fn bypass_planner(engine: &mut Engine) {
+///     engine.commit(&[]).unwrap();
+/// }
+/// ```
+///
+/// ```compile_fail,E0596
+/// use numbers_prototype_01::store::Engine;
+/// fn change_live_history(engine: &mut Engine) {
+///     engine.state().records.clear();
+/// }
+/// ```
 pub struct Engine {
-    pub state: State,
-    pub config: Value,
-    pub validated: usize,
-    pub halted: Option<Fault>,
+    state: State,
+    config: Value,
+    validated: usize,
+    halted: Option<Fault>,
     db: Connection,
     path: PathBuf,
     _writer: File,
 }
 impl Engine {
+    /// Borrow committed derived state without granting mutation of the live cache.
+    pub fn state(&self) -> &State {
+        &self.state
+    }
+
+    /// Highest sequence validated during this instance's startup reconstruction.
+    pub fn validated_through(&self) -> usize {
+        self.validated
+    }
+
     /// No evaluation occurs here: callers explicitly evaluate after reconstruction (PR04).
     pub fn open(path: &Path, config: Value) -> Result<Self> {
         let config = validate_config(config)?;
@@ -120,8 +148,9 @@ impl Engine {
         self.halted = Some(f.clone());
         f
     }
-    /// PR03: validate the complete effect, commit once, then replace the derived cache.
-    pub fn commit(&mut self, group: &[Value]) -> Result<()> {
+    // PR03: only this module commits groups produced by plan. Check their folded
+    // effect, commit once, then replace the cache; this is not a raw-record API.
+    fn commit(&mut self, group: &[Value]) -> Result<()> {
         let mut next = self.state.clone();
         next.fold(group)?;
         let encoded: Vec<(i64, String)> = group
@@ -157,7 +186,7 @@ impl Engine {
         Ok(())
     }
     /// SE04: ordered due facts precede the command, each in its own declared group.
-    pub fn evaluate(&mut self, t: i64, appended: &mut Vec<Value>) -> Result<()> {
+    fn evaluate(&mut self, t: i64, appended: &mut Vec<Value>) -> Result<()> {
         if let Some(f) = &self.halted {
             return Err(f.clone());
         }

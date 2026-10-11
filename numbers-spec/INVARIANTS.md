@@ -1,4 +1,4 @@
-# Candidate invariants
+# Prototype 1 invariants
 
 ## IV01 — Consistency obligations
 

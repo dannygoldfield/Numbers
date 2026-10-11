@@ -89,3 +89,83 @@ Compatibility checks copied both original journals for read-only validation by t
 - prototype.sqlite3: `021d1c04ba611cd282db7bb75b1192287ca8332c2830815a58513774f23224d3`
 
 RT06 preserves literal API/schema keys and enums; only current prose, display and internal variable names change. The active-spec event-field schemas were reviewed against the prior version and current local document links were checked. Historical source specifications and past verification narratives remain historical. No Prototype2 auction rule, real payment or identity behavior was introduced, and this local validation does not constitute new GitHub CI evidence.
+
+
+## Bid explanations and focused review — 2026-10-10
+
+A focused source review compared the current bidding, settlement, reconstruction and browser paths with `numbers-spec/` revision 0.1. It found no rule mismatch in the reviewed core paths and identified the raw bid-rejection codes in Auction View as a UI01/UI03 presentation gap. This was one builder's bounded review, not an independent audit or production-security assessment.
+
+The corrected Auction View maps each SE03 reason to a readable explanation and derives amount guidance from the backend response snapshot. It preserves the raw result in Protocol View and does not change admission, amount input, API schemas or canonical records. The increment display uses exact integer addition, including beyond JavaScript Number precision. The rejected-bid message explicitly says that the bid was recorded and the balance is unchanged.
+
+`./check` passed after the source update: Rust formatting, Clippy with warnings denied, 26 Rust integration test entries (including the existing crash helper), frontend formatting and six browser checks. Three new checks exercise the actual app script with controlled transport and a minimal DOM: rejected bids display 91 after a leading 90 and remain exact for a very large amount; duplicate submissions are blocked while awaiting acceptance and balances change only after the response; a lost response prompts inspection, refreshes state and does not resubmit. Existing backend and executable-demo tests use isolated test journals.
+
+No new dependency, normative rule, infrastructure or local preview server was introduced. Saved demonstration journals were not opened or changed by this work. The new presentation checks are automated script checks, not a new visual or cross-browser inspection. These results are local; no new commit, push or GitHub CI result is claimed.
+
+
+## Default dark appearance — 2026-10-10
+
+Removed the wordmark's decorative period and changed the shared stylesheet to dark mode, including native controls, placeholders, buttons, feedback, ownership banners and protocol snippets. The locked Rust build, frontend formatting check and `git diff --check` passed. Calculated color contrast was 16.01:1 for primary text/background, 9.00:1 for button text/background, and 3.20:1 for input border/surface. No new behavioral test was added for this presentation-only change.
+
+The existing local server was stopped and restarted with the same configuration and journal. Startup reported successful reconstruction through record 28. No bid, settlement, reset or balance-rule change was performed as part of the appearance update. The balance explanation follows RT01–RT03 and the existing rendering code, which selects the chosen identity's backend balance.
+
+A live visual check and automatic page refresh were unavailable because the browser tool could not verify its admin-enforced security policy. The user must refresh the page to see the rebuilt interface; no visual-browser verification is claimed for this update.
+
+
+## Grayscale at minimum contrast thresholds — 2026-10-10
+
+The user requested the lowest accessible contrast and grayscale except for the retained accent. This implementation targets WCAG 2.2 AA color-contrast thresholds: ordinary text at least 4.5:1; text at least 24 CSS pixels and essential control boundaries at least 3:1. Sources: [W3C text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) and [W3C non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html). This is a targeted color check, not a declaration of full WCAG conformance.
+
+Calculated directly from the final stylesheet using sRGB relative luminance:
+
+| Use | Foreground | Background | Calculated ratio |
+|---|---|---|---|
+| Body, labels, secondary text, errors | #818181 | #181818 | 4.55788433:1 |
+| Number, wordmark, large heading, clock, balances | #646464 | #181818 | 3.00060040:1 |
+| Inputs, placeholders, code, final ownership banner | #878787 | #202020 | 4.53543901:1 |
+| Input border against inner surface | #6A6A6A | #202020 | 3.01236643:1 |
+| Input border against outer page | #6A6A6A | #181818 | 3.28285383:1 |
+| Primary button text, normal and hover | #4D4D4D | #97C9A6 | 4.51687946:1 |
+| Accent text and focus against page | #97C9A6 | #181818 | 9.48789459:1 |
+| Secondary button text on hover | #97C9A6 | #202020 | 8.70614917:1 |
+
+Each threshold comparison used the unrounded value. For the normal-text, large-text, surface-text, inner-control-border and button-label pairs, moving one whole RGB gray step toward lower contrast fails the applicable threshold. Decorative separators are #333333 and are not relied on to identify controls. Inactive controls retain their existing disabled opacity; inactive components are exempt from these contrast requirements. All non-accent hex colors have equal red, green and blue channels. The sole retained accent is #97C9A6.
+
+Button hover now uses an underline rather than another green shade, and the ownership arrival animation retains movement without fading its text below the threshold. Existing rejection and backend-unavailable wording identifies errors without red. No auction behavior or font choice changed.
+
+The locked build, frontend formatting check, source contrast calculations and `git diff --check` passed. The server was restarted against the existing journal and reported successful reconstruction through record 28. Browser inspection/automatic refresh remain unavailable under the previously reported browser-policy check, so no new rendered-browser validation is claimed. No commit, push or remote CI result is claimed for this local update.
+
+
+## Operating-system font trial — 2026-10-10
+
+At the user's request, the body now selects `system-ui, sans-serif`, and both headings plus protocol snippets explicitly inherit the family. Existing inputs and buttons already inherit their font. This removes the prior Georgia, Inter and monospace overrides so the large number and all site text use the device's interface font. No external font resource is loaded. The palette, sizes, weights and auction behavior were not changed.
+
+The stylesheet formatting check, `git diff --check`, and locked Rust build passed. The running preview was restarted with its existing journal and reconstructed through record 28. The user must refresh to load the new embedded stylesheet. Browser visual validation remains unavailable under the previously recorded browser-policy limitation; the checks confirm the source selection and build, not a measured rendered font on the device.
+
+
+Following the operating-system font trial, the Numbers wordmark alone changed from weight 750 to semibold 600. Stylesheet formatting, `git diff --check` and the locked build passed. The preview restarted successfully against the existing journal, reconstructing through record 28. The wordmark remains 34 CSS pixels on desktop and 29 on narrow screens, preserving its large-text classification. The accent color was not changed during the accompanying research inquiry; the same browser-verification limitation applies.
+
+Following the user's request for slightly larger smallest text, all six 10-pixel styles changed to 11 pixels: edition metadata, small labels, journal ordering, journal group labels, protocol snippets and footer text. The requested 105% scale was interpreted as a 5% increase (10.5 pixels), rounded up to a whole pixel. Larger text sizes remain unchanged. Stylesheet formatting, `git diff --check` and the locked build passed. The preview restarted against the existing journal and reconstructed through record 28. The previously recorded browser-verification limitation still applies; refresh is required to load the updated stylesheet.
+
+
+## Record view and project folder guide — 2026-10-10
+
+C63 / S28 is an editorial change: the browser navigation, heading, accessible label and server startup output now say Record. The existing `/protocol` address and all internal identifiers, response contracts, record bytes and auction rules remain unchanged. Current specification and presenter prose use the new view name; historical verification and provenance retain their original wording. The root README now describes the active folders, code responsibilities, saved local histories, generated files and older material, with a short colleague walkthrough.
+
+The complete `./check` passed: Rust formatting, Clippy with warnings denied, 26 Rust integration entries (including the crash-writer helper), frontend formatting and six browser checks. Existing tests exercised the live server and both guided settlement outcomes; no new tests or dependencies were added for this label change. All local links in the folder guide and current presenter documents were checked for existing targets. The three visible/accessibility labels and retained address were checked in source. `git diff --check` passed.
+
+The rebuilt local preview restarted with Record in its startup output and reconstructed the existing journal through record 28. Browser visual inspection remains unavailable under the previously recorded browser-policy limitation; refresh is required to load the embedded page changes. No new commit, push or remote CI run is claimed.
+
+
+## Audit remediation and preserved baseline — 2026-10-10
+
+An isolated external-library probe demonstrated the audit finding: the public Engine::commit method accepted a planner-derived group whose payload hash had been replaced, while reconstruction rejected the resulting history. No live journal was used. The browser and terminal used the valid planner path; this was an unnecessary library mutation surface, not evidence of an exploited HTTP path.
+
+Engine's live state, configuration, validation receipt and halt state are now private. Its commit and due-evaluation methods are private; public state observations borrow immutably. Two compile-fail documentation tests check that an external caller cannot commit arbitrary groups or clear the live record collection. Current callers use the read-only accessors. REVIEW.md now describes this boundary accurately. Existing protocol rules, canonical bytes and persistence format are unchanged.
+
+The final `./check` passed: Rust formatting, Clippy with warnings denied, all 26 Rust integration entries (including the crash helper), both compile-fail documentation tests, frontend formatting and all six browser script checks. A locked application build also passed. These are local checks; they do not claim a remote CI result. No new dependency was installed.
+
+Documentation cleanup validated local link targets in 25 current guides. All 25 original codex-spec files remained byte-identical to the previous Git checkpoint. Both relocated book configurations matched their original bytes; their archive explains that they are snapshots, not supported build targets at the new paths. Original open-question and debt-register bodies remain intact beneath current-status notes. The new Prototype 2 brief is explicitly non-normative, with no selected scope or activated behavior. `git diff --check` passed.
+
+Seven local SQLite histories were backed up using consistent read-only source snapshots. Each destination passed integrity checking and exact ordered-row comparison; the backup manifest also records file and ordered-row SHA-256 hashes. Counts at backup were 28 for the current demo, 25 for the earlier demo, and 42, 9, 42, 12 and 3 across the five saved guided/live sessions. Seventeen configuration, session, result and receipt JSON files were copied with hashes. The backup directory and zip are under `~/Documents/Numbers-Backups/2026-10-10-prototype-01`; they remain outside Git.
+
+The rebuilt loopback demo restarted with its existing configuration and reconstructed through sequence 28. Its 28 ordered records matched the backup exactly after restart. No reset, issuance, bid or settlement command was submitted during cleanup. No new rendered-browser inspection is claimed; the previously recorded browser-policy limitation remains. C64 authorizes committing and publishing this checkpoint, with the immutable source tag `prototype-01-baseline-2026-10-10`. Remote verification belongs to the corresponding GitHub Actions run.

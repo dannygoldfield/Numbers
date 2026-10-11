@@ -2,7 +2,9 @@
 
 ## UI01 — Two non-authoritative views
 
-Auction View and Protocol View must be served by the same local application and support side-by-side display. The backend performs SE evaluation and returns canonical or mechanically derived facts. The browser must not determine validity, authoritative balances, winner, settlement, or ownership.
+The read-only view is named Record (C63), formerly Protocol. This is a presentation name; the existing `/protocol` page address and underlying response contract remain unchanged.
+
+Auction View and Record View must be served by the same local application and support side-by-side display. The backend performs SE evaluation and returns canonical or mechanically derived facts. The browser must not determine validity, authoritative balances, winner, settlement, or ownership.
 
 Auction View must show current number/state, a visibly simulated identity selector for demo-1/demo-2, both available/reserved balances for the selected identity, current leading bid, bid input, plain-language acceptance/rejection, the derived 3:45 base countdown, extension changes, fixed winner, settlement status, ownership assignment, 12-second rhythm pause, and next number.
 
@@ -10,7 +12,7 @@ Auction View must offer the explicit local settlement commands when AwaitingSett
 
 Use typography, rhythm, visible state changes, and a clear ownership-assignment moment. Animation cannot create an outcome or imply ownership before its record. No production identity or external ownership claim is permitted.
 
-Protocol View must be read-only: no bid, settlement, ownership, editing, reset, or other mutating control. It must display the submitted command representation, backend validation/result, resulting records grouped by global order, derived auction state, ledger movements, available/reserved and protocol-held balances, settlement, ownership, payload hashes, and latest reconstruction receipt. Canonical records must be shown without reinterpretation. Display the submitted command by decoding command_utf8_hex to UTF-8, alongside the unchanged canonical payload; this display decoding creates no new fact. Transient command errors with no canonical record must be labeled as unrecorded command results, never fabricated as events.
+Record View must be read-only: no bid, settlement, ownership, editing, reset, or other mutating control. It must display the submitted command representation, backend validation/result, resulting records grouped by global order, derived auction state, ledger movements, available/reserved and protocol-held balances, settlement, ownership, payload hashes, and latest reconstruction receipt. Canonical records must be shown without reinterpretation. Display the submitted command by decoding command_utf8_hex to UTF-8, alongside the unchanged canonical payload; this display decoding creates no new fact. Transient command errors with no canonical record must be labeled as unrecorded command results, never fabricated as events.
 
 ## UI02 — Fixed response contract
 
@@ -54,9 +56,9 @@ Countdown display must derive from backend server_time and current_end_time with
 
 The rhythm display must derive from recorded finalization and next_available_at. The UI must wait for an actual next AuctionRecord before displaying the next number as available. The next countdown stays dormant until its own opening record.
 
-Reading state/history invokes the backend's explicitly prescribed SE04 evaluation. Protocol View still has no controls choosing canonical state: its read cannot select a bid, settlement outcome, ownership, or transition predicate. UI polling frequency is an observation choice; no animation or client clock becomes a backend trigger rule.
+Reading state/history invokes the backend's explicitly prescribed SE04 evaluation. Record View still has no controls choosing canonical state: its read cannot select a bid, settlement outcome, ownership, or transition predicate. UI polling frequency is an observation choice; no animation or client clock becomes a backend trigger rule.
 
-Each explicit UI submission sends its command once. The UI must show the authoritative acceptance/rejection and refresh the derived state and Protocol View after the response. Disable accidental repeat submission while awaiting that response. A failed/lost response must prompt state inspection; it must not initiate automatic replay. Human-readable messages must identify the rule failure and whether canonical records were written. The backend result, not optimistic UI updates, determines displayed balances and ownership.
+Each explicit UI submission sends its command once. The UI must show the authoritative acceptance/rejection and refresh the derived state and Record View after the response. Disable accidental repeat submission while awaiting that response. A failed/lost response must prompt state inspection; it must not initiate automatic replay. Human-readable messages must identify the rule failure and whether canonical records were written. The backend result, not optimistic UI updates, determines displayed balances and ownership.
 
 ## UI04 — Required deterministic demonstration
 
@@ -95,7 +97,7 @@ No UI control for time travel, corruption injection, clearing history, or forced
 
 ## UI05 — Prototype 1 demonstration tools — C60
 
-The existing Auction and Protocol views remain available. Human-facing ownership vocabulary follows C61/RT06; canonical snippets retain revision 0.1 spellings.
+The existing Auction and Record views remain available. Human-facing ownership vocabulary follows C61/RT06; canonical snippets retain revision 0.1 spellings.
 
 The live terminal client may read state/history and submit exactly the existing bid and simulated settlement commands through the local HTTP interface. It must send each explicit submission once, preserve numeric spelling and display the backend's accepted/rejected result, balances and record references. A lost response must report uncertainty and prompt inspection; it must not replay the command. The client selects a number or auction ID from a displayed state; that context must not silently change during a submission. Local syntax/transport failures are observations, not invented journal entries. Live timing remains the existing server clock. Command output may include both exact JSON and a readable summary; only backend records determine outcomes.
 

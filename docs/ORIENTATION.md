@@ -1,3 +1,5 @@
+> Historical document. For current instructions, use the [project guide](../README.md) and [active specification](../numbers-spec/STATUS.md). The original text below describes an earlier generation.
+
 # Orientation — Numbers
 
 This repository defines **Numbers**.

@@ -1,5 +1,13 @@
 # Questions and decision record
 
+## Current status
+
+`numbers-spec/` revision 0.1 is active; [STATUS.md](../STATUS.md) controls activation. Q01–Q04 are resolved: indivisible Rana, leader-only holds, capture of the exact winning amount into the protocol balance, and release of the winning hold on failed settlement. The settlement deadline was removed before implementation. Rust and SQLite are implemented and tested; see [VERIFICATION.md](../../prototype-01/VERIFICATION.md).
+
+Prototype 2 questions live in [PROTOTYPE-02.md](PROTOTYPE-02.md). They do not amend Prototype 1. This file preserves the economic decision history below; statements about an inactive candidate or an unselected runtime describe that earlier phase.
+
+## Historical candidate record before activation
+
 Non-normative working record. All four Phase 1 economic questions are resolved by explicit user decisions. No blocking semantic question remains after the Phase 2 audit. This does not activate the candidate or authorize implementation.
 
 ## Q01 — Denomination — resolved
