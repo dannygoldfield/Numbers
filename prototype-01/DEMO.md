@@ -109,6 +109,25 @@ For an inspection that appends no lifecycle events, use the actual session path:
 
 Inspection opens SQLite read-only, validates every complete group and reports the derived state at the last recorded timestamp. A guided session can be inspected this way but cannot be resumed as a real-clock live session. Interrupted guided runs remain inspectable; a new walkthrough starts separately.
 
+## Collect colleague feedback
+
+Set aside about 15–20 minutes per colleague. Use one controlled device with simulated funds. Start a fresh live session with `./demo serve` as described above; keep its printed session path. A colleague elsewhere can watch a screen share and ask the presenter to operate the same machine. Prototype 1 does not yet provide separate-device participation.
+
+Begin with: “This explores what it could mean to own a number through an auction. The bidders and money are simulated. Try it and tell me what you expect to happen.” Let the colleague attempt the tasks before explaining the mechanics; note when help is needed.
+
+| Ask the colleague to try or explain | Observe |
+|---|---|
+| Place an opening bid and explain the clock | Can they find the action and understand when the auction starts? |
+| Switch to the other bidder and take the lead | Can they explain the available and reserved balances for both identities? |
+| Submit an equal bid | Does the rejection explain what to do next and whether the balance changed? |
+| Find that bid in Record | Can they connect their action to its recorded result? |
+| Predict a late bid's effect | Use guided steps 7–9 to show the extension window and cap; ask whether the ending feels understandable and fair. |
+| Predict successful and failed settlement | Use the live result or guided steps 10–18; can they distinguish money captured, a hold released, ownership and Unowned? |
+
+The guided examples have their own history. Explain that switch before using them. Finish by asking: “What surprised you?”, “What felt unfair or unclear?”, and “What one change would make you want to try again?”
+
+Record the session label, attempted task, observed action or exact words, help given and possible follow-up in the [Prototype 2 observation table](../numbers-spec/work/PROTOTYPE-02.md#collect-observations-in-one-place). Keep an observation separate from the proposed fix. After a few sessions, choose the strongest recurring problem or learning question. A mismatch with an approved rule is a Prototype 1 defect; a desired rule change needs a specification decision.
+
 ## Vocabulary and evidence
 
 Use **ownership**, **Owned by Bidder A/B**, and **Unowned — no owner** when presenting. Pending ownership is different from a finalized Unowned outcome. Exact revision 0.1 JSON retains `title`, `title_kind`, `holder_id`, `PublicLand` and `expired_to_publicland` for compatibility with saved history; RT06 documents this mapping. There is no collective owner.

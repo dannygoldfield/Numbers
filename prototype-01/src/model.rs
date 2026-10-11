@@ -663,7 +663,8 @@ fn plan_settlement(state: &State, time_ms: i64, raw: Option<&[u8]>) -> Result<Ve
     records(state, group_type, time_ms, auction_number, entries)
 }
 
-pub fn shape(kind: &str) -> Option<usize> {
+// SE05: number of records in each indivisible commit group.
+fn group_size(kind: &str) -> Option<usize> {
     match kind {
         "initialize" | "bid_open" | "bid_replace" | "settle" | "expire" => Some(3),
         "bid_extend" => Some(4),
@@ -679,7 +680,7 @@ pub fn reconstruct(rows: &[(i64, String)], live: &Value) -> Result<State> {
             let first: Value = serde_json::from_str(&rows[offset].1)
                 .map_err(|_| Fault::history("invalid stored JSON"))?;
             let kind = text(&first["group_type"])?;
-            let size = shape(kind).ok_or_else(|| Fault::history("unknown group"))?;
+            let size = group_size(kind).ok_or_else(|| Fault::history("unknown group"))?;
             assert_rule(offset + size <= rows.len(), "incomplete group")?;
             let mut group = vec![];
             for (position, raw) in &rows[offset..offset + size] {

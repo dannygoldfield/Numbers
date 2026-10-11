@@ -1,4 +1,8 @@
-# Candidate traceability
+# Specification traceability
+
+Revision 0.1 is active. The original candidate map below and its dated follow-ups preserve rule provenance. Use [REVIEW.md](../../prototype-01/REVIEW.md) for the current code reading map. [STATUS.md](../STATUS.md) records activation. Earlier statements about inactivity or evidence sources apply to their dated stage.
+
+## Initial candidate record
 
 Non-normative audit map. Every candidate normative clause, invariant, lifecycle transition/commit group, and event is mapped below. C/K/M/A identifiers resolve to exact user decisions, source file/sections, explicit representation choices, or declared assumptions in SOURCE-DECISIONS.md. That provenance does not activate this candidate or import unstated behavior.
 

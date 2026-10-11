@@ -176,3 +176,14 @@ The rebuilt loopback demo restarted with its existing configuration and reconstr
 Commit `d1e3e71279457ed71e7f2c5b9ec12545d096780f` and annotated tag `prototype-01-baseline-2026-10-10` were pushed together successfully. GitHub's [Prototype 1 checks job](https://github.com/dannygoldfield/Numbers/actions/runs/38107022264/job/114374580072) passed for that exact commit. Later documentation-only publication notes do not move the preserved baseline tag. Refer to the [whole workflow](https://github.com/dannygoldfield/Numbers/actions/runs/38107022264) for the separate historical application jobs.
 
 The push reported three dependency advisories. Read-only inspection confirmed all three refer to the historical frontend lockfile; TD12 records their package names, severity, patched versions and follow-up boundary. No dependency upgrade or dismissal was performed.
+
+
+## Bounded simplification pass — 2026-10-10
+
+C65 closes the final clarity pass before colleague feedback. The current handoff was reduced from 1,239 to 463 words, keeping all dated September sections byte-identical. Detailed appearance evidence stays here; instructions link to the existing demo and setup guides. Historical source-decision, change-register and traceability bodies remain intact under current-status entrances. The feedback exercise lives in DEMO.md, with a single observation table in the non-normative Prototype 2 brief. No colleague results have been invented or collected by this pass.
+
+The one Rust change renames `shape` to the private `group_size` helper: it returns the same specified commit-group sizes and has one internal caller. Its match arms and all reconstruction checks are unchanged. The presentation workspace now names its Prototype 1 Cargo manifest explicitly. No UI, dependency, launcher, normative clause, command format or record format changed. There was no demonstrated benefit to a broader code refactor; typed-state work and the historical frontend advisories retain their existing debt entries and triggers.
+
+The full `./check` passed: Rust formatting, Clippy, 26 integration entries, two compile-fail documentation tests, frontend formatting and six browser script checks. Existing tests execute the guided and live demo binaries and verify reconstruction. Documentation validation resolved 120 local links and heading targets in 21 current guides; workspace folders and task paths resolved. All normative specification files match the preceding checkpoint exactly. `git diff --check` passed. There was no rendered-browser check or live-history mutation in this pass.
+
+The preserved tag object remains `dcbbf026a80aabf4a2cb0adb155a543146a15d81`, pointing to `d1e3e71279457ed71e7f2c5b9ec12545d096780f`. The existing seven-history backup remains the saved data baseline. The next activity is colleague feedback; further implementation should follow an observed defect or an approved requirement.

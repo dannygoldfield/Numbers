@@ -1,5 +1,9 @@
 # Source decisions and extraction
 
+This non-normative register preserves the initial extraction and subsequent user decisions. Current behavioral authority is defined in [AUTHORITY.md](../AUTHORITY.md). [STATUS.md](../STATUS.md) records activation. Earlier statements about inactivity or evidence sources apply to their dated stage.
+
+## Initial candidate record
+
 Non-normative source and decision register. Date: 2026-09-05; updated through Phase 2. This file authorizes no implementation.
 
 ## Evidence and classification
@@ -247,3 +251,8 @@ The user requested “Change to Record” and an explanation of the project fold
 The user approved the audit recommendations and requested a simple, clear transition from Prototype 1 to Prototype 2, preserving past work and accounting for technical debt. Tighten the Rust engine boundary so only its internal planner-to-commit path can write records; expose borrowed observations instead of mutable state. Clarify active document status, preserve historical text and book configurations, and provide a single non-normative Prototype 2 planning entry. Record deferred typed-state work with a concrete revisit trigger rather than expanding the refactor.
 
 This authorizes the reviewed cleanup checkpoint, its GitHub commit/push and a named Prototype 1 source baseline, plus a separate backup of local histories. It does not activate Prototype 2, choose its auction rules, authorize public hosting or real payments, or reinterpret existing records. Keep historical source files and saved histories intact; navigation notices and archive placement do not give older material current authority.
+
+
+## C65 — Bounded simplification and colleague feedback, 2026-10-10
+
+The user approved one bounded pass for clearer documentation, names and developer entry points, preserving the existing baseline and then moving to feedback. Consolidate current guidance, preserve dated historical records, and prepare a short colleague exercise with observations in the existing Prototype 2 brief. The baseline tag stays fixed. This is maintenance under the existing checkpoint/publication workflow; it introduces no new auction behavior, deployment, infrastructure or Prototype 2 activation.

@@ -1,4 +1,8 @@
-# Candidate change register
+# Specification change history
+
+Revision 0.1 is active. This register preserves the earlier candidate changes followed by dated approvals and later editorial changes. [STATUS.md](../STATUS.md) records activation. Earlier statements about inactivity or evidence sources apply to their dated stage.
+
+## Initial candidate record
 
 Non-normative candidate change register, updated through Phase 2. No active source file has changed. “New” below means confirmed candidate direction unless explicitly marked unresolved or recommended; it does not mean active behavior.
 
@@ -89,3 +93,8 @@ S28 / approved editorial change: SC02 and UI01–UI05 name the read-only demonst
 ## C64 — Editorial cleanup and implementation boundary, 2026-10-10
 
 S29 / approved non-semantic cleanup: remove stale candidate wording from active authority/invariant/security headings, put current status above historical working notes, and identify older documentation entrances as archives. Add Prototype 2 planning under non-normative `work/`, with no activation. Engine encapsulation enforces the existing PR03/PR06 write path; it does not change predicates, canonical schemas, event bytes, timing or accounting. Revision 0.1 remains the sole active authority.
+
+
+## C65 — Bounded clarity pass, 2026-10-10
+
+S30 / editorial and internal naming only: shorten the current handoff, clarify historical working-record entrances, link the existing launch paths, prepare colleague feedback in DEMO.md and retain one observation table in PROTOTYPE-02.md. Make the presentation workspace's Rust project path explicit. Rename the private reconstruction-size helper for clarity. No normative clause, command, record shape, predicate, timing, accounting or authority changes. The existing Prototype 1 baseline tag remains fixed.

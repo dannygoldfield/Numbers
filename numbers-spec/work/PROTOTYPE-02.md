@@ -16,11 +16,11 @@ Choose one primary question before expanding scope. Write the expected observati
 
 ## Collect observations in one place
 
-Use [DEMO.md](../../prototype-01/DEMO.md) for the current walkthrough. Ask colleagues to explain the leading bid, available versus reserved balance, late-bid behavior, settlement and ownership in their own words. Record specific confusion and observed actions rather than a general preference score. No colleague results are recorded yet.
+Follow the [colleague feedback session](../../prototype-01/DEMO.md#collect-colleague-feedback) and record observations here. Use a session label rather than personal details. Keep what happened separate from the proposed change. No colleague results are recorded yet.
 
-| Date and session | Task attempted | Expected versus observed | Follow-up decision |
-|---|---|---|---|
-| — | — | — | — |
+| Date and session | Task attempted | Observation or exact words | Help given | Possible follow-up |
+|---|---|---|---|---|
+| — | — | — | — | — |
 
 A problem with an existing approved rule belongs in a small Prototype 1 fix. A proposed change to the rule belongs in this planning brief until approved.
 

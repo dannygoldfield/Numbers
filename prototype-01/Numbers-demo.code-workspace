@@ -14,7 +14,7 @@
     "terminal.integrated.fontSize": 15,
     "editor.minimap.enabled": false,
     "rust-analyzer.linkedProjects": [
-      "${workspaceFolder}/Cargo.toml"
+      "${workspaceFolder:Prototype 1}/Cargo.toml"
     ],
     "files.exclude": {
       "**/target": true,

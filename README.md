@@ -9,6 +9,7 @@ Numbers explores that question through sequential auctions and an explicit recor
 - [Active specification and status](numbers-spec/STATUS.md)
 - [Run Prototype 1](prototype-01/README.md)
 - [Present the browser and backend](prototype-01/DEMO.md)
+- [Collect colleague feedback](prototype-01/DEMO.md#collect-colleague-feedback)
 - [Read the Rust implementation](prototype-01/REVIEW.md)
 - [Development environment](prototype-01/SETUP.md)
 - [Continuation notes and saved-history backup](prototype-01/HANDOFF.md)

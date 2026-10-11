@@ -4,7 +4,7 @@ A local Rust application for the approved Numbers 0.1 specification. Two simulat
 
 The sole active behavioral authority is [numbers-spec](../numbers-spec/STATUS.md). The older root Rust project, frontend and `codex-spec/` remain historical and are not dependencies of this application.
 
-For the saved project state and how to return after the pause, see [HANDOFF.md](HANDOFF.md).
+For the current checkpoint and next activity, see [HANDOFF.md](HANDOFF.md). To try it with colleagues, follow the [feedback session](DEMO.md#collect-colleague-feedback).
 
 ## Run
 
@@ -50,6 +50,6 @@ The current demo journal is `data/demo-02.sqlite3`, relative to this directory. 
 
 The application has no reset, history edit, top-up, protocol spending, compensation or automatic command retry operation. An unavailable response may follow a successful commit: inspect the state and journal before making a new explicit submission. A malformed journal stops processing and is preserved for investigation.
 
-Initial allocations and the starting number apply only to a new history. Changing them does not reset an existing journal. Changing a permitted auction parameter affects future AuctionRecords, not parameters already captured in records. On 2026-09-05 the user authorized a separate fresh demo at Number 1, with initial allocations of 600 each, minimum bid 5 and minimum increase 1. Its initial allocations include the requested extra 500 each; no credit is applied to the earlier history. The UI04 acceptance fixture and original verification report retain their explicit 100-rana allocations and 10-rana minimum/increment.
+Initial allocations and the starting number apply only to a new history. Changing them does not reset an existing journal. Changing a permitted auction parameter affects future AuctionRecords, not parameters already captured in records. The UI04 acceptance fixture uses its own explicit 100-rana allocations and 10-rana minimum/increment. The [verification history](VERIFICATION.md#fresh-demo-configuration--2026-09-05) records the separate 600-rana demo initialization.
 
 This prototype uses simulated identities and local Rana. It does not accept real payments, establish external ownership, or protect a journal against a person controlling the machine.

@@ -43,7 +43,7 @@ npm run format
 ./run
 ```
 
-`./check` stops on the first failure and runs Rust formatting, Clippy with warnings treated as errors, Rust tests, frontend formatting and browser-value tests. Run it before presenting a change as ready. Use `./cargo-local test --locked <test_name>` while diagnosing a specific failure.
+`./check` stops on the first failure and runs Rust formatting, Clippy with warnings treated as errors, Rust tests, frontend formatting and browser value/command checks. Run it before presenting a change as ready. Use `./cargo-local test --locked <test_name>` while diagnosing a specific failure.
 
 For a local optimized build:
 
@@ -58,7 +58,7 @@ Release builds retain overflow checks. Economic amounts use arbitrary-precision 
 
 All behavioral inputs are in `demo-config.json`. Only the starting number and optional maximum bid have specification defaults. The operational fields are `database_path`, a loopback IP `host`, integer `port`, and `log_verbosity` (`quiet` or `requests`). Relative database paths resolve beside the configuration file.
 
-To run an explicitly separate demonstration history, prepare a separate configuration with its own unused database path and local port. That is a separate history, not a reset or recovery of the existing one. Do not change or delete a recorded history to make a test pass.
+For a fresh live demonstration, use `./demo serve`; it creates its own configuration and journal on port 8766. [DEMO.md](DEMO.md#live-browser-and-terminal-together) explains launch and restart. Use a custom configuration only when the experiment needs different explicit settings. Do not change or delete a recorded history to make a test pass.
 
 Tests use temporary directories, explicit test clocks and child processes. The UI05 guided executable also supplies explicit simulated timestamps in a separate journal. No clock or crash control is available through the live HTTP application or browser.
 
