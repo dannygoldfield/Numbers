@@ -11,13 +11,13 @@ fn bidder(value: &Value) -> &str {
     }
 }
 fn ownership(state: &Value) -> String {
-    // RT06: revision 0.1 wire keys stay unchanged; presentation uses C61 vocabulary.
-    let result = &state["title"];
+    // RT06/UI02: display the revision 0.2 ownership projection.
+    let result = &state["ownership"];
     if result.is_null() {
         "Pending".into()
-    } else if result["title_kind"] == "winner" {
-        format!("Owned by {}", bidder(&result["holder_id"]))
-    } else if result["title_kind"] == "PublicLand" {
+    } else if result["ownership_kind"] == "winner" {
+        format!("Owned by {}", bidder(&result["owner_id"]))
+    } else if result["ownership_kind"] == "unowned" {
         "Unowned".into()
     } else {
         "Unknown outcome; inspect raw response".into()

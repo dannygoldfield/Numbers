@@ -1,6 +1,6 @@
 # Numbers · Prototype 1
 
-A local Rust application for the approved Numbers 0.1 specification. Two simulated bidders compete for a number. The journal records bids, Rana movements, resolution, settlement and ownership. Restart reconstructs those records before new work begins.
+A local Rust application for the approved Numbers 0.2 specification. Two simulated bidders compete for a number. The journal records bids, Rana movements, resolution, settlement and ownership. Restart reconstructs those records before new work begins.
 
 The sole active behavioral authority is [numbers-spec](../numbers-spec/STATUS.md). The older root Rust project, frontend and `codex-spec/` remain historical and are not dependencies of this application.
 
@@ -14,7 +14,7 @@ From this directory:
 ./run
 ```
 
-Open [Auction](http://127.0.0.1:8765/) and [Record](http://127.0.0.1:8765/protocol). The Record page can sit beside the Auction page and contains no outcome controls. Stop the server with Ctrl-C. Running the same command again reconstructs the same journal.
+Open [Auction](http://127.0.0.1:8765/) and [Record](http://127.0.0.1:8765/record). The Record page can sit beside the Auction page and contains no outcome controls. Stop the server with Ctrl-C. Running the same command again reconstructs the same journal.
 
 [SETUP.md](SETUP.md) documents the installed tools, repeatable setup and checks. [REVIEW.md](REVIEW.md) is the backend reading guide. [VERIFICATION.md](VERIFICATION.md) records actual validation evidence and its limits.
 
@@ -46,7 +46,9 @@ A valid bid within the final 10 seconds extends the auction by 15 seconds, up to
 
 ## Stored history
 
-The current demo journal is `data/demo-02.sqlite3`, relative to this directory. The earlier `data/prototype.sqlite3` history remains saved separately. Its adjacent `.writer.lock` prevents a second application writer; `.diagnostic.log` records non-authoritative failures when possible. These local files are ignored by Git.
+The revised demo uses `data/revision-0.2/demo.sqlite3`, relative to this directory. Its first launch creates a separate history. The preserved `data/demo-02.sqlite3`, `data/prototype.sqlite3`, and earlier demonstration sessions require the old build; the new build rejects their format without editing them. See [HANDOFF.md](HANDOFF.md) for the verified backup. Its adjacent `.writer.lock` prevents a second application writer; `.diagnostic.log` records non-authoritative failures when possible. These local files are ignored by Git.
+
+The original winner and finalization record cannot be rewritten. A future separately approved specification may define append-only transfers, including between wallets belonging to the same person or different people; no wallet or transfer mechanism exists here.
 
 The application has no reset, history edit, top-up, protocol spending, compensation or automatic command retry operation. An unavailable response may follow a successful commit: inspect the state and journal before making a new explicit submission. A malformed journal stops processing and is preserved for investigation.
 

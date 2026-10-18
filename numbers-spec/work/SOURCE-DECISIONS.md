@@ -256,3 +256,17 @@ This authorizes the reviewed cleanup checkpoint, its GitHub commit/push and a na
 ## C65 — Bounded simplification and colleague feedback, 2026-10-10
 
 The user approved one bounded pass for clearer documentation, names and developer entry points, preserving the existing baseline and then moving to feedback. Consolidate current guidance, preserve dated historical records, and prepare a short colleague exercise with observations in the existing Prototype 2 brief. The baseline tag stays fixed. This is maintenance under the existing checkpoint/publication workflow; it introduces no new auction behavior, deployment, infrastructure or Prototype 2 activation.
+
+## C66 — Abstract numbers and separate revised histories, 2026-10-18
+
+The user rejected the land metaphor, explaining that a number is the abstract mathematical concept and its device-native font is presentation. In clarification answers, the user selected: "Keep recorded ownership; remove the land metaphor"; "Keep that behavior; revise terminology only" for simulated failed settlement releasing the winning hold and finalizing with no owner; and "Preserve the old build and journals; use a separate fresh history for the revised build". These supersede C61's current-format compatibility constraint only after the approved revision, never by rewriting old records.
+
+## C67 — Transfer clarification, revision 0.2 approval, and execution scope, 2026-10-18
+
+The user clarified that irreversible ownership must not preclude a future mechanism for transferring ownership to another wallet belonging to the same person or another person. Irreversibility protects the original auction facts; a future separately specified transfer could append later records. No wallet or transfer implementation is authorized now.
+
+The user stated: "I approve revision 0.2 and the implementation scope. Preserve and verify the current build and journals first, then make the changes and run the checks. Keep repository pruning and deployment separate." This explicitly activates the reviewed revision with the transfer clarification and authorizes local implementation and verification. Exact new field names, the per-record spec_revision marker, the /record route, fresh default history path, and application version 0.2.0 are included. Publication is a separate review gate; earlier checkpoint permissions are not reused.
+
+## C68 — Review and publish revision 0.2, 2026-10-18
+
+The user requested: "Please review the revision 0.2 changes, then commit and push them to GitHub. Keep repository pruning and deployment separate." This authorizes review, corrections within the approved implementation scope, verification, and publication of the source checkpoint and its pre-revision preservation tag. Local journals and build outputs remain outside GitHub. It introduces no new protocol behavior and does not authorize pruning, deployment, or Prototype 2 activation.

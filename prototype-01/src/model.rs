@@ -298,6 +298,7 @@ fn records(
             json!(id("auc", auction_number))
         };
         result.push(json!({
+            "spec_revision": "0.2",
             "sequence_index": first_sequence + index,
             "record_id": record_id(first_sequence + index),
             "record_type": record_type,
@@ -613,8 +614,8 @@ fn plan_settlement(state: &State, time_ms: i64, raw: Option<&[u8]>) -> Result<Ve
     } else {
         "RanaReleaseRecord"
     };
-    let ownership_kind = if success { "winner" } else { "PublicLand" };
-    let holder_id = if success {
+    let ownership_kind = if success { "winner" } else { "unowned" };
+    let owner_id = if success {
         hold["bidder_id"].clone()
     } else {
         Value::Null
@@ -622,7 +623,7 @@ fn plan_settlement(state: &State, time_ms: i64, raw: Option<&[u8]>) -> Result<Ve
     let finalization_reason = if success {
         "settled_to_winner"
     } else {
-        "expired_to_publicland"
+        "expired_to_unowned"
     };
     let server_time = stamp(time_ms)?;
     let settlement_id = record_id(state.records.len() + 1);
@@ -652,8 +653,8 @@ fn plan_settlement(state: &State, time_ms: i64, raw: Option<&[u8]>) -> Result<Ve
             "FinalizationRecord",
             json!({
                 "settlement_record_id": settlement_id,
-                "title_kind": ownership_kind,
-                "holder_id": holder_id,
+                "ownership_kind": ownership_kind,
+                "owner_id": owner_id,
                 "finalization_time": server_time,
                 "finalization_reason": finalization_reason
             }),
@@ -686,6 +687,10 @@ pub fn reconstruct(rows: &[(i64, String)], live: &Value) -> Result<State> {
             for (position, raw) in &rows[offset..offset + size] {
                 let record: Value =
                     serde_json::from_str(raw).map_err(|_| Fault::history("invalid record JSON"))?;
+                assert_rule(
+                    record["spec_revision"] == "0.2",
+                    "unsupported or missing spec_revision; use the preserved build for earlier histories",
+                )?;
                 assert_rule(
                     canonical(&record) == *raw && record["sequence_index"] == json!(position),
                     "noncanonical record or sequence",
@@ -813,7 +818,7 @@ pub fn projection(state: &State, time_ms: i64, validated: usize) -> Result<Value
     let settlement = select(&state.settlement, &["status", "settlement_time"]);
     let ownership = select(
         &state.ownership,
-        &["title_kind", "holder_id", "finalization_time"],
+        &["ownership_kind", "owner_id", "finalization_time"],
     );
     let last = state
         .records
@@ -834,7 +839,7 @@ pub fn projection(state: &State, time_ms: i64, validated: usize) -> Result<Value
         "leading_bid": leading_bid,
         "resolution": resolution,
         "settlement": settlement,
-        "title": ownership, // RT06: retain the revision 0.1 wire key.
+        "ownership": ownership,
         "balances": balances,
         "protocol_held_rana": jnum(&state.protocol),
         "sequence": {

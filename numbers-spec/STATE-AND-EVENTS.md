@@ -16,7 +16,7 @@ A SettlementRecord without its same-group finalization and ledger effect is malf
 
 ## SE02 — Command boundary and rejection classes
 
-The API contract is `rana-prototype-1`; it does not assert compatibility with the former sats API. The entire endpoint surface is:
+The API contract is `rana-prototype-1-r0.2`; it does not assert compatibility with the former sats API. The entire endpoint surface is:
 
 | Logical command | Endpoint and input |
 |---|---|
@@ -114,6 +114,6 @@ PR01 defines the common envelope. The payload fields below are required and clos
 | AuctionCloseRecord | closed_at: timestamp; reason: duration_expired | G06 only; closed_at=t; effective-end predicate met; unique per auction | Closed; valid bidding stops; hold preserved; no ownership |
 | ResolutionRecord | winning_bid_id: ID; winning_amount_rana: positive integer; resolution_time: timestamp; resolution_inputs_hash: hash | G07; winner is SE03 choice; amount matches bid; resolution_time=t; hash PR02 | Fixed winner, AwaitingSettlement; hold unchanged; no ownership |
 | SettlementRecord | command_utf8_hex: string; resolution_record_id: ID; status: settled/expired; settlement_time: timestamp | G08/G09; command_utf8_hex decodes to the exact UTF-8 body of the accepted SubmitSettlement; resolution reference is unique prior result; status matches command; settlement_time=t | Record terminal outcome only; associated ledger/ownership effects are required later in this same group |
-| FinalizationRecord | settlement_record_id: ID; title_kind: winner/PublicLand; holder_id: identity or null; finalization_time: timestamp; finalization_reason: settled_to_winner/expired_to_publicland | G08/G09 only; reference same-group SettlementRecord; t matches group; settled -> winner, winning identity, settled_to_winner; expired -> PublicLand, null, expired_to_publicland | Sole final ownership outcome, terminal Finalized, start rhythm gap; no additional economic movement |
+| FinalizationRecord | settlement_record_id: ID; ownership_kind: winner/unowned; owner_id: identity or null; finalization_time: timestamp; finalization_reason: settled_to_winner/expired_to_unowned | G08/G09 only; reference same-group SettlementRecord; t matches group; settled -> winner, winning identity, settled_to_winner; expired -> unowned, null, expired_to_unowned | Sole final ownership outcome, terminal Finalized, start rhythm gap; no additional economic movement |
 
 Every event name not in this table is forbidden. No separate correction, authority, command-submission, pending-settlement, ownership-transfer, or ambiguity event is implied.

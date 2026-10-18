@@ -8,7 +8,7 @@ Start with the [worked auction](../numbers-spec/UI-AND-DEMO.md), then follow the
 |---|---|---|
 | `src/main.rs` | Validate operational setup; open the store; evaluate startup; own the serial HTTP loop | P02, SE04, PR04 |
 | `src/http.rs` | Reject malformed transport and unsupported routes before evaluation; sample authoritative time | SE02, SE04 |
-| `src/store.rs` | Evaluate due groups; commit each atomically; return outcomes only after commit; halt on failures | SE04–SE05, PR03–PR06 |
+| `src/store.rs` | Evaluate due groups; commit each atomically; return outcomes only after commit; halt on failures | SE04–SE05, PR03–PR07 |
 | `src/model.rs` | Derive state, check ordered admission predicates, plan exact groups, reconstruct and project | P02, RT01–RT05, SE01–SE06, PR04, UI02 |
 | `src/values.rs` | Preserve command bytes, exact integers, canonical JSON, hashes and timestamps | PR01–PR02 |
 | `tests/protocol.rs` | Worked examples, rejection boundaries, reconstruction, corrupted history and killed writers | UI04, PR05–PR06 |
@@ -70,4 +70,4 @@ A review should follow one accepted bid through the reservation group and one se
 
 The walkthrough calls `Engine::request`, not duplicate bid or settlement logic. It releases its writer before a child process reconstructs the journal, then compares exact ordered rows and all projected facts. Only the observational reconstruction receipt differs. Restart receipts are presentation files, not protocol events.
 
-The internal State uses `ownership`. Literal revision 0.1 JSON keys remain unchanged under RT06; this preserves existing journal bytes, hashes and API compatibility. Human-facing labels translate the legacy outcome to Unowned with no owner.
+The internal State and UI02 projection use `ownership`; SE06 finalization uses `ownership_kind` and `owner_id`. PR07 requires `spec_revision: "0.2"` on every record. Engine::open holds the writer lock while inspecting the existing database read-only and validating the entire history before opening it for writes or creating schema. Incompatible histories halt unchanged. The inspector uses the same reconstruction function. The frozen revision 0.1 initialization fixture is rejection evidence, not a decoder or compatibility path.

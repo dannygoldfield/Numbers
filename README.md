@@ -52,7 +52,7 @@ All paths in this table are inside `prototype-01/`.
 | [run](prototype-01/run), [demo](prototype-01/demo), [check](prototype-01/check) | Launch the browser demo, run terminal demonstrations, and run the existing verification suite. |
 | [Cargo.toml](prototype-01/Cargo.toml), [Cargo.lock](prototype-01/Cargo.lock), [rust-toolchain.toml](prototype-01/rust-toolchain.toml), [cargo-local](prototype-01/cargo-local) | Rust application/dependency definitions, exact dependency versions, selected toolchain and local launcher. |
 | [package.json](prototype-01/package.json), [package-lock.json](prototype-01/package-lock.json), [.prettierrc.json](prototype-01/.prettierrc.json) | Browser development checks, their dependency versions and formatting preferences. |
-| `data/demo-02.sqlite3` | The current port-8765 demo's local auction journal. `data/prototype.sqlite3` is an earlier, separate history. |
+| `data/revision-0.2/demo.sqlite3` | The revised port-8765 demo's separate journal. Earlier `data/demo-02.sqlite3` and `data/prototype.sqlite3` remain preserved for the old build. |
 | `data/demonstrations/` | Separate live/guided demonstration sessions, saved journals and generated reconstruction evidence. |
 | `target/`, `node_modules/` | Generated Rust build files and installed development dependencies. They are reproducible working files and are excluded from Git. |
 
@@ -78,19 +78,19 @@ The root `src/`, `tests/`, `Cargo.toml` and `Cargo.lock` belong to the older Rus
 
 1. Open `numbers-spec/RANA-AND-OWNERSHIP.md`: “These are the written rules for bids, balances and ownership.”
 2. Open `prototype-01/src/model.rs`, then find `plan_bid`: “This Rust code applies those rules.”
-3. Show Auction beside Record: “One view submits a bid; the other shows the resulting records and balances.” Record retains the existing `/protocol` page address.
+3. Show Auction beside Record: “One view submits a bid; the other shows the resulting records and balances.” Record uses `/record`.
 4. Use the presenter steps in `prototype-01/DEMO.md`: “The guided terminal demonstration uses the same engine and shows reconstruction in a separate process.”
 5. Open `prototype-01/VERIFICATION.md`: “Here is the evidence for what we have checked.”
 
 ## From Prototype 1 to Prototype 2
 
-Preserve the reviewed source as the `prototype-01-baseline-2026-10-10` Git tag and back up local journals separately. Keep Prototype 1 available for colleague demonstrations. Collect observations in the [Prototype 2 planning brief](numbers-spec/work/PROTOTYPE-02.md), choose one learning goal, then approve explicit specification changes before implementation. The [current debt register](numbers-spec/work/TECHNICAL-DEBT.md#current-register-as-of-2026-10-10) distinguishes accepted limits from work with a concrete revisit trigger.
+The fixed `prototype-01-baseline-2026-10-10` tag preserves the earlier checkpoint. The `prototype-01-revision-0.1-preserved-2026-10-18` tag preserves the exact pre-revision source; builds and journals are backed up separately as described in HANDOFF.md. Keep Prototype 1 available for colleague demonstrations. Collect observations in the [Prototype 2 planning brief](numbers-spec/work/PROTOTYPE-02.md), choose one learning goal, then approve explicit specification changes before implementation. The [current debt register](numbers-spec/work/TECHNICAL-DEBT.md#current-register-as-of-2026-10-10) distinguishes accepted limits from work with a concrete revisit trigger.
 
 Future implementation should evolve the existing engine on a focused branch, using separate test histories. Preserve the tag; use a separate checkout only when both generations must run side by side. No duplicate engine or Prototype 2 service is created during planning.
 
 ## Scope and authority
 
-`numbers-spec/` revision 0.1 is the sole active behavioral authority, with precedence defined in [AUTHORITY.md](numbers-spec/AUTHORITY.md). Specification changes are explicit and traced to user decisions. Successful settlement establishes the winner's ownership; failed settlement leaves the number Unowned, with no owner. Both are final protocol outcomes.
+`numbers-spec/` revision 0.2 is the sole active behavioral authority, with precedence defined in [AUTHORITY.md](numbers-spec/AUTHORITY.md). Specification changes are explicit and traced to user decisions. Successful settlement establishes the winner's ownership; failed settlement leaves the number Unowned, with no owner. Both are immutable original auction outcomes. A future separately approved transfer mechanism may append later ownership transfers without rewriting the auction result; Prototype 1 implements no transfers or wallets.
 
 Prototype 1 uses simulated identities and Rana. It does not currently integrate Bitcoin, payments or public hosting. The root Rust application, `frontend/`, `codex-spec/`, and older `docs/` describe earlier work and remain separate historical material. Their claims about Bitcoin execution and authority do not describe this prototype.
 

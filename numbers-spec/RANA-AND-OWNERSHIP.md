@@ -52,14 +52,18 @@ Both outcomes leave no live reservation for the finalized auction. Both preserve
 
 ## RT04 — Ownership and Unowned
 
-FinalizationRecord is the sole ownership record; no second ownership-assignment event exists. Before it exists, protocol ownership is unassigned. Its `title_kind` and `holder_id` mean:
+FinalizationRecord is the sole auction ownership-assignment record; no second auction ownership-assignment event exists. Before it exists, protocol ownership is unassigned.
 
-- `winner`: holder_id equals the identity of the fixed winning BidRecord and settlement is settled.
-- `PublicLand` (displayed as Unowned): holder_id is null and settlement is expired. No owner exists.
+Its `ownership_kind` and `owner_id` mean:
 
-Unowned is an irreversible protocol ownership status. The number remains accounted for in the sequence and outside ordinary participant-held ownership. Unowned is not a person, bidder, account, error, government owner, legal land claim, configurable recipient, repair path, or general recovery mechanism. It receives no Rana.
+- `winner`: `owner_id` equals the identity of the fixed winning BidRecord, and settlement is `settled`.
+- `unowned`: `owner_id` is null, and settlement is `expired`. No owner exists.
 
-The only Unowned trigger is the accepted expired settlement group in RT03. Absence of bids, storage errors, malformed history, time alone, restart, or operator belief must not substitute for that trigger. Each number receives exactly one final ownership outcome; later facts or later specification work cannot reassign it.
+Unowned is an irreversible final auction ownership outcome. The number remains accounted for in the sequence. Unowned is not a person, bidder, account, configurable recipient, error state, repair path, or general recovery mechanism. It receives no Rana.
+
+The only Unowned trigger is the accepted `expired` settlement group in RT03. Absence of bids, storage errors, malformed history, time alone, restart, or operator belief must not substitute for that trigger.
+
+Each number receives exactly one final auction ownership outcome within its history. Later facts or specification revisions cannot erase, replace, or reinterpret that original assignment. Prototype 1 defines no subsequent transfer; RT06 distinguishes future transfer from rewriting finalization.
 
 ## RT05 — One-shot boundaries
 
@@ -68,6 +72,12 @@ Resolution permission is exhausted by the durable ResolutionRecord; terminal-set
 A complete commit makes those facts irreversible. An uncommitted local group has no canonical economic effect. An uncertain commit response is handled by halting and reconstructing durable history under PR06, never by speculative retry, forfeiture, or authority consumption before commit. Restart and operator action cannot restore consumed permission. There is no external-action authority scope or ambiguity-repair lifecycle in Prototype 1.
 
 
-## RT06 — Ownership vocabulary compatibility
+## RT06 — Current ownership vocabulary and future transfer boundary
 
-C61 changes current prose and display vocabulary only. RT04's Unowned outcome is serialized as `PublicLand` in revision 0.1. The existing `title`, `title_kind`, `holder_id` and `expired_to_publicland` spellings remain unchanged in their specified schemas. The owner remains the winning bidder on successful settlement, otherwise null on failed settlement. No joint owner, substitute winner, spending authority, reassignment or external ownership mechanism follows from these names. Saved history must reconstruct without a migration.
+Revision 0.2 uses `ownership` for the state projection, `ownership_kind` and `owner_id` for the ownership fields, and `unowned` and `expired_to_unowned` for the failed-settlement outcome and finalization reason. These are exact schema names. Legacy names are not accepted as aliases and are not emitted by the revision 0.2 interface.
+
+The owner remains the fixed winning bidder after successful settlement and null after failed settlement. These names introduce no joint owner, substitute winner, spending authority, correction of finalization, or external ownership mechanism.
+
+Irreversibility protects finalized auction facts, including the original winner and ownership assignment. It does not prohibit a future, separately specified and approved transfer mechanism that appends later transfer records while preserving those facts. Such a future mechanism may address a destination wallet belonging to the same person or another person; this clause defines neither wallet semantics nor a transfer command, event, authorization rule, or current-owner projection. No transfer mechanism exists in Prototype 1.
+
+Earlier histories remain readable through their preserved implementation. Revision 0.2 does not migrate or reinterpret them. PR07 defines the history boundary.

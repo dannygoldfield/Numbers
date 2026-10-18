@@ -101,7 +101,7 @@ fn header(name: &str, value: &str) -> Header {
 
 pub fn serve_request(mut request: Request, engine: &mut Engine) -> std::io::Result<()> {
     let resource = match request.url() {
-        "/" | "/protocol" => Some((
+        "/" | "/record" => Some((
             "text/html; charset=utf-8",
             include_str!("../static/index.html"),
         )),

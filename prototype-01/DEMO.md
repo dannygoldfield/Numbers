@@ -66,7 +66,7 @@ Run **Numbers: Start separate live demo** or, in a first terminal:
 ./demo serve
 ```
 
-This creates a fresh session at [Auction](http://127.0.0.1:8766/) with a [Record view](http://127.0.0.1:8766/protocol). It starts Number 1 with 600 rana each, minimum 5 and increment 1. Its first valid bid starts the real 3:45 clock. Existing port-8765 histories are separate.
+This creates a fresh session at [Auction](http://127.0.0.1:8766/) with a [Record view](http://127.0.0.1:8766/record). It starts Number 1 with 600 rana each, minimum 5 and increment 1. Its first valid bid starts the real 3:45 clock. Existing port-8765 histories are separate.
 
 In a second terminal, use **Numbers: Live terminal** or:
 
@@ -130,7 +130,7 @@ Record the session label, attempted task, observed action or exact words, help g
 
 ## Vocabulary and evidence
 
-Use **ownership**, **Owned by Bidder A/B**, and **Unowned — no owner** when presenting. Pending ownership is different from a finalized Unowned outcome. Exact revision 0.1 JSON retains `title`, `title_kind`, `holder_id`, `PublicLand` and `expired_to_publicland` for compatibility with saved history; RT06 documents this mapping. There is no collective owner.
+Use **ownership**, **Owned by Bidder A/B**, and **Unowned — no owner** when presenting. Pending ownership is different from a finalized Unowned outcome. Revision 0.2 JSON uses `ownership`, `ownership_kind`, `owner_id`, `unowned`, and `expired_to_unowned`. Every record identifies `spec_revision: "0.2"`. Earlier sessions require the preserved build; do not resume them with this revision. There is no collective owner.
 
 The tools illustrate recorded ownership within this prototype. They do not demonstrate Bitcoin integration, real payment, authentication or external ownership enforcement. Local SQLite records cannot protect themselves from the machine owner.
 

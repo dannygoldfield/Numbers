@@ -2,7 +2,7 @@
 use crate::{model::*, values::*, Fault, Result};
 use fs2::FileExt;
 use num_bigint::BigInt;
-use rusqlite::{params, Connection, TransactionBehavior};
+use rusqlite::{params, Connection, OpenFlags, TransactionBehavior};
 use serde_json::{json, Value};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
@@ -78,14 +78,16 @@ impl Engine {
             file.try_lock_exclusive().map_err(|error| {
                 Fault::storage(format!("Cannot acquire the single-writer lock: {error}"))
             })?;
-            let mut db = Connection::open(path)
-                .map_err(|e| Fault::history(format!("Cannot read journal: {e}")))?;
-            db.busy_timeout(std::time::Duration::ZERO)
-                .map_err(|e| Fault::storage(e.to_string()))?;
-            db.execute_batch("PRAGMA synchronous=FULL; PRAGMA fullfsync=ON;")
+            // PR07: inspect existing bytes read-only under the writer lock. Incompatible
+            // histories must fail before opening SQLite for writes or creating schema.
+            let inspection =
+                Connection::open_with_flags(&canonical_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+                    .map_err(|e| Fault::history(format!("Cannot read journal: {e}")))?;
+            inspection
+                .busy_timeout(std::time::Duration::ZERO)
                 .map_err(|e| Fault::storage(e.to_string()))?;
             let tables: Vec<String> = {
-                let mut q = db
+                let mut q = inspection
                     .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
                     .map_err(|e| Fault::history(e.to_string()))?;
                 let out = q
@@ -95,6 +97,31 @@ impl Engine {
                     .map_err(|e| Fault::history(e.to_string()))?;
                 out
             };
+            if !tables.is_empty() && tables != ["events"] {
+                return Err(Fault::history(
+                    "Unexpected database schema; no repair was performed.",
+                ));
+            }
+            let check: String = inspection
+                .query_row("PRAGMA quick_check", [], |r| r.get(0))
+                .map_err(|e| Fault::history(e.to_string()))?;
+            if check != "ok" {
+                return Err(Fault::history(check));
+            }
+            let rows = if tables.is_empty() {
+                vec![]
+            } else {
+                load(&inspection)?
+            };
+            let state = reconstruct(&rows, &config)?;
+            let validated = state.records.len();
+            drop(inspection);
+            let mut db =
+                Connection::open(&canonical_path).map_err(|e| Fault::storage(e.to_string()))?;
+            db.busy_timeout(std::time::Duration::ZERO)
+                .map_err(|e| Fault::storage(e.to_string()))?;
+            db.execute_batch("PRAGMA synchronous=FULL; PRAGMA fullfsync=ON;")
+                .map_err(|e| Fault::storage(e.to_string()))?;
             if tables.is_empty() {
                 let tx = db
                     .transaction_with_behavior(TransactionBehavior::Immediate)
@@ -111,20 +138,7 @@ impl Engine {
                 )
                 .map_err(|error| Fault::storage(error.to_string()))?;
                 tx.commit().map_err(|e| Fault::storage(e.to_string()))?;
-            } else if tables != ["events"] {
-                return Err(Fault::history(
-                    "Unexpected database schema; no repair was performed.",
-                ));
             }
-            let check: String = db
-                .query_row("PRAGMA quick_check", [], |r| r.get(0))
-                .map_err(|e| Fault::history(e.to_string()))?;
-            if check != "ok" {
-                return Err(Fault::history(check));
-            }
-            let rows = load(&db)?;
-            let state = reconstruct(&rows, &config)?;
-            let validated = state.records.len();
             Ok(Self {
                 state,
                 config,

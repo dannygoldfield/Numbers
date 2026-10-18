@@ -112,7 +112,7 @@ fn exact_worked_auction_has_31_records_and_both_ownership_outcomes() {
         json!([[[50, 0], [100, 0]], 50])
     );
     assert_eq!(
-        demo.engine.state().ownership["payload_json"]["holder_id"],
+        demo.engine.state().ownership["payload_json"]["owner_id"],
         "demo-1"
     );
     assert_eq!(demo.read(237)["data"]["current_number"], 1);
@@ -126,8 +126,8 @@ fn exact_worked_auction_has_31_records_and_both_ownership_outcomes() {
         json!([[[50, 0], [100, 0]], 50])
     );
     assert_eq!(
-        demo.engine.state().ownership["payload_json"]["title_kind"],
-        "PublicLand"
+        demo.engine.state().ownership["payload_json"]["ownership_kind"],
+        "unowned"
     );
     assert_eq!(
         demo.engine.state().resolution["payload_json"]["winning_bid_id"],
@@ -404,7 +404,7 @@ fn malformed_history_including_valid_rehashed_lies_is_rejected() {
             json!(stamp(BASE + 224000).unwrap()),
         ),
         (7, "/payload_json/winning_amount_rana", json!(30)),
-        (10, "/payload_json/title_kind", json!("PublicLand")),
+        (10, "/payload_json/ownership_kind", json!("unowned")),
         (3, "/group_size", json!(1)),
         (3, "/sequence_index", json!(true)),
         (3, "/server_time", json!(stamp(BASE - 2000).unwrap())),
@@ -443,6 +443,27 @@ fn single_writer_and_append_only_sql_constraints() {
         .execute("UPDATE events SET record_json='{}'", [])
         .is_err());
 }
+#[test]
+fn startup_inspection_rejects_a_locked_journal_without_busy_retries() {
+    let d = Demo::new();
+    drop(d.engine);
+    let before = std::fs::read(&d.path).unwrap();
+    let locker = rusqlite::Connection::open(&d.path).unwrap();
+    locker.execute_batch("BEGIN EXCLUSIVE;").unwrap();
+    let started = std::time::Instant::now();
+    let result = Engine::open(&d.path, config());
+    let elapsed = started.elapsed();
+    locker.execute_batch("ROLLBACK;").unwrap();
+    let error = result.err().expect("locked journal was accepted");
+    assert!(error.message.contains("locked"), "{error}");
+    // Leave scheduling headroom while detecting rusqlite's five-second default retry.
+    assert!(
+        elapsed < std::time::Duration::from_secs(2),
+        "startup retried a locked read for {elapsed:?}"
+    );
+    assert_eq!(std::fs::read(&d.path).unwrap(), before);
+}
+
 #[test]
 fn storage_failure_never_selects_unowned_or_acknowledges_a_bid() {
     let mut d = Demo::new();
@@ -647,4 +668,138 @@ fn configuration_has_only_explicit_defaults_and_allows_zero_allocation() {
         "insufficient_available_rana"
     );
     assert_eq!(demo.engine.state().phase(), "Scheduled");
+}
+
+// PR07: the fixture was emitted by the preserved 0.1 executable, not the new planner.
+#[test]
+fn legacy_initialization_and_mixed_revisions_are_rejected_without_writes() {
+    fn rejected(records: &[Value]) {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("history.sqlite3");
+        let db = rusqlite::Connection::open(&path).unwrap();
+        db.execute_batch(
+            "CREATE TABLE events(sequence_index INTEGER PRIMARY KEY, record_json TEXT NOT NULL)",
+        )
+        .unwrap();
+        for record in records {
+            db.execute(
+                "INSERT INTO events VALUES (?1,?2)",
+                rusqlite::params![
+                    record["sequence_index"].as_i64().unwrap(),
+                    canonical(record)
+                ],
+            )
+            .unwrap();
+        }
+        drop(db);
+        let before = std::fs::read(&path).unwrap();
+        for _ in 0..2 {
+            let error = Engine::open(&path, config())
+                .err()
+                .expect("incompatible history accepted");
+            assert_eq!(error.code, "history_invalid");
+            assert!(error.message.contains("spec_revision"));
+            assert_eq!(std::fs::read(&path).unwrap(), before);
+        }
+    }
+    let legacy: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/revision-0.1-initialization.json")).unwrap();
+    assert_eq!(legacy.len(), 3);
+    assert!(legacy.iter().all(|r| r.get("spec_revision").is_none()));
+    rejected(&legacy);
+    let mut demo = Demo::new();
+    demo.bid(0, "demo-1", json!(20));
+    demo.read(225);
+    demo.settle(226, "settled");
+    let original = &demo.engine.state().records;
+    assert!(original.iter().all(|r| r["spec_revision"] == "0.2"));
+    for index in [0, 1, 2, original.len() - 1] {
+        for marker in [
+            None,
+            Some(Value::Null),
+            Some(json!(0.2)),
+            Some(json!(true)),
+            Some(json!("0.1")),
+            Some(json!("0.3")),
+        ] {
+            let mut changed = original.clone();
+            if let Some(marker) = marker {
+                changed[index]["spec_revision"] = marker;
+            } else {
+                changed[index]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("spec_revision");
+            }
+            // PR02 still hashes only the payload. The marker requires independent validation.
+            assert_eq!(
+                changed[index]["payload_hash"],
+                hash(&changed[index]["payload_json"])
+            );
+            rejected(&changed);
+        }
+    }
+    let mut overridden = config();
+    overridden["spec_revision"] = json!("0.1");
+    assert!(validate_config(overridden).is_err());
+}
+
+#[test]
+fn ownership_schema_is_closed_and_projection_has_no_legacy_alias() {
+    for (outcome, kind, owner, reason) in [
+        ("settled", "winner", json!("demo-1"), "settled_to_winner"),
+        ("expired", "unowned", Value::Null, "expired_to_unowned"),
+    ] {
+        let mut demo = Demo::new();
+        let pending = demo.read(-1);
+        assert!(pending["data"].get("title").is_none());
+        assert_eq!(pending["data"].get("ownership"), Some(&Value::Null));
+        demo.bid(0, "demo-1", json!(20));
+        demo.read(225);
+        let response = demo.settle(226, outcome);
+        accepted(&response);
+        let projected = &response["data"]["state"];
+        assert!(projected.get("title").is_none());
+        let record = demo.engine.state().records.last().unwrap();
+        assert_eq!(record["payload_json"]["ownership_kind"], kind);
+        assert_eq!(record["payload_json"]["owner_id"], owner);
+        assert_eq!(record["payload_json"]["finalization_reason"], reason);
+        assert_eq!(
+            projected["ownership"],
+            json!({"record_id":record["record_id"],"ownership_kind":kind,"owner_id":owner,"finalization_time":record["payload_json"]["finalization_time"]})
+        );
+        for mutation in 0..6 {
+            let mut rows = demo.engine.rows().unwrap();
+            let mut altered = record.clone();
+            let payload = altered["payload_json"].as_object_mut().unwrap();
+            match mutation {
+                0 => {
+                    let value = payload.remove("ownership_kind").unwrap();
+                    payload.insert("title_kind".into(), value);
+                }
+                1 => {
+                    let value = payload.remove("owner_id").unwrap();
+                    payload.insert("holder_id".into(), value);
+                }
+                2 => {
+                    payload.insert("title_kind".into(), json!(kind));
+                }
+                3 => {
+                    payload.insert("ownership_kind".into(), json!("PublicLand"));
+                }
+                4 => {
+                    payload.insert("finalization_reason".into(), json!("expired_to_publicland"));
+                }
+                _ => {
+                    payload.insert("extra".into(), Value::Null);
+                }
+            }
+            altered["payload_hash"] = json!(hash(&altered["payload_json"]));
+            rows.last_mut().unwrap().1 = canonical(&altered);
+            assert_eq!(
+                reconstruct(&rows, &config()).err().unwrap().code,
+                "history_invalid"
+            );
+        }
+    }
 }

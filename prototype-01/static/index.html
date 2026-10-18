@@ -13,7 +13,7 @@
       ><span class="edition">Prototype 01 <span>Local demonstration</span></span>
       <nav>
         <a id="auction-link" href="/">Auction</a
-        ><a id="protocol-link" href="/protocol" target="_blank" rel="noopener">Record ↗</a>
+        ><a id="record-link" href="/record" target="_blank" rel="noopener">Record ↗</a>
       </nav>
     </header>
     <div id="connection" role="status">Connecting to the local journal…</div>
@@ -82,7 +82,7 @@
           </div>
         </div>
       </section>
-      <section id="protocol-view" aria-label="Read-only Record view">
+      <section id="record-view" aria-label="Read-only Record view">
         <div class="section-heading">
           <div>
             <div class="eyebrow">Behind the auction</div>
@@ -90,8 +90,8 @@
           </div>
           <span class="read-only">Read only</span>
         </div>
-        <div class="protocol-stats">
-          <div><span class="label">Auction state</span><strong id="protocol-state">—</strong></div>
+        <div class="record-stats">
+          <div><span class="label">Auction state</span><strong id="record-state">—</strong></div>
           <div>
             <span class="label">Protocol-held rana</span><strong id="protocol-balance">—</strong>
           </div>
@@ -102,7 +102,7 @@
             <span class="label">Reconstructed through</span><strong id="reconstructed">—</strong>
           </div>
         </div>
-        <div class="protocol-grid">
+        <div class="record-grid">
           <section class="journal">
             <div class="journal-heading">
               <h3>Ordered journal</h3>
@@ -120,10 +120,7 @@
             </details>
             <details>
               <summary>Backend state projection</summary>
-              <p class="hint">
-                Revision 0.1 raw fields retain the original names: title means ownership; PublicLand
-                means Unowned. Saved records are unchanged.
-              </p>
+
               <pre id="state-json">—</pre>
             </details>
             <p class="scope-note">
@@ -136,7 +133,7 @@
       </section>
     </main>
     <footer>
-      <span>123456789 and 0</span><span>Numbers · Specification 0.1 · Rana demonstration</span>
+      <span>123456789 and 0</span><span>Numbers · Specification 0.2 · Rana demonstration</span>
     </footer>
   </body>
 </html>

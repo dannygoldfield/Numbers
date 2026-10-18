@@ -2,6 +2,8 @@
 
 ## Current register as of 2026-10-10
 
+Revision 0.2 clarification (2026-10-18): RT06 permits future separately specified append-only transfers without rewriting original finalization; no transfer is implemented. PR07 deliberately separates histories, so compatibility notes below do not require a legacy decoder in the new build.
+
 This is the current planning register. The historical rationale below is preserved. Limits deliberately chosen for Prototype 1 are not automatically defects or promises to add infrastructure. All changes to behavior still require an explicit specification decision. The project owner prioritizes these items when approving the next scope; the implementer records verification when an item is changed.
 
 | Reference | Current disposition | Revisit when |

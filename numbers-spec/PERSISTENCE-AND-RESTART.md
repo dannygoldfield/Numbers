@@ -8,6 +8,7 @@ Every record must have exactly these common envelope fields:
 
 | Field | Exact meaning |
 |---|---|
+| spec_revision | Exact JSON string `"0.2"` on every record, including both initial RanaIssueRecords; fixed by specification, not configurable |
 | sequence_index | Positive integer; contiguous committed sequence starting at 1; each next record adds exactly 1 |
 | record_id | `rec_` plus sequence_index as decimal, zero-padded to at least 12 digits, never truncated |
 | record_type | Exact SE06 event name |
@@ -49,7 +50,7 @@ Close and resolution deliberately form separate complete groups, so an interrupt
 
 Startup must validate P02 configuration, then load the complete committed journal. Before any request or new event, it must validate and fold all groups in sequence order:
 
-1. Validate exact envelope/payload schema, canonical serialization, hashes, deterministic IDs, continuous sequence/group indices, whole group sizes/types, and valid timestamps.
+1. Validate the exact PR01 spec_revision marker on every record, exact envelope/payload schema, canonical serialization, hashes, deterministic IDs, continuous sequence/group indices, whole group sizes/types, and valid timestamps.
 2. Validate the permitted SE05 group shape and SE06 references, per-number prerequisites, uniqueness, and group timestamp consistency. Committed server_time must be nondecreasing. A group with a valid hash but illegal semantics is still invalid.
 3. Fold explicit RT ledger effects, verify nonnegative balances, hold references, and conservation after each group. Validate exactly two initial issues in the initialization group; no later issuance is permitted.
 4. Derive state by SE01 and validate the captured auction timing/bid rules, effective end and extension causes, close condition, and contiguous number creation only after the previous finalization and gap.
@@ -92,3 +93,15 @@ A process interruption before commit leaves no new complete group. A complete co
 Malformed history must not be edited, skipped, quarantined out of replay, truncated, supplemented with guessed events, or routed to Unowned. Existing facts and one-shot limits remain. Repeated restart does not make invalid history valid. After a valid reconstruction, only a new explicit command or SE04 permitted evaluation can proceed; no automatic bid/settlement retry exists.
 
 The application must provide no operation for clearing a journal, resetting allocations, or replacing an existing history. An explicitly initialized separate empty local store is a separate demo history, not a continuation or recovery of another store. This specification defines no migration from the superseded sats generation and no import of its records.
+
+## PR07 — Revision isolation
+
+A revision 0.2 implementation accepts only nonempty histories in which every record has the exact PR01 revision marker and satisfies the complete revision 0.2 schema and semantics.
+
+A missing marker, wrong type, unsupported value, or mixed revision is `history_invalid`. Reject that history before authoritative evaluation, successful state projection, canonical append, or modification of the existing journal's schema or contents. PR06 permits a separate non-authoritative diagnostic when possible.
+
+No migration, legacy decoder, alias substitution, field renaming, rehashing, prefix adoption, or carry-forward of balances or ownership is defined. Earlier histories remain unchanged and are used with their preserved implementation.
+
+A separate empty store remains a valid uninitialized history under PR04. It begins through G01 using explicit initialization inputs. It is an independent demonstration history, not continuation, recovery, or reassignment of facts from another history.
+
+An empty store contains no records from which a revision can be inferred. Initial rollout must use a verified-new location distinct from every preserved history. PR02 continues to hash payload_json only; the revision marker is an envelope field, not a new hash or event.
