@@ -1,6 +1,6 @@
 # Specification change history
 
-This non-normative register preserves earlier candidate changes followed by dated approvals and later editorial changes. The active revision is identified only by STATUS.md. [STATUS.md](../STATUS.md) records activation. Earlier statements about inactivity or evidence sources apply to their dated stage.
+This non-normative register preserves earlier candidate changes followed by dated approvals and later editorial changes. [STATUS.md](../STATUS.md) identifies the active revision and records activation. Earlier statements about inactivity or evidence sources apply to their dated stage.
 
 Historical source paths below resolve against the [preserved pre-cleanup snapshot](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/); see the [archive index](../../archive/README.md). Dated entries retain the vocabulary and authority state of their own period.
 
