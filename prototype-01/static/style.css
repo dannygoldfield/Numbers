@@ -281,7 +281,7 @@ button.secondary:hover:not(:disabled) {
 #result.error {
   color: var(--text);
 }
-#protocol-view {
+#record-view {
   border-top: 1px solid var(--line);
   padding-top: 32px;
 }
@@ -305,7 +305,7 @@ h2 {
   font-size: 11px;
   color: var(--muted);
 }
-.protocol-stats {
+.record-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 25px;
@@ -314,11 +314,11 @@ h2 {
   border-bottom: 1px solid var(--line);
   padding: 22px 0;
 }
-.protocol-stats strong {
+.record-stats strong {
   font-size: 18px;
   font-weight: 500;
 }
-.protocol-grid {
+.record-grid {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   gap: 35px;
@@ -430,14 +430,14 @@ footer {
   letter-spacing: 0.5px;
   color: var(--muted);
 }
-body.protocol-only #auction-view {
+body.record-only #auction-view {
   display: none;
 }
-body.protocol-only #protocol-view {
+body.record-only #record-view {
   border: 0;
   padding: 0;
 }
-body.protocol-only #protocol-link {
+body.record-only #record-link {
   font-weight: 700;
 }
 [hidden] {
@@ -466,7 +466,7 @@ body.protocol-only #protocol-link {
   h1 {
     font-size: 25vw;
   }
-  .protocol-grid {
+  .record-grid {
     grid-template-columns: 1fr;
   }
   aside {
@@ -507,7 +507,7 @@ body.protocol-only #protocol-link {
   .clock-row {
     gap: 12px;
   }
-  .protocol-stats {
+  .record-stats {
     grid-template-columns: 1fr 1fr;
     gap: 24px;
   }

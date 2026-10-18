@@ -2,13 +2,15 @@
 
 ## UI01 — Two non-authoritative views
 
-The read-only view is named Record (C63), formerly Protocol. This is a presentation name; the existing `/protocol` page address and underlying response contract remain unchanged.
+The read-only view is named Record and is served at `/record`. Auction remains at `/`. `/protocol` is not an alias or redirect; GET requests to it receive the existing `unknown_endpoint` response without authoritative evaluation.
 
 Auction View and Record View must be served by the same local application and support side-by-side display. The backend performs SE evaluation and returns canonical or mechanically derived facts. The browser must not determine validity, authoritative balances, winner, settlement, or ownership.
 
 Auction View must show current number/state, a visibly simulated identity selector for demo-1/demo-2, both available/reserved balances for the selected identity, current leading bid, bid input, plain-language acceptance/rejection, the derived 3:45 base countdown, extension changes, fixed winner, settlement status, ownership assignment, 12-second rhythm pause, and next number.
 
 Auction View must offer the explicit local settlement commands when AwaitingSettlement. Label them “Simulate successful settlement” and “Simulate failed settlement”. They submit settled and expired respectively; expired is only the retained machine label. They do not prove outside payment failure, identity, or human fault. There is no settlement timer or deadline display. The backend alone validates them and performs RT03.
+
+The number and interface text use the device's system interface font through `font-family: system-ui, sans-serif`, inherited by headings, controls, and record displays. No bundled or downloaded font or fixed-font override defines the number's presentation. Font appearance has no canonical meaning and must not affect the represented integer or any protocol decision.
 
 Use typography, rhythm, visible state changes, and a clear ownership-assignment moment. Animation cannot create an outcome or imply ownership before its record. No production identity or external ownership claim is permitted.
 
@@ -41,7 +43,7 @@ A state projection contains exactly:
 | leading_bid | `{bid_id, bidder_id, amount_rana}` from SE03 high bid, or null |
 | resolution | `{record_id, winning_bid_id, winning_bidder_id, winning_amount_rana, resolution_time}` from the immutable resolution and its winning bid; otherwise null |
 | settlement | `{record_id, status, settlement_time}` from SettlementRecord, otherwise null |
-| `title` (ownership projection) | `{record_id, title_kind, holder_id, finalization_time}` from FinalizationRecord, otherwise null |
+| ownership | `{record_id, ownership_kind, owner_id, finalization_time}` from FinalizationRecord, otherwise null |
 | balances | Two objects in demo-1, demo-2 order, each `{bidder_id, available_rana, reserved_rana}` under RT01 |
 | protocol_held_rana | RT01 derived balance |
 | sequence | `{phase, next_number, next_available_at}`: phase is auction_available for Scheduled, auction_active for Open/Closed/AwaitingSettlement, rhythm_gap for latest Finalized. Only rhythm_gap has next_number=current_number+1 and next_available_at=finalization_time+captured gap; otherwise both are null |
@@ -97,7 +99,7 @@ No UI control for time travel, corruption injection, clearing history, or forced
 
 ## UI05 — Prototype 1 demonstration tools — C60
 
-The existing Auction and Record views remain available. Human-facing ownership vocabulary follows C61/RT06; canonical snippets retain revision 0.1 spellings.
+The Auction and Record views remain available. Human-facing ownership vocabulary and canonical representations follow revision 0.2 under RT06. Demonstration tools and read-only inspection enforce the same history boundary under PR07.
 
 The live terminal client may read state/history and submit exactly the existing bid and simulated settlement commands through the local HTTP interface. It must send each explicit submission once, preserve numeric spelling and display the backend's accepted/rejected result, balances and record references. A lost response must report uncertainty and prompt inspection; it must not replay the command. The client selects a number or auction ID from a displayed state; that context must not silently change during a submission. Local syntax/transport failures are observations, not invented journal entries. Live timing remains the existing server clock. Command output may include both exact JSON and a readable summary; only backend records determine outcomes.
 

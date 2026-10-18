@@ -10,7 +10,7 @@
   "minimum_bid_rana": 5,
   "minimum_increment_rana": 1,
   "maximum_bid_rana": null,
-  "database_path": "data/demo-02.sqlite3",
+  "database_path": "data/revision-0.2/demo.sqlite3",
   "host": "127.0.0.1",
   "port": 8765,
   "log_verbosity": "quiet"

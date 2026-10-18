@@ -56,6 +56,8 @@ Release builds retain overflow checks. Economic amounts use arbitrary-precision 
 
 ## Configuration and operation
 
+The default revision 0.2 journal path is `data/revision-0.2/demo.sqlite3`; verify it is unused on the first rollout, then reuse it for restarts. Earlier journals require the preserved old executable. The fixed `spec_revision` marker is not configurable, and no migration or decoder for older formats is installed.
+
 All behavioral inputs are in `demo-config.json`. Only the starting number and optional maximum bid have specification defaults. The operational fields are `database_path`, a loopback IP `host`, integer `port`, and `log_verbosity` (`quiet` or `requests`). Relative database paths resolve beside the configuration file.
 
 For a fresh live demonstration, use `./demo serve`; it creates its own configuration and journal on port 8766. [DEMO.md](DEMO.md#live-browser-and-terminal-together) explains launch and restart. Use a custom configuration only when the experiment needs different explicit settings. Do not change or delete a recorded history to make a test pass.

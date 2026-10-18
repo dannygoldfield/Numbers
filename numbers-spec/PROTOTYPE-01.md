@@ -32,6 +32,8 @@ Changing the fixed 225-second duration or 12-second gap requires a prototype spe
 
 Operational settings are limited to local database path, loopback host, local port, and non-authoritative logging verbosity. Host must be loopback; port must be an integer from 1 through 65535. An existing database cannot be reset or overwritten by changing a setting. Logging cannot change semantic evaluation. No operational setting grants a protocol capability.
 
+`spec_revision` is fixed by PR01 and is not a configuration parameter. Selecting a database path cannot authorize reinterpretation, migration, reset, or replacement of an existing history.
+
 ## P03 — Responsibilities
 
 | Responsibility | Authoritative work |
@@ -40,7 +42,7 @@ Operational settings are limited to local database path, loopback host, local po
 | Rana accounting | RT01–RT03 ledger preconditions, holds, release, capture, and conservation |
 | Settlement | RT03 terminal command validation against the fixed result |
 | Ownership | RT04 binding and unique FinalizationRecord |
-| Persistence/reconstruction | PR01–PR06 order, atomic groups, durability, validation, replay |
+| Persistence/reconstruction | PR01–PR07 order, atomic groups, durability, validation, replay |
 | UI | UI01–UI04 command submission and projections only |
 
 These responsibilities must remain distinct in meaning. They do not require separate processes, services, packages, adapters, or frameworks.

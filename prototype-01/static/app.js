@@ -68,8 +68,8 @@ const put = (id, text) => {
   element(id).textContent = text;
 };
 const bidderName = (id) => (id === 'demo-1' ? 'Bidder A' : id === 'demo-2' ? 'Bidder B' : '—');
-const protocolOnly = location.pathname === '/protocol';
-document.body.classList.toggle('protocol-only', protocolOnly);
+const recordOnly = location.pathname === '/record';
+document.body.classList.toggle('record-only', recordOnly);
 let state = null,
   receivedAt = 0,
   inFlight = false,
@@ -132,18 +132,18 @@ function renderState() {
   element('bid-button').disabled = inFlight || !connected || !['Scheduled', 'Open'].includes(phase);
   element('settlement-controls').hidden = phase !== 'AwaitingSettlement';
   element('settle').disabled = element('expire').disabled = inFlight || !connected;
-  // RT06: legacy wire keys remain exact; labels use ownership and Unowned.
-  const banner = state.title
-    ? state.title.title_kind === 'winner'
-      ? `Owned by ${bidderName(state.title.holder_id)}`
+  // RT06/UI02: ownership is pending until its canonical finalization exists.
+  const banner = state.ownership
+    ? state.ownership.ownership_kind === 'winner'
+      ? `Owned by ${bidderName(state.ownership.owner_id)}`
       : 'Unowned'
     : state.resolution
       ? 'Winner resolved · ownership awaiting settlement'
       : '';
   put('ownership-banner', banner);
   element('ownership-banner').hidden = !banner;
-  element('ownership-banner').classList.toggle('final', Boolean(state.title));
-  put('protocol-state', phase);
+  element('ownership-banner').classList.toggle('final', Boolean(state.ownership));
+  put('record-state', phase);
   put('protocol-balance', state.protocol_held_rana);
   put('record-count', state.last_sequence_index);
   put('reconstructed', state.reconstruction.validated_through_sequence_index);
@@ -165,9 +165,9 @@ function renderState() {
     ['Settlement', state.settlement ? state.settlement.status : 'Pending'],
     [
       'Ownership',
-      state.title
-        ? state.title.title_kind === 'winner'
-          ? `Owned by ${bidderName(state.title.holder_id)}`
+      state.ownership
+        ? state.ownership.ownership_kind === 'winner'
+          ? `Owned by ${bidderName(state.ownership.owner_id)}`
           : 'Unowned'
         : 'Pending',
     ],
@@ -227,8 +227,8 @@ function recordEffect(record) {
         ? `Accepted · ${payload.amount_rana} rana`
         : `Rejected · ${payload.rejection_reason}`;
     case 'FinalizationRecord':
-      return payload.title_kind === 'winner'
-        ? `Owned by ${bidderName(payload.holder_id)}`
+      return payload.ownership_kind === 'winner'
+        ? `Owned by ${bidderName(payload.owner_id)}`
         : 'Unowned · no owner';
     default:
       return '';
@@ -374,7 +374,7 @@ async function submit(endpoint, body) {
       else
         put(
           'result',
-          result.data.state.title.title_kind === 'winner'
+          result.data.state.ownership.ownership_kind === 'winner'
             ? `Number ${result.data.state.current_number}: settlement committed. Winning rana captured; the winner is now the owner.`
             : `Number ${result.data.state.current_number}: settlement committed. Winning reservation released; the number is Unowned.`,
         );

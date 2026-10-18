@@ -22,7 +22,7 @@ function snapshot() {
     leading_bid: null,
     resolution: null,
     settlement: null,
-    title: null,
+    ownership: null,
     balances: [
       { bidder_id: 'demo-1', available_rana: 600, reserved_rana: 0 },
       { bidder_id: 'demo-2', available_rana: 600, reserved_rana: 0 },
@@ -35,10 +35,10 @@ function snapshot() {
 
 // Exercise the shipped submission/rendering code with controlled transport and a small DOM.
 // No server, journal, clock advancement, or extra browser dependency is involved.
-async function browser(reply) {
+async function browser(reply, pathname = '/', initial = snapshot()) {
   const elements = new Map(),
     requests = [];
-  let current = snapshot();
+  let current = initial;
   const node = () => ({
     value: 'demo-1',
     textContent: '',
@@ -57,7 +57,7 @@ async function browser(reply) {
   };
   const context = vm.createContext({
     document: { body: node(), getElementById: element, createElement: node },
-    location: { pathname: '/' },
+    location: { pathname },
     performance: { now: () => 0 },
     setInterval() {},
     fetch: async (url, options = {}) => {
@@ -77,6 +77,9 @@ async function browser(reply) {
   return {
     element,
     requests,
+    settle: (body) =>
+      vm.runInContext(`submit('/demo/settlement', ${JSON.stringify(body)})`, context),
+    recordOnly: () => vm.runInContext('recordOnly', context),
     submit: (body) => vm.runInContext(`submit('/bid', ${JSON.stringify(body)})`, context),
   };
 }
@@ -156,4 +159,38 @@ test('a lost response prompts inspection and refreshes state without resubmittin
   assert.ok(app.element('last-command').textContent.includes('no automatic resubmission'));
   const postIndex = app.requests.findIndex((r) => r.method === 'POST');
   assert.ok(app.requests.slice(postIndex + 1).some((r) => r.url === '/state'));
+});
+
+test('revision 0.2 ownership displays pending, winner and unowned without legacy fields', async () => {
+  const pending = await browser(async () => '');
+  assert.equal(pending.element('ownership-banner').textContent, '');
+  for (const [kind, owner, label, outcome] of [
+    ['winner', 'demo-1', 'Owned by Bidder A', 'settled'],
+    ['unowned', null, 'Unowned', 'expired'],
+  ]) {
+    const state = snapshot();
+    state.auction_state = 'Finalized';
+    state.sequence = { next_number: 2, next_available_at: '2026-10-10T12:00:12.000Z' };
+    state.ownership = {
+      record_id: 'rec_000000000011',
+      ownership_kind: kind,
+      owner_id: owner,
+      finalization_time: state.server_time,
+    };
+    state.settlement = { status: outcome };
+    const app = await browser(async () =>
+      JSON.stringify({ status: 'success', data: { accepted: true, state } }),
+    );
+    await app.settle(JSON.stringify({ auction_id: state.auction_id, outcome }));
+    assert.equal(app.element('ownership-banner').textContent, label);
+    assert.ok(app.element('state-json').textContent.includes('ownership_kind'));
+    assert.ok(!app.element('state-json').textContent.includes('title_kind'));
+    assert.equal(app.requests.filter((r) => r.method === 'POST').length, 1);
+  }
+});
+
+test('Record address selects the read-only presentation', async () => {
+  const app = await browser(async () => '', '/record');
+  assert.equal(app.recordOnly(), true);
+  assert.equal(app.requests.filter((r) => r.method === 'POST').length, 0);
 });

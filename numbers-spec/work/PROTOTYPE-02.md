@@ -1,6 +1,6 @@
 # Prototype 2 planning brief
 
-Status: draft, non-normative, prepared 2026-10-10. Prototype 2 has no approved scope or implementation authorization. [Specification revision 0.1](../STATUS.md) remains the sole active behavioral authority.
+Status: draft, non-normative, prepared 2026-10-10. Prototype 2 has no approved scope or implementation authorization. [STATUS.md](../STATUS.md) identifies the sole active behavioral revision for Prototype 1.
 
 ## Starting point
 
@@ -42,7 +42,7 @@ Real money, Bitcoin integration, production identity and public hosting each nee
 1. Preserve the reviewed Prototype 1 source tag and a separate, verified backup of its local histories. Keep its demonstrations usable.
 2. Gather a few colleague observations here and choose one Prototype 2 learning goal.
 3. Draft only the changed or newly required clauses, their acceptance examples and the deployment boundary. Use the existing [source decisions](SOURCE-DECISIONS.md) and [change log](SPEC-CHANGES.md) when those decisions are approved; do not create another authority ledger.
-4. Have the project owner approve the scope and explicitly activate the next specification revision before implementation. Keep one active behavioral authority; the tag preserves revision 0.1 with its original implementation.
+4. Have the project owner approve the scope and explicitly activate the next specification revision before implementation. Keep one active behavioral authority; preserved source refs retain each prior revision with its original implementation.
 5. Evolve the existing Rust engine on a focused branch. Start with a separate demonstration journal. Create a separate checkout of the preserved tag only when both generations need to run side by side; avoid copying the engine into two maintained implementations.
 6. Run the relevant rule, reconstruction and browser checks, demonstrate the agreed learning goal, then record evidence and publish the next reviewed checkpoint.
 

@@ -90,14 +90,20 @@ fn guided_proves_both_outcomes_restarts_and_preserves_its_journal() {
     assert_eq!(state["protocol_held_rana"], 62);
     let records = rows(&session.join("history.sqlite3"));
     assert_eq!(records.len(), 42);
+    assert!(records
+        .iter()
+        .all(|record| record["spec_revision"] == "0.2"));
     let finalizations: Vec<_> = records
         .iter()
         .filter(|r| r["record_type"] == "FinalizationRecord")
         .collect();
-    assert_eq!(finalizations[0]["payload_json"]["title_kind"], "winner");
-    assert_eq!(finalizations[0]["payload_json"]["holder_id"], "demo-2");
-    assert_eq!(finalizations[1]["payload_json"]["title_kind"], "PublicLand");
-    assert!(finalizations[1]["payload_json"]["holder_id"].is_null());
+    assert_eq!(finalizations[0]["payload_json"]["ownership_kind"], "winner");
+    assert_eq!(finalizations[0]["payload_json"]["owner_id"], "demo-2");
+    assert_eq!(
+        finalizations[1]["payload_json"]["ownership_kind"],
+        "unowned"
+    );
+    assert!(finalizations[1]["payload_json"]["owner_id"].is_null());
     assert_eq!(
         records
             .iter()
@@ -259,4 +265,101 @@ fn live_terminal_does_not_retry_when_the_response_is_unreadable() {
     let output = client(&url, "bid A 5\nquit\n");
     assert!(output.contains("no command was retried"));
     transport.join().unwrap();
+}
+
+#[test]
+fn record_route_and_retired_route_do_not_evaluate_an_overdue_auction() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("history.sqlite3");
+    let mut engine = Engine::open(&path, config()).unwrap();
+    let past = now() - 1_000_000;
+    engine.request("state", None, past, 100, 0);
+    let bid = engine.request(
+        "bid",
+        Some(br#"{"auction_number":1,"bidder_id":"demo-1","amount_rana":5}"#),
+        past,
+        100,
+        0,
+    );
+    assert_eq!(bid["data"]["accepted"], true);
+    let before = engine.rows().unwrap();
+    let server = tiny_http::Server::http("127.0.0.1:0").unwrap();
+    let url = format!("http://{}", server.server_addr());
+    let worker = thread::spawn(move || {
+        for _ in 0..2 {
+            let request = server
+                .recv_timeout(Duration::from_secs(10))
+                .unwrap()
+                .unwrap();
+            numbers_prototype_01::http::serve_request(request, &mut engine).unwrap();
+        }
+        assert_eq!(engine.state().phase(), "Open");
+        assert_eq!(engine.rows().unwrap(), before);
+    });
+    let get = |route: &str| {
+        success(
+            Command::new("curl")
+                .args([
+                    "--disable",
+                    "--silent",
+                    "--show-error",
+                    "--max-time",
+                    "5",
+                    "--write-out",
+                    "\n%{http_code}",
+                    &format!("{url}{route}"),
+                ])
+                .output()
+                .unwrap(),
+        )
+    };
+    let record = get("/record");
+    assert!(record.ends_with("\n200"));
+    assert!(record.contains("href=\"/record\""));
+    assert!(record.contains("Specification 0.2"));
+    let retired = get("/protocol");
+    let (body, status) = retired.rsplit_once('\n').unwrap();
+    assert_eq!(status, "404");
+    let response: Value = serde_json::from_str(body).unwrap();
+    assert_eq!(response["error"]["code"], "unknown_endpoint");
+    assert_eq!(response["evaluation_records"], json!([]));
+    worker.join().unwrap();
+}
+
+#[test]
+fn read_only_inspector_rejects_preserved_legacy_format() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("history.sqlite3");
+    let db = Connection::open(&path).unwrap();
+    db.execute_batch(
+        "CREATE TABLE events(sequence_index INTEGER PRIMARY KEY, record_json TEXT NOT NULL)",
+    )
+    .unwrap();
+    let records: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/revision-0.1-initialization.json")).unwrap();
+    for record in records {
+        db.execute(
+            "INSERT INTO events VALUES (?1,?2)",
+            rusqlite::params![
+                record["sequence_index"].as_i64().unwrap(),
+                canonical(&record)
+            ],
+        )
+        .unwrap();
+    }
+    drop(db);
+    fs::write(
+        directory.path().join("config.json"),
+        include_str!("../demo-config.json"),
+    )
+    .unwrap();
+    let before = fs::read(&path).unwrap();
+    let output = Command::new(DEMO)
+        .arg("inspect")
+        .arg(directory.path())
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("history_invalid"));
+    assert_eq!(fs::read(&path).unwrap(), before);
 }

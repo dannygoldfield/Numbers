@@ -1,5 +1,31 @@
 # Continuing Numbers Prototype 1
 
+Current handoff, 2026-10-18. [Revision 0.2](../numbers-spec/STATUS.md) is the sole active behavioral authority. C66–C67 and S31–S32 record approval and the future-transfer clarification. C68 authorizes review, commit, and push of this checkpoint. Pruning, deployment, and Prototype 2 activation remain separate.
+
+## Run the revised build
+
+From `prototype-01/`, use `./run` for Auction at `http://127.0.0.1:8765/` and Record at `/record`. The default journal is `data/revision-0.2/demo.sqlite3`, a separate revision 0.2 history. Use `./demo guided` for a fresh scripted history or `./demo serve` for a fresh separate live session. Existing revision 0.2 histories can restart; earlier histories must use their preserved build.
+
+Verified initial revision 0.2 state on 2026-10-18: Number 1 Scheduled, 600 available Rana per bidder, zero reserved/protocol-held Rana, and three records. Restart preserved identical journal bytes; the server is stopped. The reviewed checkpoint uses branch `revision-0.2-ownership`; Git records its commit and publication state.
+
+Current fields are ownership, ownership_kind, owner_id, unowned, and expired_to_unowned. Every canonical record has spec_revision=0.2. Auction economics and timing are unchanged. The original auction outcome is immutable; a future separately specified transfer may append later facts, but this prototype has no transfer or wallet capability.
+
+## Verified preservation
+
+The preservation tag `prototype-01-revision-0.1-preserved-2026-10-18` identifies pre-change commit `2cc86353185c6b96947f87810105fe04f8b8ce0c`. The existing published `prototype-01-baseline-2026-10-10` tag remains fixed.
+
+Backup: `/Users/dannygoldfield/Documents/Numbers-Backups/2026-10-18-revision-0.1/`. It contains the Git bundle, exact source archive, debug/release executables, configuration and dependency locks, and all seven saved journals with session evidence. `manifest.json` records SHA-256 hashes; `verification.json` records integrity and read-only reconstruction results. Saved journal counts were 51, 42, 9, 42, 12, 3, and 25 at preservation. The preserved executable also passed a fresh 42-record guided demonstration with separate-process reconstruction. These are dated observations.
+
+Do not run the new executable against old sessions to continue them. It rejects their unmarked format. Use the backup's old executable and original configuration on a separate copy when inspecting or demonstrating the old revision. Do not reset, rename fields, or rehash old journals. GitHub publication does not back up these local files.
+
+## Review and next activity
+
+[VERIFICATION.md](VERIFICATION.md) records revision 0.2 checks. C68 authorizes publication after review and checks. Repository pruning requires its separate approved plan; deployment is separate. Prototype 2 readiness work should remain spec-first and bounded to one DigitalOcean Droplet and invited testers, with its own approved scope before implementation.
+
+## Historical handoff — 2026-10-10 and earlier
+
+The dated text below is preserved provenance, including old launch instructions and old authority references. Use the current instructions above for revision 0.2.
+
 Current handoff, 2026-10-10. Read this section first; the dated sections below preserve earlier checkpoints. [numbers-spec revision 0.1](../numbers-spec/STATUS.md) remains the sole behavioral authority.
 
 ## Start and demonstrate

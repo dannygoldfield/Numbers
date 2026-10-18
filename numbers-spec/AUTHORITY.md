@@ -2,7 +2,7 @@
 
 ## AU01 — Active authority and revisions
 
-[STATUS.md](STATUS.md) records the user's approval of the settlement simplification and implementation following the explicit combined activation request. `numbers-spec/` revision 0.1 is the sole active specification. `codex-spec/` is superseded historical source material and remains untouched.
+[STATUS.md](STATUS.md) identifies the explicitly approved active revision of `numbers-spec/`. Only that revision has execution authority within its declared scope. Historical specifications, including `codex-spec/` and preserved earlier revisions, provide provenance only and must not supply current behavior.
 
 Future activation must identify an approved revision and replace the previous active set in one explicit decision. Review, audit, a commit, or file creation alone never implies activation. Two simultaneously active sets are forbidden.
 

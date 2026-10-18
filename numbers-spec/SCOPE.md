@@ -22,6 +22,6 @@ It must not add public hosting, distributed services, generalized scalability, q
 
 ## SC04 — Failure and irreversibility boundary
 
-Finalized facts and ownership must remain irreversible. Unexpected failures must not acquire an economic meaning or a Unowned trigger by inference. Persistence or reconstruction failure follows PR06; it must not cause forfeiture, release, replacement ownership, a skipped number, or another settlement attempt by itself.
+Finalized auction facts, including the original ownership assignment, must remain irreversible. A future separately specified transfer may append later facts without rewriting that assignment (RT06); no transfer exists in Prototype 1. Unexpected failures must not acquire an economic meaning or a Unowned trigger by inference. Persistence or reconstruction failure follows PR06; it must not cause forfeiture, release, replacement ownership, a skipped number, or another settlement attempt by itself.
 
 Deferred compensation is a future design issue described in `work/TECHNICAL-DEBT.md` F01. Deferral does not leave ordinary settlement accounting undefined. The explicit release of an uncaptured reservation is part of that accounting, not discretionary compensation.
