@@ -1,0 +1,23 @@
+# Review-only example. No installation or activation is authorized by this file.
+[Unit]
+Description=Numbers Prototype 2 invited session
+After=network.target
+
+[Service]
+Type=simple
+User=numbers
+Group=numbers
+WorkingDirectory=/var/lib/numbers/session
+ExecStart=/opt/numbers/numbers-prototype-01 --config /var/lib/numbers/session/config.json
+Restart=no
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/numbers/session
+# For controlled shutdown first stop gateway ingress, finish the current boundary,
+# then stop this process. Any interrupted group follows PR03–PR06.
+
+[Install]
+# Deliberately no boot target: starts and restarts require an explicit operator action.

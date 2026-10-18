@@ -4,11 +4,15 @@
 
 The read-only view is named Record and is served at `/record`. Auction remains at `/`. `/protocol` is not an alias or redirect; GET requests to it receive the existing `unknown_endpoint` response without authoritative evaluation.
 
-Auction View and Record View must be served by the same local application and support side-by-side display. The backend performs SE evaluation and returns canonical or mechanically derived facts. The browser must not determine validity, authoritative balances, winner, settlement, or ownership.
+Auction View and Record View must be served by the same authenticated application and support side-by-side display. The backend performs SE evaluation and returns canonical or mechanically derived facts. The browser must not determine validity, authoritative balances, winner, settlement, or ownership.
 
-Auction View must show current number/state, a visibly simulated identity selector for demo-1/demo-2, both available/reserved balances for the selected identity, current leading bid, bid input, plain-language acceptance/rejection, the derived 3:45 base countdown, extension changes, fixed winner, settlement status, ownership assignment, 12-second rhythm pause, and next number.
+Auction and Record are served through the same authenticated origin. The bidder interface shows its assigned simulated identity without an identity switcher, both available/reserved balances for that identity, shared auction facts, and the existing bid controls. Both bidders may inspect the other bidder's balances and the full Record View.
 
-Auction View must offer the explicit local settlement commands when AwaitingSettlement. Label them “Simulate successful settlement” and “Simulate failed settlement”. They submit settled and expired respectively; expired is only the retained machine label. They do not prove outside payment failure, identity, or human fault. There is no settlement timer or deadline display. The backend alone validates them and performs RT03.
+The facilitator interface shows shared auction facts and settlement controls only. It has no bidder selector or bid submission control. Only the facilitator sees “Simulate successful settlement” and “Simulate failed settlement,” and only while the backend reports AwaitingSettlement. Visibility is presentation; SE07 enforces permissions.
+
+Display the session label, simulated-funds status, and connection state. Keep abstract-number vocabulary, the device system font, original ownership meaning, and the /record address. No /protocol alias is introduced.
+
+Auction View continues to show current number/state, current leading bid, plain-language acceptance/rejection, the derived 3:45 base countdown, extension changes, fixed winner, settlement status, original ownership assignment, 12-second rhythm gap, and next number. Simulated settlement submits settled or expired; neither proves outside payment failure, identity, or human fault. There is no settlement timer or deadline display.
 
 The number and interface text use the device's system interface font through `font-family: system-ui, sans-serif`, inherited by headings, controls, and record displays. No bundled or downloaded font or fixed-font override defines the number's presentation. Font appearance has no canonical meaning and must not affect the represented integer or any protocol decision.
 
@@ -18,7 +22,7 @@ Record View must be read-only: no bid, settlement, ownership, editing, reset, or
 
 ## UI02 — Fixed response contract
 
-All endpoints use exactly one envelope: success `{status: success, data: ...}` or failure `{status: error, error: {code, message}, evaluation_records: [...]}`. Here strings such as success/error are literal JSON strings. Error codes are SE02/SE03 codes or storage_unavailable, history_invalid, clock_invalid, arithmetic_unrepresentable. Failed requests must not imply a commit failed if durable outcome is uncertain; their message must state that uncertainty and require inspection. No canonical error record is implied.
+All application API endpoints use exactly one envelope: success `{status: success, data: ...}` or failure `{status: error, error: {code, message}, evaluation_records: [...]}`. Here strings such as success/error are literal JSON strings. Error codes are SE02/SE03 codes or storage_unavailable, history_invalid, clock_invalid, arithmetic_unrepresentable. Failed requests must not imply a commit failed if durable outcome is uncertain; their message must state that uncertainty and require inspection. No canonical error record is implied.
 
 - ReadState data is the projection below.
 - ReadHistory data is `{records, pagination: {limit, offset, next_offset}}`, containing PR01 canonical records ordered by global sequence_index, including global issuance and invalid bid records. next_offset is null when the selected page reaches the journal end. Pagination uses SE02. ReadHistory runs SE04 first; it is a global journal inspection despite its retained endpoint name.
@@ -50,7 +54,11 @@ A state projection contains exactly:
 | last_sequence_index, last_group_id | Last committed record's sequence and group ID |
 | reconstruction | `{validated_through_sequence_index}` from last successful PR04 receipt; new runtime appends do not pretend to have undergone a subsequent restart |
 
-All defined fields must be present; not-yet-applicable facts use the explicit nulls above. No projection succeeds before successful validation and required startup initialization. No other fields or speculative facts are part of this contract. Selection of a UI identity is local display state and is not canonical state.
+All defined fields must be present; not-yet-applicable facts use the explicit nulls above. No projection succeeds before successful validation and required startup initialization. No other fields or speculative facts are part of this contract. Assigned identity is noncanonical access metadata, not canonical state.
+
+ReadAccess returns exactly `{status:"success",data:{role,bidder_id,session_label,spec_revision}}`. Role is `bidder` or `facilitator`; bidder_id is the assigned `demo-1`/`demo-2` for a bidder and null for the facilitator; spec_revision is `"0.3"`. These are noncanonical access/operational facts, not new state fields or journal events. ReadAccess performs no evaluator action and conveys no successful history validation.
+
+The existing canonical state projection and command response shapes are unchanged. Add the four SE07 application error codes to the closed error list. Gateway responses are outside this envelope and must not be presented as canonical command decisions.
 
 ## UI03 — Clock, reads, and commands
 
@@ -61,6 +69,14 @@ The rhythm display must derive from recorded finalization and next_available_at.
 Reading state/history invokes the backend's explicitly prescribed SE04 evaluation. Record View still has no controls choosing canonical state: its read cannot select a bid, settlement outcome, ownership, or transition predicate. UI polling frequency is an observation choice; no animation or client clock becomes a backend trigger rule.
 
 Each explicit UI submission sends its command once. The UI must show the authoritative acceptance/rejection and refresh the derived state and Record View after the response. Disable accidental repeat submission while awaiting that response. A failed/lost response must prompt state inspection; it must not initiate automatic replay. Human-readable messages must identify the rule failure and whether canonical records were written. The backend result, not optimistic UI updates, determines displayed balances and ownership.
+
+Before enabling any command, load access metadata and an authenticated state projection. Clear displayed state/history and require fresh reads when the access identity, session label, or revision changes. Never silently carry cached records between sessions.
+
+Each fetch has a 30-second client wait bound. This is a UI wait limit, not command cancellation or an auction/settlement deadline. An absent, malformed, timed-out, or gateway-generated command response means the command may have committed. Stop waiting, show that uncertainty, and resume authorized read inspection without resending the POST. The UI must not increase the amount, alter the target number, or resend on reconnection or page reload.
+
+Keep a possibly submitted command's target and uncertainty visible. Enable another mutation only after fresh state has been read and the user explicitly acknowledges that the next submission is a new command. A history read that does not yet show the request does not prove it cannot still complete. If the outcome cannot be distinguished, the facilitator must stop ingress and the process, inspect the durable history with the matching reader, and decide whether to resume that same valid history. No balance, ownership, record, or deadline is changed to resolve uncertainty.
+
+Disable command controls while disconnected or awaiting a response. Preserve an observed outcome's pending/final distinction. Other participants and server time continue under the existing rules; a disconnected browser does not pause the auction.
 
 ## UI04 — Required deterministic demonstration
 
@@ -97,14 +113,14 @@ Additional acceptance cases are mandatory specifications of verification, not ne
 No UI control for time travel, corruption injection, clearing history, or forced transition is authorized by these verification cases.
 
 
-## UI05 — Prototype 1 demonstration tools — C60
+## UI05 — Guided verification and inspection
 
-The Auction and Record views remain available. Human-facing ownership vocabulary and canonical representations follow revision 0.2 under RT06. Demonstration tools and read-only inspection enforce the same history boundary under PR07.
+The Auction and Record views remain available. Human-facing ownership vocabulary and canonical representations follow revision 0.3 under RT06. Demonstration tools and read-only inspection enforce the same history boundary under PR07.
 
-The live terminal client may read state/history and submit exactly the existing bid and simulated settlement commands through the local HTTP interface. It must send each explicit submission once, preserve numeric spelling and display the backend's accepted/rejected result, balances and record references. A lost response must report uncertainty and prompt inspection; it must not replay the command. The client selects a number or auction ID from a displayed state; that context must not silently change during a submission. Local syntax/transport failures are observations, not invented journal entries. Live timing remains the existing server clock. Command output may include both exact JSON and a readable summary; only backend records determine outcomes.
+Prototype 2's required remote interface is the authenticated browser. The preserved revision 0.2 build retains the Prototype 1 live terminal and local presentation workflows. The current revision must retain guided engine verification and read-only inspection of its own histories. Existing diagnostic tools may not provide an unauthenticated application bypass. They need no new public endpoint or independent auction engine.
 
 A separate guided executable may invoke the same Engine with explicitly scripted test timestamps, using a fresh journal per run. It must identify simulated time, expose each step's command/time/records, offer step-by-step progression and an explicit automatic mode for verification. Its clock control must not be exposed as a live server endpoint. Existing saved demo journals cannot be reset, edited or used for guided runs.
 
 The guided fixture starts at Number 1 with 600 Rana each, minimum bid 5, increment 1 and the existing 225-second/12-second timing and 10-second-window/15-second-extension/max-two rules. All times below are seconds relative to its opening. Initialize at -1; A bids 20 at 0; B30 at 30; A30 at 45 is rejected; B40 at 60 replaces its own hold; A50 at 90; B60 at 215 extends to 240; A61 at 230 extends to 255; B62 at 245 cannot extend further; read at 255 fixes B62; successful settlement at 256 captures 62 and records B as owner. At that boundary a separate process must reconstruct the same ordered rows and derived facts before any new evaluation. Advance at 268; A bids 5 at 270 on Number 2; read at 495 fixes A5; failed settlement at 496 releases 5 and finalizes Unowned. Verify separate-process reconstruction again, then advance at 508 to Number 3. Final balances are A600/B538 available, zero reserved and protocol62, with 42 records. The earlier UI04 fixture remains unchanged.
 
-The tools may create an explicitly separate live session at loopback port 8766 and a supplied session directory, using the existing demo parameters. Resuming a live session requires its existing configuration; no implicit reset is permitted. Read-only journal inspection/reconstruction may use a supplied existing journal, but must not append lifecycle events. Persistent presentation receipts and session configuration are noncanonical operational files. Presenter notes and editor tasks must distinguish live timing from simulated time, code from recorded results, and pending ownership from final ownership.
+Read-only inspection uses the matching current revision and must not append lifecycle events. Guided verification remains isolated, with a fresh history and explicit test timestamps. Presentation receipts are noncanonical. The 31- and 42-record fixtures retain their exact inputs and outcomes, now with marker 0.3.

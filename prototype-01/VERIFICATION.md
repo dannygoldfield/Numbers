@@ -1,5 +1,63 @@
 # Verification evidence
 
+## Revision 0.3 publication review — 2026-10-18
+
+C75 authorizes review, corrections within revision 0.3, commit, branch push and an unmerged PR. The review covered specification authority and the approved changes, all implementation changes and added files, authentication before evaluation, serialized command effects, initialization/restart association, revision isolation, browser uncertainty, gateway/service examples, CI and operating guidance. No remaining blocking issue was found in this bounded review; it is not an independent security audit or deployment approval.
+
+Two browser defects were reproduced with failing regression tests and corrected:
+
+- After an access/session change followed by a failed new-state read, old phase and clock labels remained visible. The clearing path now removes those timing/phase facts as well as balances, records and ownership presentation before new reads.
+- The exact-number transformer could accept malformed JSON such as a leading-zero number. It now validates the original JSON syntax before preserving numeric tokens. The validation result is discarded, so no rounded numeric value enters presentation or a command. Malformed responses retain uncertainty and cannot unlock another command. The test transport now passes malformed response bytes to the shipped parser instead of rejecting them first.
+
+The access regression also explicitly checks conflicting duplicate principal headers on an overdue auction. It rejects them before any evaluation. These fixes implement existing UI03/SE07 rules and change no auction semantics.
+
+After the fixes, the complete publication `./check` passed: Rust formatting, Clippy with warnings denied, 26 protocol tests, four HTTP access tests, five executable/process tests, two compile-fail documentation tests, frontend formatting and 16 browser-helper tests. Both locked optimized release binaries built. Prior release-guided and real HTTPS results below cover the unchanged engine and gateway configuration; the PR's Linux job repeats its complete configured checks. No new visual-browser inspection is claimed for these small parser/clearing fixes.
+
+Publication rechecks confirmed all 52 files in the new pre-Prototype-2 backup, 53 in the pre-cleanup 0.2 backup, 41 in the 0.1 backup, and all 34 original data/session files still match their checksum manifests. The original main checkout and preserved tag targets remain unchanged. Document links, workspace targets and diff whitespace pass; no generated build, local journal, credential or key is included. Review logs are the ignored `review-regressions-before.log`, `publication-check.log` and `publication-release.log` in the implementation worktree; detailed preservation evidence remains outside Git.
+
+Publication is authorized; merge, repository pruning and deployment are not. The live PR records GitHub checks after push. No actual two-device invited session or deployed host verification has occurred.
+
+## Revision 0.3 — 2026-10-18
+
+Approval: C73–C74 / S34 and the [approved decision packet](https://chatgpt.com/space/page_37906e64d6708191b3c86647190a42a5). Starting source is cleaned main `b5c15ff4d715be6c21881493be0bfd4c795a7823`, after PR #13. At this initial verification checkpoint, implementation was local and uncommitted on `codex/prototype-2-revision-0.3`. These results describe that implementation; they do not add behavioral authority or authorize deployment.
+
+### Preservation before implementation
+
+Preserved all 59 tracked source files in an exact archive and verified Git bundle at `/Users/dannygoldfield/Documents/Numbers-Backups/2026-10-18-revision-0.2-before-prototype-2/`. Copied the checksum-verified matching 0.2 debug/release executables, configuration, locks, all eight journals and session evidence. The new backup contains 52 checksummed files plus its manifest. The existing 0.2 preservation tag remains at the pre-cleanup commit; it was not moved.
+
+All eight journal copies passed SQLite integrity and matching-reader reconstruction unchanged: seven 0.1 histories with 51, 42, 9, 42, 12, 3 and 25 records, and the 0.2 history with three records. The preserved 0.2 release guided fixture also passed with 42 records and separate-process reconstruction. Before source edits, all 53 files in the earlier 0.2 backup and all 41 files in the 0.1 backup matched their manifests. Final rechecking confirmed all three backups, all 34 original local data/session files and preservation tags remain unchanged. The original main checkout remains clean.
+
+### Final local checks
+
+The complete `./check` passed on the implementation worktree: Rust formatting, Clippy with warnings denied, 26 protocol tests, four HTTP access tests, five executable/process tests, two compile-fail documentation tests, frontend formatting and 14 browser-helper tests. The local test servers used explicit permission to bind loopback. Both locked optimized release binaries built. No Rust or npm dependency version changed; Cargo.lock changes only the application version to 0.3.0.
+
+The release guided fixture passed with 42 records: Number 3 Scheduled, A600/B538 available, zero reservations, protocol62, and both separate-process reconstruction checkpoints. The independent UI04 fixture retains 31 records and A50/B100 available, zero reservations and protocol50. Both fixture inputs and economic outcomes remain unchanged; new records use marker 0.3. The auction planner changes only its generated/accepted revision-marker strings.
+
+The added or extended checks establish:
+
+- Missing/unrecognized/duplicate principal, forbidden role or bidder binding, origin/fetch-site, representation and body-size failures cannot evaluate an overdue auction or append canonical records. `/access`, static resources and rejected routes also do not evaluate. Missing/non-string bidder fields still follow the original SE03 validation order after the access gate.
+- Exact 4,096-byte commands retain their original bytes; oversized fixed/chunked bodies are rejected. Competing same-amount bids produce one accepted leader in canonical order and shared state. The facilitator alone can select either settlement outcome, without duplicate terminal effects.
+- Frozen 0.1 and 0.2 fixtures, mixed/unsupported/mistyped markers and malformed histories are rejected unchanged. Process tests prove explicit first initialization, matching restart, changed-association refusal and refusal to substitute an empty history for a missing intended journal.
+- Browser helpers cover fixed roles, exact integers, no retry after a lost/malformed/timed-out response, uncertainty across reload, explicit acknowledgment after fresh inspection, session-cache clearing and refusal of stale projections or late command responses from a previous session. The latter regression required correcting the test's simulated server so a previous session response could not overwrite its independent new history.
+
+### Actual local HTTPS rehearsal
+
+All ten scenario groups passed using the repository NGINX template, the actual debug application and locally compiled NGINX 1.30.6. The rehearsal used disposable generated secrets and a certificate trusted only within its Python process; it changed no system trust or installed service.
+
+It verified TLS checking; authentication on all resources; credential revocation; overwritten caller principal; authorization/origin/media/size rejection without evaluation; full-body buffering; ten-second header and body inactivity limits; the exact body limit; simultaneous authenticated clients with shared facts; response loss after commit with one bid group; and at most one upstream attempt for both POST and GET when the upstream fails. It also confirmed external Authorization values are stripped and test credentials absent from operational logs. The stopped writer's 13-record journal copy passed integrity and matching read-only reconstruction with identical bytes. Disposable passwords/private keys were removed and test servers stopped.
+
+The cold-copy check verifies journal preservation and reconstruction. The full operator bundle procedure additionally requires the matching executable/source, exact configuration, session receipt and relevant nonsecret diagnostics; off-host preservation and deployed restoration remain part of the separately approved operating exercise.
+
+### Browser inspection and limits
+
+The actual static assets were rendered with recorded valid state/history fixtures in separate browser environments for Bidder A, Bidder B and facilitator. Fixed identities, shared balances, facilitator-only settlement, Record navigation with Auction controls hidden and `system-ui, sans-serif` were inspected. These were read-only rendering fixtures, not a live browser authentication test or an actual two-device invited session.
+
+Linux CI is configured to run the checks, release build and local HTTPS rehearsal, but has not run on this unpublished revision. The local rehearsal does not verify any future Droplet's firewall, DNS/TLS renewal, clock, permissions, storage or off-host backup. Those checks and the two-person learning exercise remain gated by deployment approval. No real credentials, invitations, infrastructure changes, repository pruning, commits, pushes or deployment occurred.
+
+Evidence is retained in the creating task's external `outputs/numbers-revision-0.3/`: `preservation-final.json`, `release-guided-final/`, `gateway-rehearsal-final/result.json`, and the bidder/facilitator/Record screenshots. Final check/build/guided/gateway logs are ignored files in its `Numbers/` worktree. Documentation links and whitespace were checked separately. Preserved backups and the original checkout were not used as live test histories.
+
+The following sections are dated historical evidence for 0.2 and cleanup, not verification claims about 0.3 or current authorization gates.
+
 ## Revision 0.2 — 2026-10-18
 
 Approved source: C66–C67 / S31–S32. Starting commit: `2cc86353185c6b96947f87810105fe04f8b8ce0c`. This is evidence for the revised local Prototype 1, not authority for additional behavior.

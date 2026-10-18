@@ -282,3 +282,27 @@ The user requested merging PR #12 into main while keeping deployment separate. T
 The user approved the path-by-path cleanup plan, including retirement of the legacy CI jobs, and instructed: "Preserve and verify revision 0.2 first, then make the cleanup changes and open a PR. Don’t merge it yet, and keep deployment separate."
 
 This authorizes a verified source/build/journal preservation checkpoint, removal of the approved historical and redundant paths from the working checkout, current-guide clarification, retirement of the two legacy CI jobs, verification, and a cleanup PR. Historical source remains available at the preserved revision; local journals stay unchanged. The cleanup PR requires separate merge approval. Project-instruction simplification, Prototype 2 behavioral activation, and deployment remain separate. No executable code, normative rule, dependency version, or canonical history changes are authorized by this cleanup.
+
+## C71 — Cleanup merge, 2026-10-18
+
+The user requested merging PR #13, then drafting simplified project instructions, with deployment separate. PR #13 merged as b5c15ff4d715be6c21881493be0bfd4c795a7823. Earlier C70 merge restrictions applied before this explicit authorization. This was source-preserving maintenance, not a behavioral revision.
+
+## C72 — Project instructions and staged assessment, 2026-10-18
+
+The user approved the simplified project instructions and requested their application to the Numbers project, followed by a staged Prototype 2 readiness prompt for one DigitalOcean Droplet and invited testers. The subsequent request authorized a read-only readiness assessment and decision packet before implementation or deployment. Synced project reference files are not edited as part of this repository change.
+
+## C73 — Confirmed Prototype 2 experiment, 2026-10-18
+
+The user confirmed two invited bidders on separate devices and one facilitator controlling simulated settlement; unchanged revision 0.2 auction timing, Rana accounting and both settlement outcomes; and private credentials tied to fixed simulated identities with shared history and balances. These scope answers informed the [readiness decision packet](https://chatgpt.com/space/page_37906e64d6708191b3c86647190a42a5), including exact proposed clauses and verification checks.
+
+## C74 — Revision 0.3 approval and bounded implementation, 2026-10-18
+
+The user stated: “I approve revision 0.3 and the implementation scope. Preserve and verify Prototype 1’s revision 0.2 build and journals first, then implement the changes and run the checks. Keep repository pruning and deployment separate.” This approves the exact decision packet: P01 credential assignments, SE07 HTTPS Basic gateway and transport gates, 4,096-byte bodies, 10-second gateway limits, 30-second browser waiting and explicit new-command acknowledgment, independent revision 0.3 histories, and the facilitated operating procedure.
+
+Preservation precedes source changes. Local implementation, disposable local acceptance environments, and reviewable operating examples are authorized. This instruction does not authorize a commit, push, PR, merge, pruning, real credentials/invitations, provisioning, spending or deployment. The current approval date is recorded here; later publication and deployment require their own authorization.
+
+## C75 — Review and publish revision 0.3 as an unmerged PR, 2026-10-18
+
+The user requested: “I assume you are updating the local folder in Projects named Numbers? If so, please review the revision 0.3 changes, then commit and push them to GitHub and open a PR. Don’t merge it yet. Keep repository pruning and deployment separate.”
+
+The implementation is in a separate Git worktree of `/Users/dannygoldfield/Projects/Numbers-Repos/Numbers`; the Projects checkout remains on clean main. This request authorizes review, corrections within the approved specification, checks, a commit and branch push to that repository, and a pull request into main. It does not authorize merge, pruning, deployment, invitations or real credentials. Earlier publication restrictions in C74 were the gate before this explicit authorization. No new normative behavior is introduced by this publication decision.

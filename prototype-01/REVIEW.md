@@ -7,7 +7,8 @@ Start with the [worked auction](../numbers-spec/UI-AND-DEMO.md), then follow the
 | File | Responsibility | Specification owner |
 |---|---|---|
 | `src/main.rs` | Validate operational setup; open the store; evaluate startup; own the serial HTTP loop | P02, SE04, PR04 |
-| `src/http.rs` | Reject malformed transport and unsupported routes before evaluation; sample authoritative time | SE02, SE04 |
+| `src/access.rs` | Fixed gateway principals, roles, origin and representation limits | P01/P02, SE07 |
+| `src/http.rs` | Bounded bodies and access gates before evaluation; non-evaluating access metadata | SE02, SE04, SE07 |
 | `src/store.rs` | Evaluate due groups; commit each atomically; return outcomes only after commit; halt on failures | SE04–SE05, PR03–PR07 |
 | `src/model.rs` | Derive state, check ordered admission predicates, plan exact groups, reconstruct and project | P02, RT01–RT05, SE01–SE06, PR04, UI02 |
 | `src/values.rs` | Preserve command bytes, exact integers, canonical JSON, hashes and timestamps | PR01–PR02 |
@@ -19,7 +20,8 @@ The browser files are under `static/`. They submit commands once and display bac
 
 ```text
 request
-  → transport gate
+  → HTTPS credential verification and complete bounded buffering
+  → application principal, origin, representation, route and role gates
   → sample server time inside the single-writer loop
   → commit any due initialization / close / resolution / advancement groups
   → plan the command's exact group against committed state
@@ -62,12 +64,16 @@ A review should follow one accepted bid through the reservation group and one se
 | File | Responsibility |
 |---|---|
 | `src/bin/numbers-demo/main.rs` | Command selection and help |
-| `src/bin/numbers-demo/live.rs` | Existing HTTP commands, exact numeric spelling, one submission per command |
+| `src/bin/numbers-demo/live.rs` | Retained source only; not compiled or dispatched in 0.3. The preserved 0.2 build owns the old terminal workflow. |
 | `src/bin/numbers-demo/guided.rs` | Explicit UI05 fixture and separate-process reconstruction comparison |
 | `src/bin/numbers-demo/presentation.rs` | Human-readable state and record summaries |
-| `src/bin/numbers-demo/session.rs` | Separate journal directories, live launch and read-only inspection |
-| `tests/demonstration.rs` | Execute the walkthrough, inspect persisted evidence, exercise the real server and an unreadable response |
+| `src/bin/numbers-demo/session.rs` | Separate guided journals and read-only inspection |
+| `tests/demonstration.rs` | Execute the walkthrough, inspect persisted evidence, verify protected routes and refusal of missing/mismatched launch associations |
 
 The walkthrough calls `Engine::request`, not duplicate bid or settlement logic. It releases its writer before a child process reconstructs the journal, then compares exact ordered rows and all projected facts. Only the observational reconstruction receipt differs. Restart receipts are presentation files, not protocol events.
 
-The internal State and UI02 projection use `ownership`; SE06 finalization uses `ownership_kind` and `owner_id`. PR07 requires `spec_revision: "0.2"` on every record. Engine::open holds the writer lock while inspecting the existing database read-only and validating the entire history before opening it for writes or creating schema. Incompatible histories halt unchanged. The inspector uses the same reconstruction function. The frozen revision 0.1 initialization fixture is rejection evidence, not a decoder or compatibility path.
+The internal State and UI02 projection use `ownership`; SE06 finalization uses `ownership_kind` and `owner_id`. PR07 requires `spec_revision: "0.3"` on every record. Engine::open holds the writer lock while inspecting the existing database read-only and validating the entire history before opening it for writes or creating schema. Incompatible histories halt unchanged. The inspector uses the same reconstruction function. The frozen revision 0.1 and 0.2 initialization fixtures are rejection evidence, not a decoder or compatibility path.
+
+## Invited boundary checks
+
+`tests/access.rs` exercises actual HTTP denial before due evaluation, body/role boundaries, competing bids and both settlement outcomes. `tests/browser-commands.cjs` verifies role controls, bounded waiting, persisted uncertainty across reloads, explicit new-command acknowledgment and cleared cross-session caches. `tests/gateway.py` rehearses the actual HTTPS template, credential revocation, principal overwriting, slow-client containment, no upstream retry, credential stripping and cold-copy reconstruction. `ops/README.md` owns the separately gated procedure. No passing local test claims a configured Droplet or completed invited-user trial.

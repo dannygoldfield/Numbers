@@ -10,8 +10,10 @@
   "minimum_bid_rana": 5,
   "minimum_increment_rana": 1,
   "maximum_bid_rana": null,
-  "database_path": "data/revision-0.2/demo.sqlite3",
+  "database_path": "data/revision-0.3/trial-001.sqlite3",
   "host": "127.0.0.1",
   "port": 8765,
-  "log_verbosity": "quiet"
+  "log_verbosity": "quiet",
+  "allowed_origin": "https://numbers.example.test",
+  "session_label": "trial-001"
 }

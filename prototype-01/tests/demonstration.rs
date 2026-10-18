@@ -4,16 +4,13 @@ use rusqlite::{Connection, OpenFlags};
 use serde_json::{json, Value};
 use std::{
     fs,
-    io::Write,
-    net::TcpListener,
     path::Path,
-    process::{Child, Command, Output, Stdio},
+    process::{Command, Output},
     thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
 const DEMO: &str = env!("CARGO_BIN_EXE_numbers-demo");
-const SERVER: &str = env!("CARGO_BIN_EXE_numbers-prototype-01");
 fn success(output: Output) -> String {
     assert!(
         output.status.success(),
@@ -35,26 +32,17 @@ fn rows(path: &Path) -> Vec<Value> {
 }
 fn config() -> Value {
     let mut value: Value = serde_json::from_str(include_str!("../demo-config.json")).unwrap();
-    for key in ["database_path", "host", "port", "log_verbosity"] {
+    for key in [
+        "database_path",
+        "host",
+        "port",
+        "log_verbosity",
+        "allowed_origin",
+        "session_label",
+    ] {
         value.as_object_mut().unwrap().remove(key);
     }
     value
-}
-fn client(url: &str, commands: &str) -> String {
-    let mut process = Command::new(DEMO)
-        .args(["live", "--url", url])
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .unwrap();
-    process
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(commands.as_bytes())
-        .unwrap();
-    success(process.wait_with_output().unwrap())
 }
 
 #[test]
@@ -92,7 +80,7 @@ fn guided_proves_both_outcomes_restarts_and_preserves_its_journal() {
     assert_eq!(records.len(), 42);
     assert!(records
         .iter()
-        .all(|record| record["spec_revision"] == "0.2"));
+        .all(|record| record["spec_revision"] == "0.3"));
     let finalizations: Vec<_> = records
         .iter()
         .filter(|r| r["record_type"] == "FinalizationRecord")
@@ -153,118 +141,21 @@ fn guided_proves_both_outcomes_restarts_and_preserves_its_journal() {
         .output()
         .unwrap();
     assert!(!wrong_clock.status.success());
-    assert!(String::from_utf8_lossy(&wrong_clock.stderr).contains("Only a live session"));
+    assert!(String::from_utf8_lossy(&wrong_clock.stderr).contains("authenticated browser"));
     assert_eq!(fs::read(session.join("history.sqlite3")).unwrap(), before);
 }
 
-// RAII also stops the test server if an assertion fails.
-struct Server(Child);
-impl Drop for Server {
-    fn drop(&mut self) {
-        let _ = self.0.kill();
-        let _ = self.0.wait();
-    }
-}
 #[test]
-fn live_terminal_uses_the_real_server_and_preserves_submitted_number_syntax() {
-    let directory = tempfile::tempdir().unwrap();
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let address = listener.local_addr().unwrap();
-    drop(listener);
-    let mut config = config();
-    config["database_path"] = json!("history.sqlite3");
-    config["host"] = json!("127.0.0.1");
-    config["port"] = json!(address.port());
-    config["log_verbosity"] = json!("quiet");
-    let path = directory.path().join("config.json");
-    fs::write(&path, config.to_string()).unwrap();
-    let mut server = Server(
-        Command::new(SERVER)
-            .arg("--config")
-            .arg(path)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .unwrap(),
-    );
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while std::net::TcpStream::connect(address).is_err() {
-        assert!(
-            server.0.try_wait().unwrap().is_none(),
-            "Test server stopped before listening"
-        );
-        assert!(Instant::now() < deadline, "Test server startup timed out");
-        thread::sleep(Duration::from_millis(20));
+fn retired_local_live_tools_refuse_without_network_access() {
+    for args in [
+        vec!["live"],
+        vec!["serve"],
+        vec!["serve", "--session", "missing"],
+    ] {
+        let output = Command::new(DEMO).args(args).output().unwrap();
+        assert!(!output.status.success());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("authenticated browser"));
     }
-    let amount = "10000000000000000000000000000000000000003";
-    let output = client(
-        &format!("http://{address}"),
-        &format!(
-            "bid A 5\nbid B 6\nbid A 6\nbid B 6.0\nbid A {amount}\nhistory\nrecord 10\nquit\n"
-        ),
-    );
-    assert!(output.contains("Bidder A: 600 available · 0 reserved"));
-    assert!(output.contains("Bidder B: 594 available · 6 reserved"));
-    assert!(output.contains("Bid rejected:"));
-    let records = rows(&directory.path().join("history.sqlite3"));
-    let bids: Vec<_> = records
-        .iter()
-        .filter(|r| r["record_type"] == "BidRecord")
-        .collect();
-    assert_eq!(bids.len(), 5);
-    assert_eq!(bids[0]["payload_json"]["validity"], "valid");
-    assert_eq!(bids[1]["payload_json"]["validity"], "valid");
-    assert_eq!(
-        bids[2]["payload_json"]["rejection_reason"],
-        "amount_below_required_increment"
-    );
-    for (bid, spelling) in [(bids[3], "6.0"), (bids[4], amount)] {
-        assert_eq!(bid["payload_json"]["validity"], "invalid");
-        let bytes = hex::decode(bid["payload_json"]["command_utf8_hex"].as_str().unwrap()).unwrap();
-        let raw = String::from_utf8(bytes).unwrap();
-        assert!(raw.contains(&format!("\"amount_rana\":{spelling}")));
-    }
-    assert_eq!(bids[4]["payload_json"]["amount_rana"].to_string(), amount);
-}
-
-#[test]
-fn live_terminal_does_not_retry_when_the_response_is_unreadable() {
-    let directory = tempfile::tempdir().unwrap();
-    let mut engine = Engine::open(&directory.path().join("history.sqlite3"), config()).unwrap();
-    let observed = engine.request("state", None, now(), 100, 0);
-    let server = tiny_http::Server::http("127.0.0.1:0").unwrap();
-    let url = format!("http://{}", server.server_addr());
-    let transport = thread::spawn(move || {
-        let request = server
-            .recv_timeout(Duration::from_secs(10))
-            .unwrap()
-            .unwrap();
-        assert_eq!(request.url(), "/state");
-        request
-            .respond(tiny_http::Response::from_string(observed.to_string()))
-            .unwrap();
-        let mut request = server
-            .recv_timeout(Duration::from_secs(10))
-            .unwrap()
-            .unwrap();
-        assert_eq!(request.url(), "/bid");
-        let mut raw = String::new();
-        request.as_reader().read_to_string(&mut raw).unwrap();
-        assert_eq!(
-            serde_json::from_str::<Value>(&raw).unwrap()["auction_number"],
-            1
-        );
-        request
-            .respond(tiny_http::Response::from_string("unreadable response"))
-            .unwrap();
-        assert!(server
-            .recv_timeout(Duration::from_millis(500))
-            .unwrap()
-            .is_none());
-    });
-    let output = client(&url, "bid A 5\nquit\n");
-    assert!(output.contains("no command was retried"));
-    transport.join().unwrap();
 }
 
 #[test]
@@ -291,7 +182,16 @@ fn record_route_and_retired_route_do_not_evaluate_an_overdue_auction() {
                 .recv_timeout(Duration::from_secs(10))
                 .unwrap()
                 .unwrap();
-            numbers_prototype_01::http::serve_request(request, &mut engine).unwrap();
+            numbers_prototype_01::http::serve_request(
+                request,
+                &mut engine,
+                &numbers_prototype_01::access::Access::new(
+                    "https://numbers.example.test".into(),
+                    "test".into(),
+                )
+                .unwrap(),
+            )
+            .unwrap();
         }
         assert_eq!(engine.state().phase(), "Open");
         assert_eq!(engine.rows().unwrap(), before);
@@ -305,6 +205,8 @@ fn record_route_and_retired_route_do_not_evaluate_an_overdue_auction() {
                     "--show-error",
                     "--max-time",
                     "5",
+                    "--header",
+                    "X-Numbers-Principal: bidder-a",
                     "--write-out",
                     "\n%{http_code}",
                     &format!("{url}{route}"),
@@ -316,7 +218,7 @@ fn record_route_and_retired_route_do_not_evaluate_an_overdue_auction() {
     let record = get("/record");
     assert!(record.ends_with("\n200"));
     assert!(record.contains("href=\"/record\""));
-    assert!(record.contains("Specification 0.2"));
+    assert!(record.contains("Specification 0.3"));
     let retired = get("/protocol");
     let (body, status) = retired.rsplit_once('\n').unwrap();
     assert_eq!(status, "404");
@@ -362,4 +264,95 @@ fn read_only_inspector_rejects_preserved_legacy_format() {
     assert!(!output.status.success());
     assert!(String::from_utf8_lossy(&output.stderr).contains("history_invalid"));
     assert_eq!(fs::read(&path).unwrap(), before);
+}
+
+#[test]
+fn launcher_binds_build_config_and_history_and_refuses_silent_replacement() {
+    use std::{net::TcpListener, time::Instant};
+    const SERVER: &str = env!("CARGO_BIN_EXE_numbers-prototype-01");
+    struct Running(std::process::Child);
+    impl Drop for Running {
+        fn drop(&mut self) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+    let dir = tempfile::tempdir().unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    drop(listener);
+    let mut c: Value = serde_json::from_str(include_str!("../demo-config.json")).unwrap();
+    c["database_path"] = json!("history.sqlite3");
+    c["port"] = json!(port);
+    let path = dir.path().join("config.json");
+    fs::write(&path, c.to_string()).unwrap();
+    let refused = Command::new(SERVER)
+        .arg("--config")
+        .arg(&path)
+        .output()
+        .unwrap();
+    assert!(!refused.status.success());
+    assert!(!dir.path().join("history.sqlite3").exists());
+    let start = |initialize: bool| {
+        let mut cmd = Command::new(SERVER);
+        cmd.arg("--config")
+            .arg(&path)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null());
+        if initialize {
+            cmd.arg("--initialize");
+        }
+        let mut process = Running(cmd.spawn().unwrap());
+        let until = Instant::now() + Duration::from_secs(10);
+        loop {
+            assert!(process.0.try_wait().unwrap().is_none(), "server stopped");
+            assert!(Instant::now() < until, "startup timeout");
+            let output = Command::new("curl")
+                .args([
+                    "--disable",
+                    "-s",
+                    "--max-time",
+                    "1",
+                    "-H",
+                    "X-Numbers-Principal: bidder-a",
+                    &format!("http://127.0.0.1:{port}/access"),
+                ])
+                .output()
+                .unwrap();
+            if output.status.success()
+                && String::from_utf8_lossy(&output.stdout).contains("spec_revision")
+            {
+                break;
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
+        process
+    };
+    drop(start(true));
+    let journal = dir.path().join("history.sqlite3");
+    let before = fs::read(&journal).unwrap();
+    assert_eq!(rows(&journal).len(), 3);
+    drop(start(false));
+    assert_eq!(fs::read(&journal).unwrap(), before);
+    c["database_path"] = json!("substitute.sqlite3");
+    fs::write(&path, c.to_string()).unwrap();
+    let refused = Command::new(SERVER)
+        .arg("--config")
+        .arg(&path)
+        .output()
+        .unwrap();
+    assert!(!refused.status.success());
+    assert!(!dir.path().join("substitute.sqlite3").exists());
+    assert_eq!(fs::read(&journal).unwrap(), before);
+    c["database_path"] = json!("history.sqlite3");
+    fs::write(&path, c.to_string()).unwrap();
+    fs::remove_file(&journal).unwrap();
+    let refused = Command::new(SERVER)
+        .arg("--config")
+        .arg(&path)
+        .output()
+        .unwrap();
+    assert!(!refused.status.success());
+    assert!(!journal.exists());
+    assert!(String::from_utf8_lossy(&refused.stderr).contains("missing or empty"));
 }

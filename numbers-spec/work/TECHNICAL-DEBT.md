@@ -2,13 +2,15 @@
 
 ## Current register
 
+Revision 0.3 (2026-10-18): C74 approves the bounded invited access and operating rules. TD05–TD07 remain explicit trusted-host, request-driven and payload-hash limitations. TD08/TD11 remain deferred; remote access does not justify a new engine or storage architecture.
+
 Revision 0.2 clarification (2026-10-18): RT06 permits future separately specified append-only transfers without rewriting original finalization; no transfer is implemented. PR07 deliberately separates histories, so compatibility notes below do not require a legacy decoder in the new build.
 
 This is the current planning register. The historical rationale below is preserved. Limits deliberately chosen for Prototype 1 are not automatically defects or promises to add infrastructure. All changes to behavior still require an explicit specification decision. The project owner prioritizes these items when approving the next scope; the implementer records verification when an item is changed.
 
 | Reference | Current disposition | Revisit when |
 |---|---|---|
-| TD01 | Two simulated identities; no authentication. Accepted local-demo limit. | Before independent participants can act as themselves. Specify identity, access and permissions. |
+| TD01 | Revision 0.3 adds fixed credential-bound identities and a same-host HTTPS gateway (C74/SE07). Still no human identity proof or general account system. | Revisit for real accounts, additional participants, recovery or external ownership. Keep host trust explicit. |
 | TD02–TD03 | One application writer and SQLite. Keep this architecture unless an observed need contradicts it. | Remote operation needs access controls; more servers or a new database require separate evidence, not merely a second browser. |
 | TD04 | Operator-selected simulated settlement, with no deadline. Accepted scope. | A new learning goal requires autonomous settlement or actual obligations. Define triggers before implementation. |
 | TD05–TD07 | Request-driven evaluation, local clock and payload consistency hashes. Accepted scope, not independently verifiable history. | Remote timing/fairness or independent reliance on records becomes part of the test. |

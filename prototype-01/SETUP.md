@@ -1,74 +1,47 @@
 # Development environment
 
-The environment is installed for continuing Numbers development, with reproducible versions and checks. No toolchain installation or package download occurs during an auction.
+## Dependencies
 
-## Installed baseline
-
-| Tool | Baseline | Purpose |
-|---|---|---|
-| Rust / Cargo | 1.98.1, pinned in rust-toolchain.toml | Compile the authoritative backend and run tests |
-| rustfmt | Toolchain component | Consistent Rust formatting |
-| Clippy | Toolchain component | Rust correctness and maintainability checks |
-| rust-analyzer | Toolchain component | Editor navigation, diagnostics and refactoring |
-| Apple Command Line Tools | Existing local installation | Native linker and compilation of bundled SQLite |
-| SQLite | Bundled through the locked rusqlite dependency | Durable journal; no separate database service |
-| Node.js | Existing 22.23.2 installation; Node 22+ required for UI development checks | Run the formatter and exact-value browser tests |
-| curl | Existing macOS command-line tool | HTTP transport for the optional live terminal client; ambient curl configuration is disabled, with no automatic retries |
-| VS Code | Existing local installation with rust-analyzer | Optional presentation workspace and source navigation |
-| Prettier | 3.9.6, exact development dependency | Format HTML, CSS and JavaScript |
-
-Rust is installed in its standard user locations, `~/.cargo/` and `~/.rustup/`. `rust-toolchain.toml` chooses the project version and required components. `Cargo.lock` and `package-lock.json` pin dependency resolution. The `cargo-local` wrapper also finds the standard Rust installation when the current shell has not reloaded its PATH.
-
-## Reproduce setup
-
-On macOS, install Apple's Command Line Tools if absent, and install Rust using the [official Rust instructions](https://rust-lang.org/tools/install/). Install Node.js 22 or later through the existing Node version manager. Then, in this directory:
+Rust 1.98.1 and its formatter/linter are pinned in `rust-toolchain.toml`. SQLite is bundled by the locked Rust dependency. Node 22+ and locked Prettier 3.9.6 provide development checks; the served browser has no third-party runtime assets. Python 3.9+, OpenSSL and an NGINX build with HTTP SSL/Basic authentication are needed only for gateway acceptance. The core tests also use system curl with its ambient configuration disabled.
 
 ```sh
-rustup show
 npm ci --ignore-scripts
 ./cargo-local fetch --locked
 ./check
+./cargo-local build --locked --release --bins
 ```
 
-The pinned toolchain automatically requests the matching formatter, linter and language server. `npm ci` installs only development tooling; the served browser interface has no runtime JavaScript dependencies and uses no third-party network assets.
+`./check` runs Rust formatting, Clippy with warnings denied, protocol/HTTP/process tests, compile-fail engine-boundary tests, frontend formatting and browser helper tests. The helper tests exercise shipped code with controlled DOM/transport; they are not a real two-device trial. Release overflow checks remain enabled.
 
-For an editor, enable its rust-analyzer integration and point it at this directory's `Cargo.toml`. This is the repository's active Cargo project. Run commands here or pass this manifest explicitly; the former root application is preserved through the [historical index](../archive/README.md).
+## HTTPS gateway acceptance
 
-## Daily workflow
+Run the actual gateway template against disposable generated credentials and a test certificate trusted only by the test process:
 
 ```sh
-./cargo-local fmt --all
-npm run format
-./check
-./run
+./cargo-local build --locked --bins
+NUMBERS_TEST_NGINX=/absolute/path/to/nginx python3 tests/gateway.py --directory /absolute/path/to/new-rehearsal
 ```
 
-`./check` stops on the first failure and runs Rust formatting, Clippy with warnings treated as errors, Rust tests, frontend formatting and browser value/command checks. Run it before presenting a change as ready. Use `./cargo-local test --locked <test_name>` while diagnosing a specific failure.
+The directory must not exist. No service is installed, no system certificate trust is changed, and no cloud resource is used. Servers bind loopback, stop after the run, and disposable secrets/keys are removed. The script retains logs, a test journal, a cold copy and `result.json`. Keep the directory outside the repository. Tests verify authentication/revocation, role and origin enforcement, buffering/limits, exact body bytes, simultaneous bids, lost responses, no upstream retry, credential stripping and cold-copy reconstruction.
 
-For a local optimized build:
+The Ubuntu CI job prepares a disposable gateway binary and runs the same checks. A local macOS result does not claim a completed Linux CI run or a verified deployment.
+
+## Configuration and launch
+
+The complete behavioral input surface remains P02. In addition to `database_path`, loopback `host`, `port` and `log_verbosity`, supply `allowed_origin` and `session_label`. The origin is an exact HTTPS origin, using a lowercase hostname and no path/query/fragment; use the browser's normalized origin, omitting a default `:443`. The label is 1–64 ASCII letters/digits/hyphens/underscores. There is no implicit value for either.
+
+The executable accepts:
 
 ```sh
-./cargo-local build --locked --release
-./target/release/numbers-prototype-01 --config ./demo-config.json
+./target/release/numbers-prototype-01 --config /absolute/session/config.json --initialize
+# After a controlled stop, restart the SAME session with its matching binary:
+./target/release/numbers-prototype-01 --config /absolute/session/config.json
 ```
 
-Release builds retain overflow checks. Economic amounts use arbitrary-precision integers; timestamp or storage-sequence overflow stops processing explicitly.
+Initialization refuses an existing database or `config.session.json`. The noncanonical receipt binds the exact configuration bytes, executable hash, absolute database path, session label, revision and fixed principal mapping. It contains no password or real name. Restart requires the receipt, matching association and existing nonempty journal, then validates all records before evaluating time. A failure leaves evidence intact; do not delete the receipt or journal to bypass it. Prepare a separately labeled history for a different build/configuration instead.
 
-## Configuration and operation
+[ops/README.md](ops/README.md) owns the gated operating procedure. `./demo guided` and `./demo inspect SESSION_DIRECTORY` retain verification/inspection; `live` and `serve` refuse in the current build. The preserved 0.2 executable retains those old workflows. No time-control endpoint exists.
 
-The default revision 0.2 journal path is `data/revision-0.2/demo.sqlite3`; verify it is unused on the first rollout, then reuse it for restarts. Earlier journals require the preserved old executable. The fixed `spec_revision` marker is not configurable, and no migration or decoder for older formats is installed.
+## Editor
 
-All behavioral inputs are in `demo-config.json`. Only the starting number and optional maximum bid have specification defaults. The operational fields are `database_path`, a loopback IP `host`, integer `port`, and `log_verbosity` (`quiet` or `requests`). Relative database paths resolve beside the configuration file.
-
-For a fresh live demonstration, use `./demo serve`; it creates its own configuration and journal on port 8766. [DEMO.md](DEMO.md#live-browser-and-terminal-together) explains launch and restart. Use a custom configuration only when the experiment needs different explicit settings. Do not change or delete a recorded history to make a test pass.
-
-Tests use temporary directories, explicit test clocks and child processes. The UI05 guided executable also supplies explicit simulated timestamps in a separate journal. No clock or crash control is available through the live HTTP application or browser.
-
-## Continuing infrastructure work
-
-This baseline supplies compilation, storage, formatting, linting, editor support and repeatable verification for the approved local application. Extend it when an actual development requirement appears. Payment services, identity infrastructure, external attestations and public hosting require their own specification and deployment decisions; they are not silently enabled by environment setup.
-
-
-## Presentation workspace
-
-Open [Numbers-demo.code-workspace](Numbers-demo.code-workspace) for workspace-scoped editor settings and the four presentation/check tasks. [DEMO.md](DEMO.md) explains their use. `./demo` builds both binaries with locked dependencies; `default-run` keeps `./run` targeting the existing server. The live client uses system curl solely for HTTP transport and disables its user configuration. New demo sessions live under ignored `data/demonstrations/` and are never reset by the launcher.
+The Numbers workspaces keep the existing directory and point rust-analyzer at `prototype-01/Cargo.toml`. Presenter tasks run guided verification, checks or an already prepared configured session. Editor launch does not install credentials, create a gateway or authorize deployment.

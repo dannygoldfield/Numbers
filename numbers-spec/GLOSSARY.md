@@ -5,7 +5,9 @@
 | Term | Meaning / owning rule |
 |---|---|
 | Rana; `rana`; `RANA` | In-house value standard. One rana is indivisible; `rana` is singular and plural, `RANA` is the machine code. Economic rules: RT01. |
-| Simulated identity | Either `demo-1` or `demo-2`; selecting one proves no human identity. P01. |
+| Simulated identity | A fixed prototype bidder account, `demo-1` or `demo-2`, bound to one credential principal. P01. |
+| Credential | Permission for its fixed bidder account or facilitator role, not proof of a person. P01/SE07. |
+| Facilitator | Sole simulated-settlement operator, with no Rana account and no bid permission. P01/RT03/SE07. |
 | Number | The abstract mathematical value identified, within this prototype, by its canonical positive integer. Font, typography, rendering, and display location do not determine its identity. |
 | Auction | The SE01 lifecycle for a number within one demonstration history. It exists in Scheduled before its first valid bid. |
 | Canonical record / event / journal record | The same immutable persisted object; record type names are event names. PR01. |
@@ -17,9 +19,9 @@
 | Protocol-held balance | Derived Rana balance receiving successful captures; not a bidder, not Unowned, and no spending operation exists. RT01/RT03. |
 | Leading bid | Current highest valid bid before or after resolution, derived by SE03; leadership alone is not ownership. |
 | Resolved winner | Winning bid/identity irreversibly fixed by ResolutionRecord, even if ownership later becomes Unowned. SE03. |
-| Settlement | A separate phase consuming a resolved result; `settled` and `expired` are terminal outcomes of an explicit local command. RT03. |
-| `expired` | Retained local demo outcome label. It does not assert that a deadline elapsed or an outside payment failed. RT03. |
-| Protocol ownership | Original auction ownership outcome recorded by FinalizationRecord. Its historical assignment is immutable; Prototype 1 has no transfer. RT04/RT06. |
+| Settlement | A separate phase consuming a resolved result; `settled` and `expired` are terminal outcomes of an explicit simulated command. RT03. |
+| `expired` | Retained simulated outcome label. It does not assert that a deadline elapsed or an outside payment failed. RT03. |
+| Protocol ownership | Original auction ownership outcome recorded by FinalizationRecord. Its historical assignment is immutable; Prototype 2 has no transfer. RT04/RT06. |
 | Unowned | A final outcome with no owner, defined only by RT04; distinct from ownership pending. |
 | Rhythm gap | Twelve seconds after finalization before the next number is eligible for creation. SE04. |
 | Reconstruction | Validation and folding of the committed journal into derived state; it performs no new economic action. PR04. |

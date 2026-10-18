@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   prototype:
-    name: Prototype 1 checks
+    name: Prototype 2 checks
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -37,3 +37,20 @@ jobs:
 
       - name: Check the pinned Rust prototype and browser helpers
         run: ./check
+
+      - name: Build release binaries
+        run: ./cargo-local build --locked --release --bins
+
+      - name: Prepare gateway binary without installing a service
+        run: |
+          sudo apt-get update
+          mkdir -p "$RUNNER_TEMP/numbers-nginx-package" "$RUNNER_TEMP/numbers-nginx"
+          cd "$RUNNER_TEMP/numbers-nginx-package"
+          apt-get download nginx
+          for package in nginx_*.deb; do dpkg-deb --extract "$package" "$RUNNER_TEMP/numbers-nginx"; done
+          test -x "$RUNNER_TEMP/numbers-nginx/usr/sbin/nginx"
+
+      - name: Rehearse local HTTPS access and preservation
+        env:
+          NUMBERS_TEST_NGINX: ${{ runner.temp }}/numbers-nginx/usr/sbin/nginx
+        run: python3 tests/gateway.py --directory "$RUNNER_TEMP/numbers-gateway-rehearsal"

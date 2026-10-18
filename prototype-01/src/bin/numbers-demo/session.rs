@@ -1,15 +1,14 @@
 //! UI05: each demonstration has its own directory and journal.
 use super::{
     presentation::{show_records, show_state},
-    Result, URL,
+    Result,
 };
 use numbers_prototype_01::{model::*, values::*};
 use serde_json::{json, Value};
 use std::{
     fs::{self, OpenOptions},
-    io::{self, Write},
+    io::Write,
     path::{Path, PathBuf},
-    process::Command,
 };
 const ROOT: &str = env!("CARGO_MANIFEST_DIR");
 
@@ -52,7 +51,14 @@ pub(super) fn new_session(mode: &str, supplied: Option<&str>) -> Result<PathBuf>
 }
 pub(super) fn session_config(path: &Path) -> Result<Value> {
     let mut config: Value = serde_json::from_slice(&fs::read(path.join("config.json"))?)?;
-    for key in ["database_path", "host", "port", "log_verbosity"] {
+    for key in [
+        "database_path",
+        "host",
+        "port",
+        "log_verbosity",
+        "allowed_origin",
+        "session_label",
+    ] {
         config
             .as_object_mut()
             .ok_or("Invalid session configuration")?
@@ -65,6 +71,7 @@ pub(super) fn inspect(session: &Path) -> Result<()> {
         session.join("history.sqlite3"),
         rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
     )?;
+    db.busy_timeout(std::time::Duration::ZERO)?;
     let mut query =
         db.prepare("SELECT sequence_index,record_json FROM events ORDER BY sequence_index")?;
     let rows: Vec<(i64, String)> = query
@@ -81,25 +88,4 @@ pub(super) fn inspect(session: &Path) -> Result<()> {
     show_state(&projection(&state, time, state.records.len())?)?;
     show_records(&state.records);
     Ok(())
-}
-pub(super) fn serve(existing: Option<&str>) -> Result<()> {
-    let session = if let Some(path) = existing {
-        let path = PathBuf::from(path).canonicalize()?;
-        let metadata: Value = serde_json::from_slice(&fs::read(path.join("session.json"))?)?;
-        if metadata["mode"] != "live" {
-            return Err("Only a live session can use the real-clock server. Use inspect for a guided history.".into());
-        }
-        path
-    } else {
-        new_session("live", None)?
-    };
-    println!("Numbers · Separate live demonstration\nBrowser: {URL}/\nTerminal client: ./demo live\nSession: {}\nRestart this history: ./demo serve --session '{}'\n",session.display(),session.display());
-    io::stdout().flush()?;
-    let server = std::env::current_exe()?.with_file_name("numbers-prototype-01");
-    use std::os::unix::process::CommandExt;
-    Err(Command::new(server)
-        .arg("--config")
-        .arg(session.join("config.json"))
-        .exec()
-        .into())
 }

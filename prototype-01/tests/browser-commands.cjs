@@ -35,10 +35,25 @@ function snapshot() {
 
 // Exercise the shipped submission/rendering code with controlled transport and a small DOM.
 // No server, journal, clock advancement, or extra browser dependency is involved.
-async function browser(reply, pathname = '/', initial = snapshot()) {
+async function browser(
+  reply,
+  pathname = '/',
+  initial = snapshot(),
+  role = 'bidder',
+  storage = new Map(),
+  readReply = null,
+) {
   const elements = new Map(),
     requests = [];
-  let current = initial;
+  let current = initial,
+    access = {
+      role,
+      bidder_id: role === 'bidder' ? 'demo-1' : null,
+      session_label: 'test',
+      spec_revision: '0.3',
+    };
+  const timers = new Map();
+  let nextTimer = 0;
   const node = () => ({
     value: 'demo-1',
     textContent: '',
@@ -60,15 +75,45 @@ async function browser(reply, pathname = '/', initial = snapshot()) {
     location: { pathname },
     performance: { now: () => 0 },
     setInterval() {},
+    AbortController,
+    setTimeout(fn) {
+      const id = ++nextTimer;
+      timers.set(id, fn);
+      return id;
+    },
+    clearTimeout(id) {
+      timers.delete(id);
+    },
+    sessionStorage: {
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => storage.set(key, value),
+      removeItem: (key) => storage.delete(key),
+    },
     fetch: async (url, options = {}) => {
       requests.push({ url, ...options });
       if (options.method === 'POST') {
+        const submittedAccess = JSON.stringify(access);
         const raw = await reply();
-        const parsed = JSON.parse(raw);
-        if (parsed.data?.state) current = parsed.data.state;
+        let parsed;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          // Malformed bytes still reach the shipped response parser.
+        }
+        if (parsed?.data?.state && JSON.stringify(access) === submittedAccess)
+          current = parsed.data.state;
         return { text: async () => raw };
       }
-      const data = url === '/state' ? current : { records: [], pagination: { next_offset: null } };
+      if (readReply) {
+        const raw = await readReply(url);
+        if (raw !== undefined) return { text: async () => raw };
+      }
+      const data =
+        url === '/access'
+          ? access
+          : url === '/state'
+            ? current
+            : { records: [], pagination: { next_offset: null } };
       return { text: async () => JSON.stringify({ status: 'success', data }) };
     },
   });
@@ -77,6 +122,19 @@ async function browser(reply, pathname = '/', initial = snapshot()) {
   return {
     element,
     requests,
+    storage,
+    timeout: () => {
+      for (const fn of [...timers.values()]) fn();
+    },
+    acknowledge: () => vm.runInContext('acknowledgeNewCommand()', context),
+    refresh: () => vm.runInContext('refresh()', context),
+    acceptAccessNow: (next) => vm.runInContext(`acceptAccess(${JSON.stringify(next)})`, context),
+    changeAccess: (next) => {
+      access = next;
+    },
+    setState: (next) => {
+      current = next;
+    },
     settle: (body) =>
       vm.runInContext(`submit('/demo/settlement', ${JSON.stringify(body)})`, context),
     recordOnly: () => vm.runInContext('recordOnly', context),
@@ -95,6 +153,8 @@ test('rejected bids explain the exact required increase from the response and re
     const response = JSON.stringify({
       status: 'success',
       data: {
+        command_records: [],
+        evaluation_records: [],
         accepted: false,
         bid_record: {
           number: 1,
@@ -138,7 +198,13 @@ test('a pending submission blocks repeat clicks and changes balances only after 
   release(
     JSON.stringify({
       status: 'success',
-      data: { accepted: true, bid_record: { number: 1 }, state },
+      data: {
+        command_records: [],
+        evaluation_records: [],
+        accepted: true,
+        bid_record: { number: 1 },
+        state,
+      },
     }),
   );
   await first;
@@ -161,7 +227,7 @@ test('a lost response prompts inspection and refreshes state without resubmittin
   assert.ok(app.requests.slice(postIndex + 1).some((r) => r.url === '/state'));
 });
 
-test('revision 0.2 ownership displays pending, winner and unowned without legacy fields', async () => {
+test('revision 0.3 ownership displays pending, winner and unowned without legacy fields', async () => {
   const pending = await browser(async () => '');
   assert.equal(pending.element('ownership-banner').textContent, '');
   for (const [kind, owner, label, outcome] of [
@@ -178,8 +244,15 @@ test('revision 0.2 ownership displays pending, winner and unowned without legacy
       finalization_time: state.server_time,
     };
     state.settlement = { status: outcome };
-    const app = await browser(async () =>
-      JSON.stringify({ status: 'success', data: { accepted: true, state } }),
+    const app = await browser(
+      async () =>
+        JSON.stringify({
+          status: 'success',
+          data: { command_records: [], evaluation_records: [], accepted: true, state },
+        }),
+      '/',
+      snapshot(),
+      'facilitator',
     );
     await app.settle(JSON.stringify({ auction_id: state.auction_id, outcome }));
     assert.equal(app.element('ownership-banner').textContent, label);
@@ -193,4 +266,183 @@ test('Record address selects the read-only presentation', async () => {
   const app = await browser(async () => '', '/record');
   assert.equal(app.recordOnly(), true);
   assert.equal(app.requests.filter((r) => r.method === 'POST').length, 0);
+});
+
+test('fixed identities and facilitator controls cannot be switched in the UI', async () => {
+  const bidder = await browser(async () => '');
+  assert.ok(bidder.element('identity').textContent.includes('Bidder A'));
+  assert.equal(bidder.element('bid-panel').hidden, false);
+  await bidder.settle('{}');
+  assert.equal(bidder.requests.filter((r) => r.method === 'POST').length, 0);
+  const state = snapshot();
+  state.auction_state = 'AwaitingSettlement';
+  const facilitator = await browser(async () => '', '/', state, 'facilitator');
+  assert.equal(facilitator.element('bid-panel').hidden, true);
+  assert.equal(facilitator.element('settlement-controls').hidden, false);
+  await facilitator.submit(command);
+  assert.equal(facilitator.requests.filter((r) => r.method === 'POST').length, 0);
+});
+
+test('timeout keeps uncertainty through inspection and reload and never resends the POST', async () => {
+  let release;
+  const delayed = new Promise((resolve) => {
+    release = resolve;
+  });
+  const app = await browser(() => delayed);
+  const submission = app.submit(command);
+  await new Promise((resolve) => setImmediate(resolve));
+  app.timeout();
+  await submission;
+  assert.equal(app.requests.filter((r) => r.method === 'POST').length, 1);
+  assert.equal(app.element('bid-button').disabled, true);
+  assert.ok(app.element('uncertain-target').textContent.includes('absence in a read is not proof'));
+  await app.submit(command);
+  assert.equal(app.requests.filter((r) => r.method === 'POST').length, 1);
+  const restored = await browser(async () => '', '/', snapshot(), 'bidder', app.storage);
+  assert.equal(restored.element('uncertainty').hidden, false);
+  assert.ok(restored.element('uncertain-target').textContent.includes('Number 1'));
+  assert.equal(restored.requests.filter((r) => r.method === 'POST').length, 0);
+  restored.acknowledge();
+  assert.equal(restored.element('bid-button').disabled, false);
+  assert.equal(restored.element('uncertainty').hidden, true);
+  release('{}');
+});
+
+test('malformed success and gateway pages keep the outcome unconfirmed', async () => {
+  for (const reply of [
+    '<html>timeout</html>',
+    '{"status":"success","data":{}}',
+    '{"status":"error","error":{"code":"gateway_problem","message":"unknown"},"evaluation_records":[]}',
+  ]) {
+    const app = await browser(async () => reply);
+    await app.submit(command);
+    assert.equal(app.element('uncertainty').hidden, false);
+    assert.equal(app.element('bid-button').disabled, true);
+    assert.equal(app.requests.filter((r) => r.method === 'POST').length, 1);
+  }
+});
+
+test('malformed numeric JSON remains unconfirmed without losing exact integer support', async () => {
+  const malformed = JSON.stringify({
+    status: 'success',
+    data: {
+      accepted: true,
+      command_records: [],
+      evaluation_records: [],
+      bid_record: { number: 1 },
+      state: snapshot(),
+    },
+  }).replace('"max_extensions":2', '"max_extensions":02');
+  const app = await browser(async () => malformed);
+  await app.submit(command);
+  assert.equal(app.element('uncertainty').hidden, false);
+  assert.equal(app.element('bid-button').disabled, true);
+  assert.equal(app.requests.filter((r) => r.method === 'POST').length, 1);
+});
+
+test('changing session clears all previous timing and phase facts even if the new read fails', async () => {
+  let failState = false;
+  const initial = snapshot();
+  initial.auction_state = 'Open';
+  initial.current_end_time = '2026-10-10T12:03:45.000Z';
+  const app = await browser(
+    async () => '',
+    '/',
+    initial,
+    'bidder',
+    new Map(),
+    async (url) => {
+      if (failState && url === '/state') throw new Error('Unavailable new history');
+    },
+  );
+  assert.equal(app.element('phase').textContent, 'Auction open');
+  failState = true;
+  app.changeAccess({
+    role: 'bidder',
+    bidder_id: 'demo-2',
+    session_label: 'another-history',
+    spec_revision: '0.3',
+  });
+  await app.refresh();
+  for (const id of [
+    'number',
+    'phase',
+    'clock',
+    'clock-label',
+    'clock-note',
+    'bid-rule',
+    'leader-label',
+  ])
+    assert.equal(app.element(id).textContent, '—', id);
+  assert.equal(app.element('bid-button').disabled, true);
+  assert.equal(app.requests.filter((r) => r.method === 'POST').length, 0);
+});
+
+test('session changes clear uncertainty and previously displayed facts without carrying a command', async () => {
+  const app = await browser(async () => {
+    throw new Error('lost');
+  });
+  await app.submit(command);
+  const state = snapshot();
+  state.current_number = 20;
+  app.setState(state);
+  app.changeAccess({
+    role: 'bidder',
+    bidder_id: 'demo-2',
+    session_label: 'new-history',
+    spec_revision: '0.3',
+  });
+  await app.refresh();
+  assert.ok(app.element('identity').textContent.includes('Bidder B'));
+  assert.equal(String(app.element('number').textContent), '20');
+  assert.equal(app.element('uncertainty').hidden, true);
+  assert.equal(app.element('last-command').textContent, 'No command submitted in this view.');
+  assert.equal(app.requests.filter((r) => r.method === 'POST').length, 1);
+});
+
+test('older projections do not replace newer committed facts', async () => {
+  const newer = snapshot();
+  newer.current_number = 2;
+  newer.last_sequence_index = 22;
+  const app = await browser(async () => '', '/', newer);
+  app.setState(snapshot());
+  await app.refresh();
+  assert.equal(String(app.element('number').textContent), '2');
+});
+
+test('a late command response cannot restore facts from the previous session', async () => {
+  let release;
+  const response = new Promise((resolve) => {
+    release = resolve;
+  });
+  const app = await browser(() => response);
+  const pending = app.submit(command);
+  const next = {
+    role: 'bidder',
+    bidder_id: 'demo-2',
+    session_label: 'another-history',
+    spec_revision: '0.3',
+  };
+  const nextState = snapshot();
+  nextState.current_number = 20;
+  app.changeAccess(next);
+  app.setState(nextState);
+  app.acceptAccessNow(next);
+  release(
+    JSON.stringify({
+      status: 'success',
+      data: {
+        accepted: true,
+        command_records: [],
+        evaluation_records: [],
+        bid_record: { number: 1 },
+        state: snapshot(),
+      },
+    }),
+  );
+  await pending;
+  assert.equal(String(app.element('number').textContent), '20');
+  assert.ok(app.element('result').textContent.includes('previous session separately'));
+  assert.equal(app.element('uncertainty').hidden, true);
+  assert.equal(app.requests.filter((r) => r.method === 'POST').length, 1);
 });

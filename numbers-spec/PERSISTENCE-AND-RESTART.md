@@ -8,7 +8,7 @@ Every record must have exactly these common envelope fields:
 
 | Field | Exact meaning |
 |---|---|
-| spec_revision | Exact JSON string `"0.2"` on every record, including both initial RanaIssueRecords; fixed by specification, not configurable |
+| spec_revision | Exact JSON string `"0.3"` on every record, including both initial RanaIssueRecords; fixed by specification, not configurable |
 | sequence_index | Positive integer; contiguous committed sequence starting at 1; each next record adds exactly 1 |
 | record_id | `rec_` plus sequence_index as decimal, zero-padded to at least 12 digits, never truncated |
 | record_type | Exact SE06 event name |
@@ -94,14 +94,10 @@ Malformed history must not be edited, skipped, quarantined out of replay, trunca
 
 The application must provide no operation for clearing a journal, resetting allocations, or replacing an existing history. An explicitly initialized separate empty local store is a separate demo history, not a continuation or recovery of another store. This specification defines no migration from the superseded sats generation and no import of its records.
 
-## PR07 — Revision isolation
+## PR07 — Revision and history isolation
 
-A revision 0.2 implementation accepts only nonempty histories in which every record has the exact PR01 revision marker and satisfies the complete revision 0.2 schema and semantics.
+A revision 0.3 implementation accepts only nonempty histories whose every record has the exact string spec_revision="0.3" and satisfies the complete revision 0.3 schema and semantics. Missing, mistyped, other-revision, or mixed markers produce history_invalid before authoritative evaluation, successful canonical state projection, append, or modification of the existing journal's schema or contents.
 
-A missing marker, wrong type, unsupported value, or mixed revision is `history_invalid`. Reject that history before authoritative evaluation, successful state projection, canonical append, or modification of the existing journal's schema or contents. PR06 permits a separate non-authoritative diagnostic when possible.
+No migration, legacy decoder, alias substitution, rehashing, prefix adoption, or balance/ownership carry-forward exists. Preserved histories remain unchanged and are read with their matching implementation. A separate verified-new store begins through G01 using explicit inputs and its own session association. It is an independent demonstration, not continuation, reassignment, or recovery of a previous history.
 
-No migration, legacy decoder, alias substitution, field renaming, rehashing, prefix adoption, or carry-forward of balances or ownership is defined. Earlier histories remain unchanged and are used with their preserved implementation.
-
-A separate empty store remains a valid uninitialized history under PR04. It begins through G01 using explicit initialization inputs. It is an independent demonstration history, not continuation, recovery, or reassignment of facts from another history.
-
-An empty store contains no records from which a revision can be inferred. Initial rollout must use a verified-new location distinct from every preserved history. PR02 continues to hash payload_json only; the revision marker is an envelope field, not a new hash or event.
+Preserve and verify revision 0.2 source, matching executables, configuration, and all existing journals before activating the new implementation. PR02 continues to hash payload_json only. Authentication secrets and session labels are not canonical event fields.

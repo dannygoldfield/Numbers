@@ -298,7 +298,7 @@ fn records(
             json!(id("auc", auction_number))
         };
         result.push(json!({
-            "spec_revision": "0.2",
+            "spec_revision": "0.3",
             "sequence_index": first_sequence + index,
             "record_id": record_id(first_sequence + index),
             "record_type": record_type,
@@ -688,7 +688,7 @@ pub fn reconstruct(rows: &[(i64, String)], live: &Value) -> Result<State> {
                 let record: Value =
                     serde_json::from_str(raw).map_err(|_| Fault::history("invalid record JSON"))?;
                 assert_rule(
-                    record["spec_revision"] == "0.2",
+                    record["spec_revision"] == "0.3",
                     "unsupported or missing spec_revision; use the preserved build for earlier histories",
                 )?;
                 assert_rule(
