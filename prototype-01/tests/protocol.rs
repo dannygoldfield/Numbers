@@ -707,12 +707,16 @@ fn legacy_initialization_and_mixed_revisions_are_rejected_without_writes() {
     assert_eq!(legacy.len(), 3);
     assert!(legacy.iter().all(|r| r.get("spec_revision").is_none()));
     rejected(&legacy);
+    let revision_02: Vec<Value> =
+        serde_json::from_str(include_str!("fixtures/revision-0.2-initialization.json")).unwrap();
+    assert!(revision_02.iter().all(|r| r["spec_revision"] == "0.2"));
+    rejected(&revision_02);
     let mut demo = Demo::new();
     demo.bid(0, "demo-1", json!(20));
     demo.read(225);
     demo.settle(226, "settled");
     let original = &demo.engine.state().records;
-    assert!(original.iter().all(|r| r["spec_revision"] == "0.2"));
+    assert!(original.iter().all(|r| r["spec_revision"] == "0.3"));
     for index in [0, 1, 2, original.len() - 1] {
         for marker in [
             None,
@@ -720,7 +724,8 @@ fn legacy_initialization_and_mixed_revisions_are_rejected_without_writes() {
             Some(json!(0.2)),
             Some(json!(true)),
             Some(json!("0.1")),
-            Some(json!("0.3")),
+            Some(json!("0.2")),
+            Some(json!("0.4")),
         ] {
             let mut changed = original.clone();
             if let Some(marker) = marker {

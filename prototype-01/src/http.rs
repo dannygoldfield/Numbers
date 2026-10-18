@@ -2,10 +2,16 @@
 //!
 //! Static files are presentation resources. Only the four specified API endpoints
 //! reach the authoritative evaluator; malformed transport never does.
-use crate::{store::Engine, values::command, Fault};
+use crate::{
+    access::{self, Access, BODY_LIMIT},
+    store::Engine,
+    values::command,
+    Fault,
+};
 use num_bigint::BigInt;
 use serde_json::Value;
 use std::collections::BTreeMap;
+use std::io::Read;
 use tiny_http::{Header, Request, Response, StatusCode};
 
 pub struct Input {
@@ -18,6 +24,7 @@ pub fn route(method: &str, url: &str, body: &[u8]) -> crate::Result<Input> {
     let (path, query) = url.split_once('?').unwrap_or((url, ""));
     let (required, action) = match path {
         "/state" => ("GET", "state"),
+        "/access" => ("GET", "access"),
         "/auction/history" => ("GET", "history"),
         "/bid" => ("POST", "bid"),
         "/demo/settlement" => ("POST", "settlement"),
@@ -79,6 +86,10 @@ pub fn respond_json(request: Request, value: &Value) -> std::io::Result<()> {
         200
     } else {
         match value["error"]["code"].as_str().unwrap_or("") {
+            "authentication_required" => 401,
+            "forbidden" => 403,
+            "unsupported_media_type" => 415,
+            "request_too_large" => 413,
             "unknown_endpoint" => 404,
             "method_not_allowed" => 405,
             "storage_unavailable"
@@ -99,7 +110,22 @@ fn header(name: &str, value: &str) -> Header {
     Header::from_bytes(name, value).expect("fixed ASCII header")
 }
 
-pub fn serve_request(mut request: Request, engine: &mut Engine) -> std::io::Result<()> {
+pub fn serve_request(
+    mut request: Request,
+    engine: &mut Engine,
+    access: &Access,
+) -> std::io::Result<()> {
+    let principal = match access::principal(request.headers()) {
+        Ok(principal) => principal,
+        Err(fault) => return respond_json(request, &fault.response(&[])),
+    };
+    if let Err(fault) = access.transport(
+        request.method().as_str(),
+        request.headers(),
+        request.body_length(),
+    ) {
+        return respond_json(request, &fault.response(&[]));
+    }
     let resource = match request.url() {
         "/" | "/record" => Some((
             "text/html; charset=utf-8",
@@ -126,11 +152,25 @@ pub fn serve_request(mut request: Request, engine: &mut Engine) -> std::io::Resu
         );
     }
     let mut body = Vec::new();
-    if request.as_reader().read_to_end(&mut body).is_err() {
+    if request
+        .as_reader()
+        .take(BODY_LIMIT + 1)
+        .read_to_end(&mut body)
+        .is_err()
+    {
         return respond_json(request, &Fault::new("malformed_request").response(&[]));
+    }
+    if body.len() as u64 > BODY_LIMIT {
+        return respond_json(request, &Fault::new("request_too_large").response(&[]));
     }
     match route(request.method().as_str(), request.url(), &body) {
         Ok(input) => {
+            if let Err(fault) = principal.authorize(input.action, &body) {
+                return respond_json(request, &fault.response(&[]));
+            }
+            if input.action == "access" {
+                return respond_json(request, &access.metadata(principal));
+            }
             // SE04: time is sampled here, after transport and exclusive writer entry.
             let result = engine.request(
                 input.action,

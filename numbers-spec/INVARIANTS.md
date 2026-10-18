@@ -1,4 +1,4 @@
-# Prototype 1 invariants
+# Prototype 2 invariants
 
 ## IV01 — Consistency obligations
 
@@ -16,11 +16,12 @@ Every complete committed group and every successfully reconstructed journal must
 | I08 | Only valid pre-close bids participate; highest amount wins with earliest canonical sequence as tie-break; the result is recorded once. | SE03, SE06 |
 | I09 | Resolution, terminal settlement, and ownership are distinct facts, each fixed by its defined record. Settlement never revises the resolved winner. | RT03–RT05, SE06 |
 | I10 | Successful capture equals the winning bid and credits protocol-held Rana; failed settlement releases the hold. No protocol spending, extra issuance, or compensation is inferred. | RT01, RT03, SC03 |
-| I11 | Each finalized number has exactly one original auction ownership outcome: the winning identity after settled, or Unowned after expired. Prototype 1 has no ownership transfer; future transfer design cannot rewrite this original auction outcome. | RT04, RT06 |
+| I11 | Each finalized number has exactly one original auction ownership outcome: the winning identity after settled, or Unowned after expired. Prototype 2 has no ownership transfer; future transfer design cannot rewrite this original auction outcome. | RT04, RT06 |
 | I12 | Unowned is neither a participant/account nor an error or recovery mechanism. | RT04 |
 | I13 | Base duration is 225 seconds; extensions obey captured parameters and cannot alter base end; close takes precedence at the effective end. | P02, SE03–SE04 |
 | I14 | Finalization precedes the 12-second gap and next-number creation; creation never opens the next auction. | SE04 |
 | I15 | Reconstruction preserves the committed prefix exactly and neither reissues Rana nor repeats outcome effects. | PR04–PR06 |
 | I16 | One authoritative order and complete atomic groups connect auction, ledger, settlement, and ownership; unavailable or malformed history is not permission. | PR01–PR06, SE05 |
-| I17 | UI commands, clocks, balances, animations, and identity selection cannot determine authoritative truth. | UI01–UI03 |
+| I17 | UI commands, clocks, balances, animations, and identity display cannot determine authoritative truth. | UI01–UI03 |
 | I18 | Configuration cannot reinterpret captured history, and no unlisted retry or recovery exists. | P02, PR04–PR06, SE02 |
+| I19 | No remotely submitted request reaches authoritative evaluation before the SE07 access and transport gates; denied access creates no canonical fact. | SE07 |

@@ -1,57 +1,36 @@
-# Numbers · Prototype 1
+# Numbers Prototype 2
 
-A local Rust application for the approved Numbers 0.2 specification. Two simulated bidders compete for a number. The journal records bids, Rana movements, resolution, settlement and ownership. Restart reconstructs those records before new work begins.
+Revision 0.3 extends the same Rust auction engine to two invited bidders and one facilitator. Each bidder has a private credential and fixed simulated account. All three inspect the same journal and balances; only the facilitator can select simulated settlement. [STATUS](../numbers-spec/STATUS.md) and [AUTHORITY](../numbers-spec/AUTHORITY.md) define current behavior.
 
-The sole active behavioral authority is [numbers-spec](../numbers-spec/STATUS.md). Earlier applications and specifications are preserved through the [historical index](../archive/README.md); they are not dependencies of this application.
+The `prototype-01/` directory and Rust package name are retained to avoid copying or renaming the engine. Prototype 1 remains usable through its preserved revision 0.2 build and journals; see [HANDOFF](HANDOFF.md). Revision 0.3 never continues those histories.
 
-For the current checkpoint and next activity, see [HANDOFF.md](HANDOFF.md). To try it with colleagues, follow the [feedback session](DEMO.md#collect-colleague-feedback).
-
-## Run
-
-From this directory:
+## Verify locally
 
 ```sh
-./run
+npm ci --ignore-scripts
+./check
+./cargo-local build --locked --release --bins
+./demo guided --auto
 ```
 
-Open [Auction](http://127.0.0.1:8765/) and [Record](http://127.0.0.1:8765/record). The Record page can sit beside the Auction page and contains no outcome controls. Stop the server with Ctrl-C. Running the same command again reconstructs the same journal.
+The guided executable uses the actual engine with explicit simulated time and a fresh journal. Its 42-record fixture proves both settlement outcomes and reconstruction in separate processes. The 31-record fixture, timing, Rana accounting and ownership rules remain unchanged. Tests use disposable journals; never point them at saved sessions.
 
-[SETUP.md](SETUP.md) documents the installed tools, repeatable setup and checks. [REVIEW.md](REVIEW.md) is the backend reading guide. [VERIFICATION.md](VERIFICATION.md) records actual validation evidence and its limits.
+[SETUP](SETUP.md) describes dependencies and the separate real HTTPS gateway rehearsal. [REVIEW](REVIEW.md) maps rules to implementation and checks. [VERIFICATION](VERIFICATION.md) records results and limits.
 
-## Demonstrate in VS Code, the browser and terminal
+## Prepare an invited session
 
-Open [Numbers-demo.code-workspace](Numbers-demo.code-workspace) in VS Code, then choose **Terminal → Run Task → Numbers: Guided mechanics**. The walkthrough waits for Enter and shows rules, commands, committed records and balances. It uses simulated time with the actual Rust engine and proves reconstruction in separate processes.
+The live interface requires an authenticated HTTPS gateway. The application remains on loopback and rejects requests without a gateway principal assertion. Merely opening its port in a browser does not create authenticated access.
 
-```sh
-./demo guided     # Guided mechanics; each run has its own journal
-./demo serve      # Separate live browser session on port 8766
-./demo live       # Run in a second terminal against that live session
-```
+Use the [reviewable operating examples](ops/README.md) to prepare a configuration, dedicated history location, fixed credential assignment and session manifest. First launch is an explicit `--initialize`; subsequent starts omit it. A missing intended journal, changed configuration or changed build stops startup instead of creating a replacement. Keep the matching binary and configuration with each history.
 
-[DEMO.md](DEMO.md) contains the presenter script, command reference, saved-session inspection and restart instructions. The live browser and terminal share a real-clock backend; the guided history is independent. The existing `./run` and port-8765 browser demonstration remain available.
+`demo-config.json` contains explicit 600-Rana demo inputs plus an example origin, label and independent `data/revision-0.3/trial-001.sqlite3` path. The example origin is not a deployment. No credentials, keys or real hostname belong in Git. The convenience `./run --initialize` / `./run` use that exact configuration; review it and the gateway before launch.
 
-## Auction mechanics
+Auction is `/`; Record is `/record`. Both require a credential. The Record view contains no mutation controls. The bidder sees its assigned account without a selector; the facilitator sees settlement controls and no bid form. All use the device system font.
 
-The explicit [demo configuration](demo-config.json) starts a separate history at Number 1 with 600 rana per simulated bidder. The opening minimum is 5 rana; each subsequent bid must increase the leading amount by at least 1 rana. For example, a leading bid of 5 can be raised to 6.
+## Unchanged mechanics
 
-1. Bidder A bids 20. The 3:45 auction begins and 20 rana is reserved.
-2. Bidder B bids 30. A's reservation is released; B now has 570 available and 30 reserved.
-3. A bids 30. The backend rejects the insufficient increase and records an invalid bid.
-4. B raises to 40, using its existing reservation. A can then lead with 50.
-5. After the auction closes, the resolved winner waits for an explicit settlement choice.
-6. **Simulate successful settlement** captures the winning amount into protocol-held Rana and establishes the winner’s ownership. **Simulate failed settlement** releases the winning reservation and leaves the number Unowned (no owner). The failure command retains `expired` as its internal label; there is no settlement deadline.
-7. After the 12-second gap, the next number appears and remains dormant until its first valid bid.
+The first valid bid starts a 225-second auction. A valid bid in the final configured 10-second window extends by 15 seconds, at most twice. Only the leader has a reservation. Resolution fixes the winner; successful settlement captures the full hold and assigns original ownership, while failed settlement releases it and finalizes Unowned. After a 12-second gap the next number becomes available, dormant until its first valid bid. Settlement has no deadline.
 
-A valid bid within the final 10 seconds extends the auction by 15 seconds, up to two times. The backend controls all timing and outcomes. The browser only displays them and submits commands.
+Network and browser time do not grant priority or change these rules. A lost response may follow a committed command. The browser never resubmits it; inspect the records and explicitly acknowledge before submitting a new command. If the outcome remains unclear, involve the facilitator and use the stop/inspect procedure.
 
-## Stored history
-
-The revised demo uses `data/revision-0.2/demo.sqlite3`, relative to this directory. Its first launch creates a separate history. The preserved `data/demo-02.sqlite3`, `data/prototype.sqlite3`, and earlier demonstration sessions require the old build; the new build rejects their format without editing them. See [HANDOFF.md](HANDOFF.md) for the verified backup. Its adjacent `.writer.lock` prevents a second application writer; `.diagnostic.log` records non-authoritative failures when possible. These local files are ignored by Git.
-
-The original winner and finalization record cannot be rewritten. A future separately approved specification may define append-only transfers, including between wallets belonging to the same person or different people; no wallet or transfer mechanism exists here.
-
-The application has no reset, history edit, top-up, protocol spending, compensation or automatic command retry operation. An unavailable response may follow a successful commit: inspect the state and journal before making a new explicit submission. A malformed journal stops processing and is preserved for investigation.
-
-Initial allocations and the starting number apply only to a new history. Changing them does not reset an existing journal. Changing a permitted auction parameter affects future AuctionRecords, not parameters already captured in records. The UI04 acceptance fixture uses its own explicit 100-rana allocations and 10-rana minimum/increment. The [historical verification](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/prototype-01/VERIFICATION.md#fresh-demo-configuration--2026-09-05) records the separate 600-rana demo initialization.
-
-This prototype uses simulated identities and local Rana. It does not accept real payments, establish external ownership, or protect a journal against a person controlling the machine.
+No Bitcoin, payments, wallets, transfers, top-ups, reset, history edits, compensation or automatic recovery exist. Original auction facts remain immutable; a separately approved future transfer could append later facts. Host administrators remain trusted. Deployment and repository pruning require separate authorization.

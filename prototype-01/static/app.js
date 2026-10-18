@@ -34,6 +34,8 @@ function prettyExact(value, depth = 0) {
     : '{}';
 }
 function parseExact(source) {
+  // Validate JSON syntax first; discard this rounded parse before preserving tokens.
+  JSON.parse(source);
   let output = '',
     index = 0;
   while (index < source.length) {
@@ -74,19 +76,160 @@ let state = null,
   receivedAt = 0,
   inFlight = false,
   connected = false,
-  refreshing = false;
+  refreshing = false,
+  access = null,
+  pendingCommand = null,
+  freshInspection = false,
+  inspectionGeneration = 0;
 let history = [],
   historyThrough = '0';
-const channel =
-  typeof BroadcastChannel === 'function' ? new BroadcastChannel('numbers-prototype-01-view') : null;
-
+// UI03: retain only the uncertain target, never a command to replay.
+function pendingKey() {
+  return (
+    'numbers-pending:' +
+    JSON.stringify([access.session_label, access.spec_revision, access.role, access.bidder_id])
+  );
+}
+function clearPresentation() {
+  state = null;
+  history = [];
+  historyThrough = '0';
+  connected = false;
+  freshInspection = false;
+  for (const id of [
+    'number',
+    'phase',
+    'clock',
+    'clock-label',
+    'clock-note',
+    'bid-rule',
+    'leader-label',
+    'available',
+    'reserved',
+    'leader',
+    'record-state',
+    'protocol-balance',
+    'record-count',
+    'reconstructed',
+    'state-json',
+    'ownership-banner',
+  ])
+    put(id, '—');
+  element('records').replaceChildren();
+  element('account-summary').replaceChildren();
+  element('ownership-banner').hidden = true;
+  element('ownership-banner').classList.remove('final');
+  put('last-command', 'No command submitted in this view.');
+  put('result', 'Two simulated bidders. One recorded history.');
+  element('bid-button').disabled = element('settle').disabled = element('expire').disabled = true;
+}
+function acceptAccess(next) {
+  if (
+    !next ||
+    next.spec_revision !== '0.3' ||
+    typeof next.session_label !== 'string' ||
+    !/^[A-Za-z0-9_-]{1,64}$/.test(next.session_label) ||
+    !(
+      (next.role === 'bidder' && ['demo-1', 'demo-2'].includes(next.bidder_id)) ||
+      (next.role === 'facilitator' && next.bidder_id === null)
+    )
+  )
+    throw new Error('Invalid access response');
+  if (JSON.stringify(next) !== JSON.stringify(access)) {
+    clearPresentation();
+    access = next;
+    pendingCommand = JSON.parse(sessionStorage.getItem(pendingKey()) || 'null');
+    put(
+      'identity',
+      access.role === 'facilitator'
+        ? 'Facilitator'
+        : `${bidderName(access.bidder_id)} · ${access.bidder_id}`,
+    );
+    put(
+      'session-label',
+      `Session ${access.session_label} · ${access.role === 'facilitator' ? 'Facilitator' : bidderName(access.bidder_id)} · simulated funds`,
+    );
+    element('bid-panel').hidden = access.role !== 'bidder';
+    element('settlement-controls').hidden = true;
+  }
+}
+async function request(url, options = {}) {
+  const controller = new AbortController();
+  let timer;
+  try {
+    return await Promise.race([
+      (async () => {
+        const response = await fetch(url, {
+          ...options,
+          cache: 'no-store',
+          credentials: 'same-origin',
+          signal: controller.signal,
+        });
+        return parseExact(await response.text());
+      })(),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          reject(new Error('The 30-second wait ended; this does not cancel a command.'));
+        }, 30000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 async function read(url) {
-  const response = await fetch(url, { cache: 'no-store' });
-  const value = parseExact(await response.text());
-  if (value.status !== 'success') throw new Error(value.error.message);
+  const value = await request(url);
+  if (value?.status !== 'success' || !value.data || typeof value.data !== 'object')
+    throw new Error(value?.error?.message || 'Unconfirmed backend response');
   return value.data;
 }
+function renderUncertainty() {
+  element('uncertainty').hidden = !pendingCommand;
+  element('acknowledge').disabled = inFlight || !connected || !freshInspection;
+  if (pendingCommand)
+    put(
+      'uncertain-target',
+      `Outcome unconfirmed for ${pendingCommand.target}. The command may have committed or may still complete. Inspect the shared records; absence in a read is not proof of rejection. Ask the facilitator if the outcome remains unclear.`,
+    );
+}
+function acknowledgeNewCommand() {
+  if (inFlight || !connected || !freshInspection || !pendingCommand || recordOnly) return;
+  sessionStorage.removeItem(pendingKey());
+  pendingCommand = null;
+  renderState();
+}
+
+function validateState(next) {
+  const integer = (v) => v instanceof ExactNumber && /^(0|[1-9][0-9]*)$/.test(v.value);
+  if (
+    !next ||
+    !integer(next.current_number) ||
+    !integer(next.last_sequence_index) ||
+    typeof next.server_time !== 'string' ||
+    !Number.isFinite(Date.parse(next.server_time)) ||
+    !['Scheduled', 'Open', 'Closed', 'AwaitingSettlement', 'Finalized'].includes(
+      next.auction_state,
+    ) ||
+    !Array.isArray(next.balances) ||
+    next.balances.length !== 2 ||
+    !next.balances.every(
+      (b, i) =>
+        b.bidder_id === ['demo-1', 'demo-2'][i] &&
+        integer(b.available_rana) &&
+        integer(b.reserved_rana),
+    ) ||
+    !integer(next.protocol_held_rana) ||
+    !integer(next.reconstruction?.validated_through_sequence_index) ||
+    !next.parameters ||
+    !integer(next.parameters.minimum_bid_rana) ||
+    !integer(next.parameters.minimum_increment_rana)
+  )
+    throw new Error('Invalid state projection');
+  return next;
+}
 function updateState(next) {
+  validateState(next);
   if (
     state &&
     (BigInt(String(next.last_sequence_index)) < BigInt(String(state.last_sequence_index)) ||
@@ -97,7 +240,7 @@ function updateState(next) {
   state = next;
   receivedAt = performance.now();
   connected = true;
-  put('connection', 'Connected locally · backend records determine the result');
+  put('connection', 'Connected · backend records determine the result');
   element('connection').classList.remove('error');
   renderState();
 }
@@ -115,9 +258,9 @@ function renderState() {
     }[phase],
   );
   put('number', state.current_number);
-  const chosen = state.balances.find((balance) => balance.bidder_id === element('identity').value);
-  put('available', chosen.available_rana);
-  put('reserved', chosen.reserved_rana);
+  const chosen = state.balances.find((balance) => balance.bidder_id === access?.bidder_id);
+  put('available', chosen?.available_rana ?? '—');
+  put('reserved', chosen?.reserved_rana ?? '—');
   put('leader-label', state.resolution ? 'Resolved winner' : 'Leading bid');
   put(
     'leader',
@@ -129,9 +272,22 @@ function renderState() {
     'bid-rule',
     `Minimum ${state.parameters.minimum_bid_rana} rana · increase by at least ${state.parameters.minimum_increment_rana} rana`,
   );
-  element('bid-button').disabled = inFlight || !connected || !['Scheduled', 'Open'].includes(phase);
-  element('settlement-controls').hidden = phase !== 'AwaitingSettlement';
-  element('settle').disabled = element('expire').disabled = inFlight || !connected;
+  element('bid-button').disabled =
+    recordOnly ||
+    access?.role !== 'bidder' ||
+    inFlight ||
+    !connected ||
+    Boolean(pendingCommand) ||
+    !['Scheduled', 'Open'].includes(phase);
+  element('settlement-controls').hidden =
+    access?.role !== 'facilitator' || phase !== 'AwaitingSettlement';
+  element('settle').disabled = element('expire').disabled =
+    recordOnly ||
+    access?.role !== 'facilitator' ||
+    inFlight ||
+    !connected ||
+    Boolean(pendingCommand);
+  renderUncertainty();
   // RT06/UI02: ownership is pending until its canonical finalization exists.
   const banner = state.ownership
     ? state.ownership.ownership_kind === 'winner'
@@ -299,21 +455,24 @@ async function refreshHistory() {
 async function refresh() {
   if (refreshing || inFlight) return;
   refreshing = true;
+  const generation = inspectionGeneration;
   try {
+    acceptAccess(await read('/access'));
     updateState(await read('/state'));
+    freshInspection = generation === inspectionGeneration && !inFlight;
     await refreshHistory();
   } catch (error) {
     connected = false;
-    put('connection', `Local backend unavailable: ${error.message}`);
+    put('connection', `Connection unavailable: ${error.message}`);
     element('connection').classList.add('error');
     renderState();
   } finally {
     refreshing = false;
+    renderUncertainty();
   }
 }
-function showResult(result, broadcast = true) {
+function showResult(result) {
   put('last-command', prettyExact(result));
-  if (broadcast && channel) channel.postMessage(prettyExact(result));
 }
 // UI01/UI03: explain the backend's SE03 decision using its response snapshot.
 // This display calculation never validates, increases, or resubmits a bid.
@@ -326,7 +485,7 @@ function bidRejectionReason(reason, snapshot) {
     case 'malformed_field':
       return 'The bid details have an invalid format. Enter a whole-number amount.';
     case 'unknown_identity':
-      return 'Choose Bidder A or Bidder B.';
+      return 'The submitted identity is not a supported simulated bidder.';
     case 'amount_below_minimum':
       return `Bid at least ${snapshot.parameters.minimum_bid_rana} rana.`;
     case 'amount_below_required_increment': {
@@ -344,16 +503,99 @@ function bidRejectionReason(reason, snapshot) {
   }
 }
 async function submit(endpoint, body) {
-  if (inFlight || !connected) return;
+  if (
+    recordOnly ||
+    inFlight ||
+    !connected ||
+    pendingCommand ||
+    !access ||
+    (endpoint === '/bid'
+      ? access.role !== 'bidder'
+      : endpoint !== '/demo/settlement' || access.role !== 'facilitator')
+  )
+    return;
+  const submittedAccess = pendingKey();
+  inspectionGeneration += 1;
   inFlight = true;
   renderState();
   try {
-    const response = await fetch(endpoint, {
+    pendingCommand = {
+      target: `Number ${state.current_number} · ${endpoint === '/bid' ? 'bid' : 'settlement'}`,
+    };
+    freshInspection = false;
+    sessionStorage.setItem(submittedAccess, JSON.stringify(pendingCommand));
+    renderUncertainty();
+    const result = await request(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
     });
-    const result = parseExact(await response.text());
+    if (pendingKey() !== submittedAccess)
+      throw new Error(
+        'The session changed while the command response was pending. Inspect the previous session separately.',
+      );
+    if (
+      !(
+        result?.status === 'error' &&
+        [
+          'authentication_required',
+          'forbidden',
+          'unsupported_media_type',
+          'request_too_large',
+          'malformed_request',
+          'invalid_read_parameters',
+          'unknown_endpoint',
+          'method_not_allowed',
+          'auction_not_accepting_bids',
+          'settlement_not_available',
+          'missing_required_field',
+          'malformed_field',
+          'wrong_auction',
+          'invalid_settlement_outcome',
+          'storage_unavailable',
+          'history_invalid',
+          'clock_invalid',
+          'arithmetic_unrepresentable',
+        ].includes(result.error?.code) &&
+        typeof result.error.message === 'string' &&
+        Array.isArray(result.evaluation_records)
+      ) &&
+      !(
+        result?.status === 'success' &&
+        typeof result.data?.accepted === 'boolean' &&
+        result.data.state &&
+        Array.isArray(result.data.command_records) &&
+        Array.isArray(result.data.evaluation_records)
+      )
+    )
+      throw new Error('Unconfirmed command response');
+    if (result.status === 'success') {
+      validateState(result.data.state);
+      if (
+        endpoint === '/bid' &&
+        (!result.data.bid_record ||
+          result.data.bid_record.number === undefined ||
+          (!result.data.accepted && !result.data.bid_record.payload_json))
+      )
+        throw new Error('Invalid bid response');
+      if (
+        endpoint === '/demo/settlement' &&
+        !['winner', 'unowned'].includes(result.data.state.ownership?.ownership_kind)
+      )
+        throw new Error('Invalid settlement response');
+    }
+    if (!(
+      result.status === 'error' &&
+      [
+        'storage_unavailable',
+        'history_invalid',
+        'clock_invalid',
+        'arithmetic_unrepresentable',
+      ].includes(result.error.code)
+    )) {
+      sessionStorage.removeItem(submittedAccess);
+      pendingCommand = null;
+    }
     showResult(result);
     if (result.status === 'error') {
       put(
@@ -383,7 +625,9 @@ async function submit(endpoint, body) {
   } catch (error) {
     put(
       'result',
-      'The response was lost or unavailable. The command may have committed. Inspect the refreshed state and journal before making a new submission.',
+      pendingKey() === submittedAccess
+        ? 'The response was lost or unavailable. The command may have committed. Inspect the refreshed state and journal. A missing record does not prove the request cannot still complete. Acknowledge before making a new command.'
+        : 'The session changed while a command was pending. Inspect that previous session separately; no command has been carried into this session.',
     );
     element('result').classList.add('error');
     showResult({
@@ -396,7 +640,7 @@ async function submit(endpoint, body) {
     renderState();
   }
 }
-element('identity').addEventListener('change', renderState);
+element('acknowledge').addEventListener('click', acknowledgeNewCommand);
 element('bid-form').addEventListener('submit', (event) => {
   event.preventDefault();
   if (!state) return;
@@ -409,7 +653,7 @@ element('bid-form').addEventListener('submit', (event) => {
   } catch {
     amount = JSON.stringify(entered);
   }
-  const body = `{"auction_number":${state.current_number},"bidder_id":${JSON.stringify(element('identity').value)},"amount_rana":${amount}}`;
+  const body = `{"auction_number":${state.current_number},"bidder_id":${JSON.stringify(access.bidder_id)},"amount_rana":${amount}}`;
   submit('/bid', body);
 });
 element('settle').addEventListener('click', () =>
@@ -418,7 +662,6 @@ element('settle').addEventListener('click', () =>
 element('expire').addEventListener('click', () =>
   submit('/demo/settlement', JSON.stringify({ auction_id: state.auction_id, outcome: 'expired' })),
 );
-if (channel) channel.onmessage = (event) => showResult(parseExact(event.data), false);
 setInterval(refresh, 1000);
 setInterval(renderClock, 100);
 refresh();

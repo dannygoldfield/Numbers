@@ -1,3 +1,4 @@
+pub mod access;
 pub mod http;
 pub mod model;
 pub mod store;
@@ -13,6 +14,10 @@ pub type Result<T> = std::result::Result<T, Fault>;
 impl Fault {
     pub fn new(code: &str) -> Self {
         let message=match code {
+            "authentication_required"=>"A valid invited credential is required. No evaluation occurred.",
+            "forbidden"=>"This request is not permitted for this credential or origin. No evaluation occurred.",
+            "unsupported_media_type"=>"Use uncompressed application/json with UTF-8. No evaluation occurred.",
+            "request_too_large"=>"The request body exceeds 4,096 bytes. No evaluation occurred.",
             "wrong_auction_number"=>"This bid names a different number.",
             "missing_required_field"=>"A required field is missing.",
             "malformed_field"=>"A field has the wrong name, type, or integer format.",

@@ -37,9 +37,11 @@ Validation uses the pre-group state; release/reserve steps are indivisible to ob
 
 A release or capture must reference an earlier live reservation exactly once and consume the full hold. A previously released or captured hold cannot be used again. There is no cumulative hold per bid or retained losing hold. Losing-reservation release occurs when outbid; terminal settlement must not issue duplicate releases for already released losers.
 
-## RT03 — Separate local settlement
+## RT03 — Separate simulated settlement
 
 Resolution fixes the winning bid before settlement is eligible. Only `SubmitSettlement` defined in SE02 can cause settlement. It must name the current resolved auction and request exactly `settled` or `expired` while the auction is AwaitingSettlement. No terminal outcome already exists. The live hold must match the recorded winning bid, bidder, and exact winning amount.
+
+In Prototype 2, only the authenticated facilitator may submit this command through SE07. Bidder credentials cannot select either settlement outcome. This permission change does not change eligibility, winner binding, ledger effects, the lack of a settlement deadline, or either final ownership outcome.
 
 A missing/mismatched hold is invalid history or an invariant failure under PR06, not a permitted failed-settlement result.
 
@@ -63,21 +65,21 @@ Unowned is an irreversible final auction ownership outcome. The number remains a
 
 The only Unowned trigger is the accepted `expired` settlement group in RT03. Absence of bids, storage errors, malformed history, time alone, restart, or operator belief must not substitute for that trigger.
 
-Each number receives exactly one final auction ownership outcome within its history. Later facts or specification revisions cannot erase, replace, or reinterpret that original assignment. Prototype 1 defines no subsequent transfer; RT06 distinguishes future transfer from rewriting finalization.
+Each number receives exactly one final auction ownership outcome within its history. Later facts or specification revisions cannot erase, replace, or reinterpret that original assignment. Prototype 2 defines no subsequent transfer; RT06 distinguishes future transfer from rewriting finalization.
 
 ## RT05 — One-shot boundaries
 
 Resolution permission is exhausted by the durable ResolutionRecord; terminal-settlement permission by its complete settlement group; ownership-assignment permission by its FinalizationRecord in that same group. A reservation can end only once by its permitted release or capture. These limits are enforced by canonical references, event preconditions, and record/group uniqueness, not a separate mutable authority flag.
 
-A complete commit makes those facts irreversible. An uncommitted local group has no canonical economic effect. An uncertain commit response is handled by halting and reconstructing durable history under PR06, never by speculative retry, forfeiture, or authority consumption before commit. Restart and operator action cannot restore consumed permission. There is no external-action authority scope or ambiguity-repair lifecycle in Prototype 1.
+A complete commit makes those facts irreversible. An uncommitted local group has no canonical economic effect. An uncertain commit response is handled by halting and reconstructing durable history under PR06, never by speculative retry, forfeiture, or authority consumption before commit. Restart and operator action cannot restore consumed permission. There is no external-action authority scope or ambiguity-repair lifecycle in Prototype 2.
 
 
 ## RT06 — Current ownership vocabulary and future transfer boundary
 
-Revision 0.2 uses `ownership` for the state projection, `ownership_kind` and `owner_id` for the ownership fields, and `unowned` and `expired_to_unowned` for the failed-settlement outcome and finalization reason. These are exact schema names. Legacy names are not accepted as aliases and are not emitted by the revision 0.2 interface.
+Revision 0.3 uses `ownership` for the state projection, `ownership_kind` and `owner_id` for the ownership fields, and `unowned` and `expired_to_unowned` for the failed-settlement outcome and finalization reason. These are exact schema names. Legacy names are not accepted as aliases and are not emitted by the revision 0.3 interface.
 
 The owner remains the fixed winning bidder after successful settlement and null after failed settlement. These names introduce no joint owner, substitute winner, spending authority, correction of finalization, or external ownership mechanism.
 
-Irreversibility protects finalized auction facts, including the original winner and ownership assignment. It does not prohibit a future, separately specified and approved transfer mechanism that appends later transfer records while preserving those facts. Such a future mechanism may address a destination wallet belonging to the same person or another person; this clause defines neither wallet semantics nor a transfer command, event, authorization rule, or current-owner projection. No transfer mechanism exists in Prototype 1.
+Irreversibility protects finalized auction facts, including the original winner and ownership assignment. It does not prohibit a future, separately specified and approved transfer mechanism that appends later transfer records while preserving those facts. Such a future mechanism may address a destination wallet belonging to the same person or another person; this clause defines neither wallet semantics nor a transfer command, event, authorization rule, or current-owner projection. No transfer mechanism exists in Prototype 2.
 
-Earlier histories remain readable through their preserved implementation. Revision 0.2 does not migrate or reinterpret them. PR07 defines the history boundary.
+Earlier histories remain readable through their preserved implementation. Revision 0.3 does not migrate or reinterpret them. PR07 defines the history boundary.

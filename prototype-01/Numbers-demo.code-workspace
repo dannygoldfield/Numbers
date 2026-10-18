@@ -1,7 +1,7 @@
 {
   "folders": [
     {
-      "name": "Prototype 1",
+      "name": "Numbers prototype",
       "path": "."
     },
     {
@@ -14,7 +14,7 @@
     "terminal.integrated.fontSize": 15,
     "editor.minimap.enabled": false,
     "rust-analyzer.linkedProjects": [
-      "${workspaceFolder:Prototype 1}/Cargo.toml"
+      "${workspaceFolder:Numbers prototype}/Cargo.toml"
     ],
     "files.exclude": {
       "**/target": true,
@@ -35,7 +35,7 @@
         "type": "shell",
         "command": "./demo guided",
         "options": {
-          "cwd": "${workspaceFolder:Prototype 1}"
+          "cwd": "${workspaceFolder:Numbers prototype}"
         },
         "problemMatcher": [],
         "presentation": {
@@ -49,11 +49,11 @@
         }
       },
       {
-        "label": "Numbers: Start separate live demo",
+        "label": "Numbers: Start prepared session",
         "type": "shell",
-        "command": "./demo serve",
+        "command": "./run",
         "options": {
-          "cwd": "${workspaceFolder:Prototype 1}"
+          "cwd": "${workspaceFolder:Numbers prototype}"
         },
         "problemMatcher": [],
         "presentation": {
@@ -67,11 +67,11 @@
         }
       },
       {
-        "label": "Numbers: Live terminal",
+        "label": "Numbers: Guided acceptance",
         "type": "shell",
-        "command": "./demo live",
+        "command": "./demo guided --auto",
         "options": {
-          "cwd": "${workspaceFolder:Prototype 1}"
+          "cwd": "${workspaceFolder:Numbers prototype}"
         },
         "problemMatcher": [],
         "presentation": {
@@ -89,7 +89,7 @@
         "type": "shell",
         "command": "./check",
         "options": {
-          "cwd": "${workspaceFolder:Prototype 1}"
+          "cwd": "${workspaceFolder:Numbers prototype}"
         },
         "problemMatcher": [],
         "presentation": {

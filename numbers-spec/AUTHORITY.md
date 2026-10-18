@@ -20,7 +20,7 @@ The active precedence is:
 8. `PROTOTYPE-01.md` — identities and parameter definitions.
 9. `UI-AND-DEMO.md` — interface projections and demonstration contract.
 10. `GLOSSARY.md` — vocabulary.
-11. `SECURITY-NOW-AND-LATER.md` — only its explicitly normative Prototype 1 section.
+11. `SECURITY-NOW-AND-LATER.md` — only its explicitly normative current-prototype protection section.
 
 All these files are normative documents except sections explicitly labeled non-normative. `work/` is entirely non-normative. Recommendations, examples of rejected alternatives, future investigations, and provenance records cannot authorize behavior.
 

@@ -112,3 +112,11 @@ Revision 0.2 replaces revision 0.1 as the sole current authority. Historical ent
 ## C69–C70 — Merged revision and approved repository cleanup, 2026-10-18
 
 S33 / non-semantic maintenance: preserve merged revision 0.2, remove retired applications/specifications/experiments and redundant dependencies/snapshots from the working checkout, retire their two CI jobs, and clarify current navigation and provenance. Keep all eleven normative documents, current executable code, tests, manifests, configuration, and local journals unchanged. Current source and history remain revision 0.2. Publication as a cleanup PR is authorized; merging that PR, simplifying project instructions, activating Prototype 2, and deployment remain separate decisions.
+
+## Approved revision 0.3 — 2026-10-18
+
+S34 / approved C73–C74: activate Prototype 2 for two credential-bound invited bidders and a facilitator on one Droplet. Add the SE07 access/transport boundary before all evaluator entry, including reads; fixed bidder assignment and facilitator-only settlement; noncanonical GET /access; 4,096-byte request limit; explicit 10-second gateway transport limits without retry; and UI03's 30-second wait bound, persisted uncertain target, inspection and explicit acknowledgment before a new command. P02 binds build/configuration/credential assignment/session label/history without silent replacement. SN01 requires explicit restart and stopped-writer preservation.
+
+PR01/PR07 require exact marker 0.3 with a separate fresh history; matching old builds retain prior histories. UI05 retains guided engine verification and read-only inspection, while the preserved 0.2 build retains its live terminal workflow. The current prototype uses the authenticated browser. Scope and permissions change; auction timing, Rana accounting, ownership meaning, event groups, deterministic ordering and 31/42-record fixtures do not. No Bitcoin, transfer, new writer, database service, queue or generalized recovery is introduced.
+
+Owners: STATUS, AU02, SC01–SC04, P01–P03, SE02/SE04/SE07, RT03/RT06, PR01/PR07, UI01–UI05, SN01, I17/I19, GL01. C74 authorized local implementation/checks. C75 subsequently authorizes review and publication as an unmerged PR without changing normative meaning. Merging, pruning and deployment remain separate.

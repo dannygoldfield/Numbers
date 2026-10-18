@@ -1,0 +1,72 @@
+# Review-only template. Render the @@ placeholders for a local rehearsal or an
+# independently approved deployment. Never expose the Rust listener directly.
+worker_processes 1;
+pid @@RUNTIME@@/nginx.pid;
+error_log @@RUNTIME@@/error.log crit;
+events { worker_connections 128; }
+http {
+    map $remote_user $numbers_principal {
+        default "";
+        bidder-a bidder-a;
+        bidder-b bidder-b;
+        facilitator facilitator;
+    }
+    map $uri $numbers_route {
+        default unknown;
+        / auction;
+        /record record;
+        /app.js script;
+        /style.css style;
+        /access access;
+        /state state;
+        /auction/history history;
+        /bid bid;
+        /demo/settlement settlement;
+    }
+    # Do not log query strings, request bodies, arbitrary usernames, or credentials.
+    log_format numbers '$time_iso8601 principal=$numbers_principal method=$request_method route=$numbers_route status=$status';
+    access_log @@RUNTIME@@/access.log numbers;
+    client_body_temp_path @@RUNTIME@@/client-body;
+    proxy_temp_path @@RUNTIME@@/proxy;
+    server {
+        listen @@LISTEN@@ ssl;
+        server_name @@HOSTNAME@@;
+        ssl_certificate @@CERTIFICATE@@;
+        ssl_certificate_key @@CERTIFICATE_KEY@@;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        auth_basic "Numbers invited session";
+        auth_basic_user_file @@CREDENTIAL_FILE@@;
+        client_max_body_size 4096;
+        client_body_buffer_size 4096;
+        client_header_timeout 10s;
+        client_body_timeout 10s;
+        send_timeout 10s;
+        keepalive_timeout 10s;
+        location / {
+            proxy_pass http://@@BACKEND@@;
+            proxy_http_version 1.1;
+            proxy_pass_request_headers off;
+            proxy_set_header Connection close;
+            proxy_set_header X-Numbers-Principal $numbers_principal;
+            proxy_set_header Authorization "";
+            proxy_set_header Origin $http_origin;
+            proxy_set_header Sec-Fetch-Site $http_sec_fetch_site;
+            proxy_set_header Content-Type $http_content_type;
+            proxy_set_header Content-Encoding $http_content_encoding;
+            proxy_request_buffering on;
+            proxy_buffering on;
+            proxy_next_upstream off;
+            proxy_next_upstream_tries 1;
+            proxy_connect_timeout 10s;
+            proxy_send_timeout 10s;
+            proxy_read_timeout 10s;
+            proxy_cache off;
+            proxy_ignore_client_abort on;
+            proxy_intercept_errors off;
+            proxy_redirect off;
+            add_header Cache-Control "no-store" always;
+            add_header X-Content-Type-Options nosniff always;
+            add_header Referrer-Policy no-referrer always;
+        }
+    }
+}
