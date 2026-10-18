@@ -2,102 +2,43 @@
 
 What if you can own a number?
 
-Numbers explores that question through sequential auctions and an explicit record of ownership. The current implementation is [Prototype 1](prototype-01/README.md): a local Rust application with two simulated bidders, exact Rana accounting, an append-only SQLite journal and restart reconstruction.
+Numbers explores sequential auctions and an explicit record of ownership. The current implementation is **Prototype 1, specification revision 0.2**: one local Rust application, two simulated bidders, exact Rana accounting, an append-only journal, and restart reconstruction. A number is the abstract mathematical value; its device-native appearance does not define its identity.
 
 ## Start here
 
-- [Active specification and status](numbers-spec/STATUS.md)
-- [Run Prototype 1](prototype-01/README.md)
-- [Present the browser and backend](prototype-01/DEMO.md)
-- [Collect colleague feedback](prototype-01/DEMO.md#collect-colleague-feedback)
-- [Read the Rust implementation](prototype-01/REVIEW.md)
-- [Development environment](prototype-01/SETUP.md)
-- [Continuation notes and saved-history backup](prototype-01/HANDOFF.md)
-- [Prototype 2 planning and workflow](numbers-spec/work/PROTOTYPE-02.md) — draft, not active rules
-- [Historical source archive](archive/README.md)
+- [Active status](numbers-spec/STATUS.md) and [authority order](numbers-spec/AUTHORITY.md) — the behavioral specification.
+- [Run Prototype 1](prototype-01/README.md) — Auction at `/` and Record at `/record`.
+- [Demonstrate and collect feedback](prototype-01/DEMO.md).
+- [Read the implementation](prototype-01/REVIEW.md) or [reproduce the environment](prototype-01/SETUP.md).
+- [Current handoff and preserved histories](prototype-01/HANDOFF.md), with [verification evidence](prototype-01/VERIFICATION.md).
+- [Prototype 2 planning](numbers-spec/work/PROTOTYPE-02.md) — non-normative; implementation and deployment need separate approval.
 
-Open `prototype-01/Numbers-demo.code-workspace` in VS Code to see the active specification beside the implementation and run its demonstration tasks.
+Open [Numbers-demo.code-workspace](prototype-01/Numbers-demo.code-workspace) for the active specification, implementation, and demonstration tasks. [Numbers.code-workspace](Numbers.code-workspace) opens the same two folders without presenter tasks.
 
 ## Project folder guide
 
-On Danny's Mac, the working repository is `/Users/dannygoldfield/Projects/Numbers-Repos/Numbers`. The active project has two main folders: `numbers-spec/` states the rules; `prototype-01/` implements and demonstrates them. This guide explains locations, not additional protocol requirements.
-
-For a presentation, open [Numbers-demo.code-workspace](prototype-01/Numbers-demo.code-workspace) in VS Code. Its sidebar calls these folders **Specification** and **Prototype 1**, respectively. The root `Numbers.code-workspace` also opens these two active folders; the presentation workspace adds demo tasks. Open the repository folder itself to inspect older material. These workspaces are views of the same files, not separate copies.
-
-### Rules and decisions
-
-| Location | What it contains |
+| Path | Purpose |
 |---|---|
-| [numbers-spec/STATUS.md](numbers-spec/STATUS.md), [AUTHORITY.md](numbers-spec/AUTHORITY.md), [SCOPE.md](numbers-spec/SCOPE.md) | Which specification is active, which documents control, and what Prototype 1 includes. |
-| [RANA-AND-OWNERSHIP.md](numbers-spec/RANA-AND-OWNERSHIP.md), [STATE-AND-EVENTS.md](numbers-spec/STATE-AND-EVENTS.md), [INVARIANTS.md](numbers-spec/INVARIANTS.md) | Balances, bids, settlement, ownership, event order and properties that must always hold. |
-| [PERSISTENCE-AND-RESTART.md](numbers-spec/PERSISTENCE-AND-RESTART.md) | How records are saved and validated when the application restarts. |
-| [PROTOTYPE-01.md](numbers-spec/PROTOTYPE-01.md), [UI-AND-DEMO.md](numbers-spec/UI-AND-DEMO.md), [GLOSSARY.md](numbers-spec/GLOSSARY.md) | Demo parameters, Auction and Record view requirements, worked examples and vocabulary. |
-| [SECURITY-NOW-AND-LATER.md](numbers-spec/SECURITY-NOW-AND-LATER.md) | Current protection requirements and separately labeled future investigations. |
-| [numbers-spec/work/](numbers-spec/work/) | Decision sources, specification changes, audit, traceability, questions and deferred work. These are supporting notes, not executable authority. |
+| [numbers-spec/](numbers-spec/) | The eleven documents identified by AUTHORITY.md; only their declared normative sections control behavior. |
+| [numbers-spec/work/](numbers-spec/work/) | Decision provenance, explicit changes, current debt, and the next-prototype brief. None supplies executable authority. |
+| [prototype-01/src/](prototype-01/src/) | One Rust engine, HTTP service, and terminal demonstration tools. Start with [model.rs](prototype-01/src/model.rs). |
+| [prototype-01/static/](prototype-01/static/) | Auction and read-only Record browser views served by the same application. |
+| [prototype-01/tests/](prototype-01/tests/) | Protocol, executable-demo, and browser checks. The revision 0.1 fixture is retained to test rejection of old histories. |
+| [prototype-01/run](prototype-01/run), [demo](prototype-01/demo), [check](prototype-01/check) | Launch, demonstrate, and verify from the prototype directory. Its manifests and lockfiles own all current dependencies. |
+| [prototype-01/demo-config.json](prototype-01/demo-config.json) | Explicit demo inputs. Changing configuration cannot reset or reinterpret a recorded history. |
+| `prototype-01/data/` | Local journals and session evidence, excluded from Git and backed up separately. The default revised journal is `data/revision-0.2/demo.sqlite3`. |
+| `prototype-01/target/`, `prototype-01/node_modules/` | Ignored generated builds and installed development tools. |
+| [.github/workflows/ci.yml](.github/workflows/ci.yml) | Prototype 1 checks; no deployment job. |
+| [archive/README.md](archive/README.md) | Retrieval index for preserved earlier applications, specifications, experiments, and evidence. |
 
-### Working application
+## Scope and future prototypes
 
-All paths in this table are inside `prototype-01/`.
+Successful settlement records the winner as owner; explicitly failed settlement leaves the number Unowned and releases the winning reservation. The original auction outcome is immutable. A future separately approved transfer mechanism may append later facts without rewriting that outcome; Prototype 1 has no wallets or transfers.
 
-| Location | What it does |
-|---|---|
-| [src/model.rs](prototype-01/src/model.rs) | The central Rust auction rules: bid admission, reservations, settlement, ownership and reconstruction. Start here to show the mechanics. |
-| [src/store.rs](prototype-01/src/store.rs) | Saves complete groups of records atomically in SQLite and exposes committed state. |
-| [src/http.rs](prototype-01/src/http.rs), [src/main.rs](prototype-01/src/main.rs) | Connect the browser and terminal to the engine; start and run the local application. |
-| [src/values.rs](prototype-01/src/values.rs), [src/lib.rs](prototype-01/src/lib.rs) | Exact values and canonical representation; shared engine modules and error types. |
-| [static/index.html](prototype-01/static/index.html), [static/style.css](prototype-01/static/style.css), [static/app.js](prototype-01/static/app.js) | Both browser views: page structure, appearance, command submission and display. The backend decides outcomes. |
-| [src/bin/numbers-demo/](prototype-01/src/bin/numbers-demo/) | The guided walkthrough, live terminal client, readable summaries and separate demo-session management. These use the same engine. |
-| [tests/](prototype-01/tests/) | Rust protocol and demonstration checks, plus browser exact-value and command-display checks. |
-| [demo-config.json](prototype-01/demo-config.json) | The current local demo's explicit settings, including its journal path. Initial balances apply to a new history; editing this file does not reset an existing one. |
-| [run](prototype-01/run), [demo](prototype-01/demo), [check](prototype-01/check) | Launch the browser demo, run terminal demonstrations, and run the existing verification suite. |
-| [Cargo.toml](prototype-01/Cargo.toml), [Cargo.lock](prototype-01/Cargo.lock), [rust-toolchain.toml](prototype-01/rust-toolchain.toml), [cargo-local](prototype-01/cargo-local) | Rust application/dependency definitions, exact dependency versions, selected toolchain and local launcher. |
-| [package.json](prototype-01/package.json), [package-lock.json](prototype-01/package-lock.json), [.prettierrc.json](prototype-01/.prettierrc.json) | Browser development checks, their dependency versions and formatting preferences. |
-| `data/revision-0.2/demo.sqlite3` | The revised port-8765 demo's separate journal. Earlier `data/demo-02.sqlite3` and `data/prototype.sqlite3` remain preserved for the old build. |
-| `data/demonstrations/` | Separate live/guided demonstration sessions, saved journals and generated reconstruction evidence. |
-| `target/`, `node_modules/` | Generated Rust build files and installed development dependencies. They are reproducible working files and are excluded from Git. |
+Prototype 1 uses simulated identities and Rana. Bitcoin, real payments, authentication, and hosted operation are outside its active scope. Prototype 2 readiness planning is bounded to one DigitalOcean Droplet and invited testers; this does not activate new behavior or authorize deployment. Evolve the existing engine after the next specification is approved, using separate histories.
 
-`data/` is also excluded from Git: publishing source to GitHub does not back up local auction histories. The separate dated backup location is documented in [HANDOFF.md](prototype-01/HANDOFF.md).
+The [preserved revision 0.2 source](https://github.com/dannygoldfield/Numbers/tree/prototype-01-revision-0.2-preserved-2026-10-18) includes everything present before cleanup. Historical documents retain their original meaning and cannot supply missing current rules. See the archive index when a specific historical question requires them.
 
-### Guides for colleagues and future work
+## Authorship and license
 
-| Document | When to open it |
-|---|---|
-| [prototype-01/README.md](prototype-01/README.md) | Starting the application and understanding the demonstrated auction. |
-| [DEMO.md](prototype-01/DEMO.md) | Presenting the browser, terminal and guided walkthrough. |
-| [REVIEW.md](prototype-01/REVIEW.md) | Following a specification rule through the Rust implementation. |
-| [SETUP.md](prototype-01/SETUP.md) | Understanding or reproducing the development environment. |
-| [VERIFICATION.md](prototype-01/VERIFICATION.md) | Reading what was actually checked, when, and with what limits. |
-| [HANDOFF.md](prototype-01/HANDOFF.md) | Resuming work from the latest checkpoint; earlier dated sections are historical. |
-| [.github/workflows/ci.yml](.github/workflows/ci.yml) | GitHub's automated checks. Prototype 1 has a dedicated job; older application checks are separate. |
-
-### Earlier work and experiments
-
-The root `src/`, `tests/`, `Cargo.toml` and `Cargo.lock` belong to the older Rust application. `frontend/` is its separate earlier browser application; the current demo's browser code is in `prototype-01/static/`. `codex-spec/` is the superseded specification, and `docs/` contains older planning and documentation. The two former book configurations are preserved under `archive/legacy-book/`; `book/` retains historical themes and any generated material. `results/` contains earlier application output. `Experiments/` and `numbers-typing/` contain visual and typing experiments. Retained zip archives are historical snapshots. These locations are outside the active Prototype 1 implementation and do not define its behavior.
-
-### A short folder walkthrough
-
-1. Open `numbers-spec/RANA-AND-OWNERSHIP.md`: “These are the written rules for bids, balances and ownership.”
-2. Open `prototype-01/src/model.rs`, then find `plan_bid`: “This Rust code applies those rules.”
-3. Show Auction beside Record: “One view submits a bid; the other shows the resulting records and balances.” Record uses `/record`.
-4. Use the presenter steps in `prototype-01/DEMO.md`: “The guided terminal demonstration uses the same engine and shows reconstruction in a separate process.”
-5. Open `prototype-01/VERIFICATION.md`: “Here is the evidence for what we have checked.”
-
-## From Prototype 1 to Prototype 2
-
-The fixed `prototype-01-baseline-2026-10-10` tag preserves the earlier checkpoint. The `prototype-01-revision-0.1-preserved-2026-10-18` tag preserves the exact pre-revision source; builds and journals are backed up separately as described in HANDOFF.md. Keep Prototype 1 available for colleague demonstrations. Collect observations in the [Prototype 2 planning brief](numbers-spec/work/PROTOTYPE-02.md), choose one learning goal, then approve explicit specification changes before implementation. The [current debt register](numbers-spec/work/TECHNICAL-DEBT.md#current-register-as-of-2026-10-10) distinguishes accepted limits from work with a concrete revisit trigger.
-
-Future implementation should evolve the existing engine on a focused branch, using separate test histories. Preserve the tag; use a separate checkout only when both generations must run side by side. No duplicate engine or Prototype 2 service is created during planning.
-
-## Scope and authority
-
-`numbers-spec/` revision 0.2 is the sole active behavioral authority, with precedence defined in [AUTHORITY.md](numbers-spec/AUTHORITY.md). Specification changes are explicit and traced to user decisions. Successful settlement establishes the winner's ownership; failed settlement leaves the number Unowned, with no owner. Both are immutable original auction outcomes. A future separately approved transfer mechanism may append later ownership transfers without rewriting the auction result; Prototype 1 implements no transfers or wallets.
-
-Prototype 1 uses simulated identities and Rana. It does not currently integrate Bitcoin, payments or public hosting. The root Rust application, `frontend/`, `codex-spec/`, and older `docs/` describe earlier work and remain separate historical material. Their claims about Bitcoin execution and authority do not describe this prototype.
-
-## Authorship
-
-Numbers is authored and operated by Danny Goldfield, under the identity **123456789 and 0**.
-
-## License
-
-MIT
+Numbers is authored and operated by Danny Goldfield, under the identity **123456789 and 0**. [MIT license](LICENSE).

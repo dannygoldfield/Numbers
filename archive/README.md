@@ -1,22 +1,30 @@
 # Historical Numbers material
 
-The current application is [Prototype 1](../prototype-01/README.md), governed only by [numbers-spec revision 0.1](../numbers-spec/STATUS.md). Proposed work belongs in the [Prototype 2 planning brief](../numbers-spec/work/PROTOTYPE-02.md). Historical references to “normative”, “active” or “current” apply to their own period.
+The active application is [Prototype 1](../prototype-01/README.md); [STATUS.md](../numbers-spec/STATUS.md) and [AUTHORITY.md](../numbers-spec/AUTHORITY.md) identify its current behavioral authority. This index supplies retrieval paths, not execution rules.
 
-Most earlier files remain at their original paths so links, source citations and existing checks keep working. Their location does not grant current authority. The original contents remain available in Git history, including the pre-cleanup checkpoint `4a45179`.
+## Preserved source
 
-| Historical location | What is preserved |
+The complete pre-cleanup repository is preserved by tag `prototype-01-revision-0.2-preserved-2026-10-18` at commit `d567a3f55e951114ee4c5c125cdd9366dd70de3b`. [Browse that snapshot](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/). Links below use the exact commit so later work cannot change their targets. No Git history was rewritten.
+
+| Former path | Preserved material |
 |---|---|
-| [codex-spec/](../codex-spec/) | The superseded specification. Its original rule files are unchanged. |
-| [docs/](../docs/) | Earlier product, implementation and planning documents. Entry notices identify their historical status. |
-| Root [src/](../src/), [tests/](../tests/), [Cargo.toml](../Cargo.toml), [Cargo.lock](../Cargo.lock) | The earlier Rust application; separate from Prototype 1. |
-| [frontend/](../frontend/) | The earlier React application. Prototype 1's browser code is in `prototype-01/static/`. |
-| [results/](../results/), [Experiments/](../Experiments/), [numbers-typing/](../numbers-typing/) | Earlier output and visual/typing experiments. |
-| [legacy-book/root-book.toml](legacy-book/root-book.toml) | Exact former root `book.toml`. |
-| [legacy-book/nested-book.toml](legacy-book/nested-book.toml) | Exact former `book/book.toml`. |
-| [book/](../book/) | Historical themes and any locally generated book output. |
+| [codex-spec/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/codex-spec/) | Superseded specifications, with their original authority and terminology. |
+| [docs/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/docs/) | Earlier product, conceptual, protocol, deployment, and planning documents, including nested archives and notes. |
+| [src/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/src/), [Cargo.toml](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/Cargo.toml), [Cargo.lock](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/Cargo.lock), [tests/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/tests/) | Earlier Rust application and sample tests. |
+| [frontend/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/frontend/) | Earlier React application and its dependency locks. |
+| [results/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/results/) | Earlier application output; these are not Prototype 1 journals. |
+| [Experiments/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/Experiments/), [numbers-typing/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/numbers-typing/) | Visual and typing experiments. |
+| [book/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/book/), [archive/legacy-book/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/archive/legacy-book/) | Historical themes and exact former book configurations. Those configurations retain their original relative paths. |
+| [codex-spec.zip](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/codex-spec.zip), [five-document ZIP](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/docs/5-FILES-NOT-IN-CODEX-SPEC-DIRECTORY.zip) | Original ZIP snapshots; their 25 and five document contents respectively matched existing source files at cleanup. |
+| [node_modules/](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/node_modules/) | Former tracked Mocha/Chai installation and dependencies; not required by Prototype 1. |
+| [AUDIT.md](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/numbers-spec/work/AUDIT.md), [TRACEABILITY.md](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/numbers-spec/work/TRACEABILITY.md), [OPEN-QUESTIONS.md](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/numbers-spec/work/OPEN-QUESTIONS.md) | Earlier candidate audits, provenance maps, and resolved questions. |
+| [HANDOFF.md](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/prototype-01/HANDOFF.md), [VERIFICATION.md](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/prototype-01/VERIFICATION.md) | Full earlier handoff and verification chronology. |
+| [ci.yml](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/.github/workflows/ci.yml) | Previous workflow, including the retired legacy Rust and React jobs. |
 
-The two book configurations are source snapshots, not supported build entry points from their new locations: relative paths still describe their original locations. They were archived byte-for-byte to remove the misleading default book target. No documentation generator is required for the current Markdown guides. Use Git history in a separate checkout if historical build reconstruction becomes necessary.
+Historical uses of "normative", "active", "current", old ownership names, or `/protocol` apply to their original period. Restore a separate checkout of the appropriate preserved revision for historical work; do not import its assumptions into the current engine. Earlier supporting references in the decision/change registers resolve against this snapshot.
 
-The historical application's existing GitHub jobs remain separate from Prototype 1 checks. Moving all old code or reviving its build/dependency maintenance is a separate task; neither is needed to prepare Prototype 2.
+The fixed tags `prototype-01-baseline-2026-10-10` and `prototype-01-revision-0.1-preserved-2026-10-18` remain unchanged. Revision 0.1 histories require the corresponding preserved build; the new source snapshot is not a compatibility decoder.
 
-Local journals under `prototype-01/data/` are operational history, not this source archive. They are excluded from Git and backed up separately. See [HANDOFF.md](../prototype-01/HANDOFF.md).
+## Local operational history
+
+Local journals, executables, and session evidence are not backed up by GitHub. Their verified backup locations and matching revision boundaries are in [HANDOFF.md](../prototype-01/HANDOFF.md). Cleanup does not delete or relocate them. The legacy applications and CI jobs are retired from the working checkout; revival or deployment requires separate review.

@@ -1,6 +1,6 @@
 # Prototype limits and technical debt
 
-## Current register as of 2026-10-10
+## Current register
 
 Revision 0.2 clarification (2026-10-18): RT06 permits future separately specified append-only transfers without rewriting original finalization; no transfer is implemented. PR07 deliberately separates histories, so compatibility notes below do not require a legacy decoder in the new build.
 
@@ -16,13 +16,15 @@ This is the current planning register. The historical rationale below is preserv
 | TD09 | Ownership is an assignment within the prototype. External enforcement is outside scope. | A proposal connects the record to external assets or obligations. |
 | TD10 | Retired before implementation: no settlement deadline remains. | Only through an explicit proposal for new settlement semantics. |
 | TD11 | Internal state/events still use generic JSON and string labels. Deferred maintainability work. | Extending a lifecycle or record shape makes a small Rust type materially reduce ambiguity. Preserve existing wire bytes and test old histories; avoid a wholesale rewrite. |
-| TD12 | Historical `frontend/package-lock.json` has three open GitHub dependency alerts: js-yaml (high), browserslist (high), @humanfs/node (moderate). Prototype 1 uses a separate manifest; the legacy frontend still runs in its own CI job. | Address before reviving or deploying that application, or processing untrusted inputs through its affected build tools. Keep dependency maintenance separate from auction semantics. |
+| TD12 | The legacy frontend and its CI job are retired from the working checkout under C70. Its dependency history remains in the preserved snapshot; retirement is not a dependency repair or an advisory dismissal. Prototype 1 uses its own unchanged manifest. | Reassess dependencies and current advisories before reviving any archived application or its build tools. Keep that work separate from auction semantics. |
 | F01 | Exceptional compensation remains undefined and excluded. Ordinary release and capture are already fully specified. | Before economically meaningful loss or a real-value experiment. Specify eligibility, funding and authority without rewriting prior outcomes. |
 | Audit 2026-10-10 | Direct journal commit and mutable live engine state are private; callers observe through read-only accessors. | Compiler-checked examples protect the boundary; future changes must keep the planner as the only source of committed groups. |
 
 Prototype 2 planning and decision gates are in [PROTOTYPE-02.md](PROTOTYPE-02.md). Keep each future debt entry specific: limitation, reason to defer, and the evidence that would require addressing it.
 
 ### Historical dependency evidence — 2026-10-10
+
+The following is a dated observation, not a current alert count or status. The [historical index](../../archive/README.md) identifies the preserved application and lockfile; no alert dismissal or dependency upgrade is part of cleanup.
 
 GitHub reported three open alerts during publication. All identify `frontend/package-lock.json`, not Prototype 1's manifest: [js-yaml #48](https://github.com/dannygoldfield/Numbers/security/dependabot/48), fixed in 4.3.2; [browserslist #46](https://github.com/dannygoldfield/Numbers/security/dependabot/46), fixed in 4.28.7; and [@humanfs/node #45](https://github.com/dannygoldfield/Numbers/security/dependabot/45), fixed in 0.16.8. These versions and severities are a dated advisory observation, not a completed upgrade or a claim that the entire repository is vulnerability-free. They remain open maintenance work under TD12.
 

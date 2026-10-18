@@ -2,7 +2,7 @@
 
 A local Rust application for the approved Numbers 0.2 specification. Two simulated bidders compete for a number. The journal records bids, Rana movements, resolution, settlement and ownership. Restart reconstructs those records before new work begins.
 
-The sole active behavioral authority is [numbers-spec](../numbers-spec/STATUS.md). The older root Rust project, frontend and `codex-spec/` remain historical and are not dependencies of this application.
+The sole active behavioral authority is [numbers-spec](../numbers-spec/STATUS.md). Earlier applications and specifications are preserved through the [historical index](../archive/README.md); they are not dependencies of this application.
 
 For the current checkpoint and next activity, see [HANDOFF.md](HANDOFF.md). To try it with colleagues, follow the [feedback session](DEMO.md#collect-colleague-feedback).
 
@@ -52,6 +52,6 @@ The original winner and finalization record cannot be rewritten. A future separa
 
 The application has no reset, history edit, top-up, protocol spending, compensation or automatic command retry operation. An unavailable response may follow a successful commit: inspect the state and journal before making a new explicit submission. A malformed journal stops processing and is preserved for investigation.
 
-Initial allocations and the starting number apply only to a new history. Changing them does not reset an existing journal. Changing a permitted auction parameter affects future AuctionRecords, not parameters already captured in records. The UI04 acceptance fixture uses its own explicit 100-rana allocations and 10-rana minimum/increment. The [verification history](VERIFICATION.md#fresh-demo-configuration--2026-09-05) records the separate 600-rana demo initialization.
+Initial allocations and the starting number apply only to a new history. Changing them does not reset an existing journal. Changing a permitted auction parameter affects future AuctionRecords, not parameters already captured in records. The UI04 acceptance fixture uses its own explicit 100-rana allocations and 10-rana minimum/increment. The [historical verification](https://github.com/dannygoldfield/Numbers/blob/d567a3f55e951114ee4c5c125cdd9366dd70de3b/prototype-01/VERIFICATION.md#fresh-demo-configuration--2026-09-05) records the separate 600-rana demo initialization.
 
 This prototype uses simulated identities and local Rana. It does not accept real payments, establish external ownership, or protect a journal against a person controlling the machine.

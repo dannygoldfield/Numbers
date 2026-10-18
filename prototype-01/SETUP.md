@@ -32,7 +32,7 @@ npm ci --ignore-scripts
 
 The pinned toolchain automatically requests the matching formatter, linter and language server. `npm ci` installs only development tooling; the served browser interface has no runtime JavaScript dependencies and uses no third-party network assets.
 
-For an editor, enable its rust-analyzer integration and point it at this directory's `Cargo.toml`. The parent repository contains an older, independent Cargo project. Run commands here or pass this manifest explicitly.
+For an editor, enable its rust-analyzer integration and point it at this directory's `Cargo.toml`. This is the repository's active Cargo project. Run commands here or pass this manifest explicitly; the former root application is preserved through the [historical index](../archive/README.md).
 
 ## Daily workflow
 
