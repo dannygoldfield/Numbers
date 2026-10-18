@@ -2,6 +2,8 @@
 
 This non-normative register preserves the initial extraction and subsequent user decisions. Current behavioral authority is defined in [AUTHORITY.md](../AUTHORITY.md). [STATUS.md](../STATUS.md) records activation. Earlier statements about inactivity or evidence sources apply to their dated stage.
 
+Historical paths and candidate document names below refer to the [preserved pre-cleanup snapshot](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/); the [archive index](../../archive/README.md) links the earlier audit, traceability map, and resolved questions. For the current ownership/history decisions, start at [C66](#c66--abstract-numbers-and-separate-revised-histories-2026-10-18).
+
 ## Initial candidate record
 
 Non-normative source and decision register. Date: 2026-09-05; updated through Phase 2. This file authorizes no implementation.
@@ -270,3 +272,13 @@ The user stated: "I approve revision 0.2 and the implementation scope. Preserve 
 ## C68 — Review and publish revision 0.2, 2026-10-18
 
 The user requested: "Please review the revision 0.2 changes, then commit and push them to GitHub. Keep repository pruning and deployment separate." This authorizes review, corrections within the approved implementation scope, verification, and publication of the source checkpoint and its pre-revision preservation tag. Local journals and build outputs remain outside GitHub. It introduces no new protocol behavior and does not authorize pruning, deployment, or Prototype 2 activation.
+
+## C69 — Merge revision 0.2, 2026-10-18
+
+The user requested merging PR #12 into main while keeping deployment separate. The PR was merged as d567a3f55e951114ee4c5c125cdd9366dd70de3b; its three GitHub CI jobs passed. This publishes the approved revision and does not activate Prototype 2 or authorize deployment.
+
+## C70 — Preserve and clean the repository, 2026-10-18
+
+The user approved the path-by-path cleanup plan, including retirement of the legacy CI jobs, and instructed: "Preserve and verify revision 0.2 first, then make the cleanup changes and open a PR. Don’t merge it yet, and keep deployment separate."
+
+This authorizes a verified source/build/journal preservation checkpoint, removal of the approved historical and redundant paths from the working checkout, current-guide clarification, retirement of the two legacy CI jobs, verification, and a cleanup PR. Historical source remains available at the preserved revision; local journals stay unchanged. The cleanup PR requires separate merge approval. Project-instruction simplification, Prototype 2 behavioral activation, and deployment remain separate. No executable code, normative rule, dependency version, or canonical history changes are authorized by this cleanup.

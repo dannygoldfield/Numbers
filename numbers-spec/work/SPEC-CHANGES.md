@@ -1,6 +1,8 @@
 # Specification change history
 
-Revision 0.1 is active. This register preserves the earlier candidate changes followed by dated approvals and later editorial changes. [STATUS.md](../STATUS.md) records activation. Earlier statements about inactivity or evidence sources apply to their dated stage.
+This non-normative register preserves earlier candidate changes followed by dated approvals and later editorial changes. The active revision is identified only by STATUS.md. [STATUS.md](../STATUS.md) records activation. Earlier statements about inactivity or evidence sources apply to their dated stage.
+
+Historical source paths below resolve against the [preserved pre-cleanup snapshot](https://github.com/dannygoldfield/Numbers/tree/d567a3f55e951114ee4c5c125cdd9366dd70de3b/); see the [archive index](../../archive/README.md). Dated entries retain the vocabulary and authority state of their own period.
 
 ## Initial candidate record
 
@@ -106,3 +108,7 @@ S31 / approved C66–C67: replace the current ownership projection and finalizat
 S32 / approved C67 clarification: immutable finalization fixes the original auction outcome, not a perpetual prohibition on later transfer. A separately approved future specification may define append-only transfers preserving the original winner and assignment, including transfers to a wallet belonging to the same or a different person. No transfer or wallet mechanism is implemented or activated. Owners: RT04/RT06, GL02, SC04, I11. This narrows previously unqualified "ownership never changes" wording without changing Prototype 1 behavior.
 
 Revision 0.2 replaces revision 0.1 as the sole current authority. Historical entries above remain dated provenance. C67 authorizes preservation, local changes, and checks. C68 subsequently authorizes review, commit, and push of this checkpoint without changing normative meaning. Pruning, deployment, and Prototype 2 activation remain separate.
+
+## C69–C70 — Merged revision and approved repository cleanup, 2026-10-18
+
+S33 / non-semantic maintenance: preserve merged revision 0.2, remove retired applications/specifications/experiments and redundant dependencies/snapshots from the working checkout, retire their two CI jobs, and clarify current navigation and provenance. Keep all eleven normative documents, current executable code, tests, manifests, configuration, and local journals unchanged. Current source and history remain revision 0.2. Publication as a cleanup PR is authorized; merging that PR, simplifying project instructions, activating Prototype 2, and deployment remain separate decisions.

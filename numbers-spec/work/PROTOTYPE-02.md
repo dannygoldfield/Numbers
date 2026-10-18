@@ -1,12 +1,14 @@
 # Prototype 2 planning brief
 
-Status: draft, non-normative, prepared 2026-10-10. Prototype 2 has no approved scope or implementation authorization. [STATUS.md](../STATUS.md) identifies the sole active behavioral revision for Prototype 1.
+Status: draft, non-normative, updated 2026-10-18. Prototype 2 has no approved scope or implementation authorization. [STATUS.md](../STATUS.md) identifies the sole active behavioral revision for Prototype 1.
 
 ## Starting point
 
-Prototype 1 already demonstrates the complete auction with two simulated identities, exact accounting, append-only records, explicit simulated settlement and restart reconstruction. Browser, live terminal and guided demonstrations use one Rust engine. Preserve this baseline under the Git tag `prototype-01-baseline-2026-10-10`; local journals require the separate backup described in [HANDOFF.md](../../prototype-01/HANDOFF.md).
+Prototype 1 already demonstrates the complete auction with two simulated identities, exact accounting, append-only records, explicit simulated settlement and restart reconstruction. Browser, live terminal and guided demonstrations use one Rust engine. The merged revision 0.2 baseline is preserved under `prototype-01-revision-0.2-preserved-2026-10-18` at d567a3f55e951114ee4c5c125cdd9366dd70de3b; local journals require the separate backup described in [HANDOFF.md](../../prototype-01/HANDOFF.md).
 
-The user approves preparing the next stage, preserving earlier work and tracking proportionate technical debt (C64). That is not approval of a second prototype's behavior.
+The user approves preparing the next stage, preserving earlier work, and tracking proportionate technical debt (C64, C70). Readiness assessment is bounded to one DigitalOcean Droplet and invited testers only. This is a planning constraint, not approval of a second prototype's behavior, infrastructure provisioning, or deployment.
+
+For readiness work, start with STATUS.md, AUTHORITY.md and the relevant current clauses, then inspect the current prototype, tests and build configuration. Identify which rules carry forward and which need an explicit decision. Consult historical material only to answer a specific provenance question; it cannot fill a missing current rule. Return a bounded specification-change proposal and acceptance checks before implementation.
 
 ## Choose one learning goal
 
@@ -29,7 +31,7 @@ A problem with an existing approved rule belongs in a small Prototype 1 fix. A p
 These are questions, not new rules or defaults:
 
 - Which participants may connect, how are simulated identities assigned, and who may choose settlement outcomes?
-- Is the demonstration on a private local network or a deliberately hosted private service? Specify access boundaries before changing the current loopback-only deployment.
+- Within the one-Droplet, invited-tester planning boundary, what access restriction, participant permissions, and operational responsibilities are required? Specify them before changing the current loopback-only service. No deployment follows from this brief.
 - Which server-observed ordering and cutoff rules apply to competing requests, late bids and extensions? Decide whether the existing extension cap still serves the intended experience.
 - What should a participant see after losing a connection or a command response? Preserve the existing no-automatic-replay rule unless a replacement is explicitly specified.
 - Which Prototype 1 behaviors carry forward unchanged, and which clauses change? Define the exact demonstration and acceptance evidence for each change.
